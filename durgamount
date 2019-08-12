@@ -22,7 +22,8 @@ if ls -1qA "$MOUNTPOINT" | grep -q . ; then
     exit 1
 fi
 
-echo -n "Going to mount //durga/$SHARENAME on $MOUNTPOINT as $PARTNERSID.  OK? (y/n): "
+echo -e "\nIMPORTANT NOTE: Durga mounts are NOT accessible from compute nodes (node1-5)!\n"
+echo -n "Going to mount //durga/$SHARENAME on $(readlink -f $MOUNTPOINT) as $PARTNERSID.  OK? (y/n): "
 read -r answer
 if [ "$answer" != "${answer#[Yy]}" ] ;then
     echo Please enter your PARTNERS password...
