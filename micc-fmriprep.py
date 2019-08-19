@@ -140,7 +140,7 @@ if __name__ == '__main__':
     print(script)
     print('================')
 
-    qsub_cmd = f'{QSUB} -q bigmem.q -N fmriprep -pe fmriprep {args.ncpus} -w e -R y {filename}'.split()
+    qsub_cmd = f'{QSUB} -cwd -q bigmem.q -N fmriprep -pe fmriprep {args.ncpus} -w e -R y {filename}'.split()
     print(qsub_cmd)
     if args.dry_run:
         print('Not running; dry run only.')
