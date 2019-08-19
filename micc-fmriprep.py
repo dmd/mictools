@@ -38,7 +38,7 @@ def make_runscript(args):
     s += [args.outputdir]
     s += ['participant']
 
-    script = '#!/bin/bash\n' + ' \\\n'.join(s) + '\n'
+    script = '#!/bin/bash\n\n' + ' \\\n    '.join(s) + '\n'
 
     _, filename = tempfile.mkstemp()
     with open(filename, 'w') as fp:
@@ -102,6 +102,10 @@ if __name__ == '__main__':
                              'Default: "MNI152NLin6Asym:res-2 anat func fsaverage"',
                         default='MNI152NLin6Asym:res-2 anat func fsaverage')
 
+    parser.add_argument('--dry-run',
+                        help='Do not actually submit the job; just show what would be submitted.',
+                        action='store_true')
+
     required.add_argument('--bidsdir',
                           help='BIDS directory.',
                           required=True,
@@ -138,12 +142,15 @@ if __name__ == '__main__':
 
     qsub_cmd = f'{QSUB} -q bigmem.q -N fmriprep -pe fmriprep {args.ncpus} -w e -R y {filename}'.split()
     print(qsub_cmd)
-    proc = subprocess.Popen(qsub_cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
-    stdout, stderr = proc.communicate()
-    print('stdout:\n')
-    print(stdout)
-    print('\n\nstderr:')
-    print(stderr)
+    if args.dry_run:
+        print('Not running; dry run only.')
+    else:
+        proc = subprocess.Popen(qsub_cmd,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
+        stdout, stderr = proc.communicate()
+        print('stdout:\n')
+        print(stdout)
+        print('\n\nstderr:')
+        print(stderr)
     # os.unlink(filename)
