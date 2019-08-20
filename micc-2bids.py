@@ -78,7 +78,7 @@ def create_bids():
 
 if __name__ == '__main__':
     def is_file_or_dir(arg):
-        if not os.path.exists(arg):
+        if not (os.path.exists(arg) or os.path.exists(pjoin('sourcedata', arg))):
             raise argparse.ArgumentTypeError(f'{arg} does not exist')
         else:
             return arg
@@ -132,9 +132,9 @@ cue_mb6_gr2_3 = cue3
         sys.exit(0)
 
     subjectdir = args.subjectdir
+    _, subject = os.path.split(subjectdir)
     config = read_config(args.config)
 
-    # rename
     for scantype in config:  # ('anat', 'func')
         if scantype == 'DEFAULT':  # ignore configparser silliness
             continue
@@ -149,11 +149,5 @@ cue_mb6_gr2_3 = cue3
                 print(f'linking {source} to {dest}')
                 os.symlink(source, dest)
 
-    # convert
-    _, subject = os.path.split(subjectdir)
-    for scantype in config:  # ('anat', 'func')
-        if scantype == 'DEFAULT':  # ignore configparser silliness
-            continue
-
-        for scanname in config[scantype]:
             convertdicoms(subjectdir, scanname, scantype, subject + '_' + config[scantype][scanname])
+
