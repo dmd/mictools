@@ -77,6 +77,12 @@ def create_bids():
 
 
 if __name__ == '__main__':
+    def is_file_or_dir(arg):
+        if not os.path.exists(arg):
+            raise argparse.ArgumentTypeError(f'{arg} does not exist')
+        else:
+            return arg
+
     parser = argparse.ArgumentParser(description='Convert dicoms from the scanner to BIDS format, using a config file. '
                                                  'You should run this from the top level of a BIDS directory. '
                                                  'Your dicoms should be in ./sourcedata/SUBJECTDIR.')
@@ -84,10 +90,12 @@ if __name__ == '__main__':
     mug = parser.add_mutually_exclusive_group(required=True)
 
     mug.add_argument('--subjectdir',
+                     type=is_file_or_dir,
                      help='SUBJECTDIR to be processed, to be found under "sourcedata"')
 
     parser.add_argument('--config',
-                        help='Name of config file to use. (Default: ./scantypes.ini)',
+                        type=is_file_or_dir,
+                        help='Name of config file to use. (Default: scantypes.ini)',
                         default='scantypes.ini')
 
     mug.add_argument('--config-help',
