@@ -2,6 +2,7 @@
 import os
 import sys
 import argparse
+from argparse import RawTextHelpFormatter
 import re
 from os.path import join as pjoin
 import subprocess
@@ -83,9 +84,17 @@ if __name__ == '__main__':
         else:
             return arg
 
-    parser = argparse.ArgumentParser(description='Convert dicoms from the scanner to BIDS format, using a config file. '
-                                                 'You should run this from the top level of a BIDS directory. '
-                                                 'Your dicoms should be in ./sourcedata/SUBJECTDIR.')
+    parser = argparse.ArgumentParser(description=(
+        'Convert dicoms from the scanner to quasi-BIDS format, using a config file.\n'
+        'You should run this from the top level of a BIDS directory.\n'
+        'Your dicoms should be in ./sourcedata/SUBJECTDIR.\n\n'
+        'Why "quasi"? Because BIDS is a rather complex set of formats and rules,\n'
+        'and this tool is very very simple. If you want "real" BIDS, use one of:\n\n'
+        '  * https://github.com/nipy/heudiconv\n'
+        '  * https://github.com/cbedetti/Dcm2Bids\n'
+        '  * https://github.com/jmtyszka/bidskit\n'
+        '  * https://github.com/dangom/dac2bids\n'),
+                                     formatter_class=RawTextHelpFormatter)
 
     mug = parser.add_mutually_exclusive_group(required=True)
 
@@ -150,4 +159,3 @@ cue_mb6_gr2_3 = cue3
                 os.symlink(source, dest)
 
             convertdicoms(subjectdir, scanname, scantype, subject + '_' + config[scantype][scanname])
-
