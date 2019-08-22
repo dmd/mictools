@@ -99,11 +99,9 @@ if __name__ == '__main__':
     mug = parser.add_mutually_exclusive_group(required=True)
 
     mug.add_argument('--subjectdir',
-                     type=is_file_or_dir,
                      help='SUBJECTDIR to be processed, to be found under "sourcedata"')
 
     parser.add_argument('--config',
-                        type=is_file_or_dir,
                         help='Name of config file to use. (Default: scantypes.ini)',
                         default='scantypes.ini')
 
@@ -119,26 +117,35 @@ if __name__ == '__main__':
 
     if args.config_help:
         print("""
-The file should have two sections, prefixed by [anat] and [func]. Within each section,
-specify SCAN_NAME_FROM_SCANNER = scan_name_you_want
-Do NOT include the last _NN suffix. The last one will be chosen, and others ignored.
+The file should have two sections, prefixed by [anat] and [func]. Within
+each section, specify SCAN_NAME_FROM_SCANNER = scan_name_you_want
+Do NOT include the last _NN suffix. The last one will be chosen, 
+and others ignored.
+
+It is your responsibility to use names that are BIDS-compliant!
 
 E.g.:
 [anat]
-T1_MEMPRAGE_64ch_RMS = mprage
+T1_MEMPRAGE_64ch_RMS = T1w
 
 [func]
-resting_mb6_gr2_64ch = resting
-cue_mb6_gr2_1 = cue1
-cue_mb6_gr2_2 = cue2
-cue_mb6_gr2_3 = cue3
-
+resting_mb6_gr2_64ch = task-resting_bold
+cue_mb6_gr2_1 = task-cue1_bold
+cue_mb6_gr2_2 = task-cue2_bold
+cue_mb6_gr2_3 = task-cue3_bold
         """)
         sys.exit(0)
 
     if args.init_bids:
         create_bids()
         sys.exit(0)
+
+    if not os.path.exists(args.subjectdir):
+        print(f'subjectdir {args.subjectdir} does not exist')
+        sys.exit(1)
+    if not os.path.exists(args.config):
+        print(f'config file {args.config} does not exist')
+        sys.exit(1)
 
     subjectdir = args.subjectdir
     _, subject = os.path.split(subjectdir)
