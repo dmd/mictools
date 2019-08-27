@@ -140,7 +140,7 @@ cue_mb6_gr2_3 = task-cue3_bold
         create_bids()
         sys.exit(0)
 
-    if not os.path.exists(args.subjectdir):
+    if not os.path.exists(pjoin('sourcedata', args.subjectdir)):
         print(f'subjectdir {args.subjectdir} does not exist')
         sys.exit(1)
     if not os.path.exists(args.config):
