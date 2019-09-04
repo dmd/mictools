@@ -16,7 +16,6 @@ def make_runscript(args):
     s += ['-B /data:/data -B /data1:/data1 -B /data2:/data2 -B /data3:/data3 -B /cm/shared:/cm/shared']
     s += [args.fmriprep_container]
     s += [f'--fs-license-file /cm/shared/freesurfer-6.0.1/license.txt']
-    s += [f'-w  {args.workdir}']
     s += [f'--participant_label {args.participant}']
     s += [f'--output-spaces {args.output_spaces}']
     s += [f'--n_cpus {args.ncpus} --nthreads {args.ncpus} --omp-nthreads {args.ncpus}']
@@ -36,6 +35,8 @@ def make_runscript(args):
 
     if not args.freesurfer:
         s += ['--fs-no-reconall']
+
+    s += [f'-w  {args.workdir}']
 
     s += [args.bidsdir]
     s += [args.outputdir]
