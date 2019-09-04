@@ -22,6 +22,9 @@ def make_runscript(args):
     s += [f'--n_cpus {args.ncpus} --nthreads {args.ncpus} --omp-nthreads {args.ncpus}']
     s += [f'--mem-mb {args.ramsize*1024}']
 
+    # workaround
+    s += ['--use-plugin /data/ddrucker/workaround.yml']
+
     if args.aroma:
         s += ['--use-aroma --ignore-aroma-denoising-errors']
 
