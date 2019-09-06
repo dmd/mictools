@@ -70,3 +70,4 @@ for mailboxnum, tapeid in enumerate(tapes):
 # update slots
 
 bconsole(echo('-e','update slots storage=sl150-robot\n\n'))
+print('Updated bacula slots.')
