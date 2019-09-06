@@ -24,7 +24,7 @@ os.chdir('/')
 
 httpd = SocketServer.TCPServer(('', 0), SimpleHTTPServer.SimpleHTTPRequestHandler)
 
-print 'Go to:      http://micc.mclean.harvard.edu:' + str(httpd.socket.getsockname()[1]) + filepath;
+print 'Go to:      http://micc.mclean.harvard.edu:' + str(httpd.socket.getsockname()[1]) + filepath
 print '(In Terminal, you can right-click the above and select Open URL.)'
 print 'Please type Control-c when you are done.'
 httpd.serve_forever()
