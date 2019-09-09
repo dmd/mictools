@@ -22,7 +22,6 @@ def make_runscript(args):
     s += [f'--participant_label {args.participant}']
     s += [f'--output-spaces {args.output_spaces}']
     s += [f'--n_cpus {args.ncpus}']
-    s += [f'--nthreads {args.ncpus}']
 #    s += [f'--omp-nthreads {args.ncpus}']
     s += [f'--mem-mb {args.ramsize*1024}']
 
