@@ -12,16 +12,21 @@ def make_runscript(args):
 
     s = []
     s += ['/cm/shared/singularity/bin/singularity run']
-    s += ['--cleanenv']
     s += ['-B /data:/data -B /data1:/data1 -B /data2:/data2 -B /data3:/data3 -B /cm/shared:/cm/shared']
+    s += ['--cleanenv']
     s += [args.fmriprep_container]
+    s += [args.bidsdir]
+    s += [args.outputdir]
+    s += ['participant']
     s += [f'--fs-license-file /cm/shared/freesurfer-6.0.1/license.txt']
     s += [f'--participant_label {args.participant}']
     s += [f'--output-spaces {args.output_spaces}']
-    s += [f'--n_cpus {args.ncpus} --nthreads {args.ncpus} --omp-nthreads {args.ncpus}']
+    s += [f'--n_cpus {args.ncpus}']
+    s += [f'--nthreads {args.ncpus}']
+#    s += [f'--omp-nthreads {args.ncpus}']
     s += [f'--mem-mb {args.ramsize*1024}']
 
-    # workaround
+    # workaround FIXME
     s += ['--use-plugin /data/ddrucker/workaround.yml']
 
     if args.aroma:
@@ -36,11 +41,11 @@ def make_runscript(args):
     if not args.freesurfer:
         s += ['--fs-no-reconall']
 
+    if args.verbose:
+        s += ['-vvvv']
+
     s += [f'-w  {args.workdir}']
 
-    s += [args.bidsdir]
-    s += [args.outputdir]
-    s += ['participant']
 
     script = '#!/bin/bash\n\n' + ' \\\n    '.join(s) + '\n'
 
@@ -108,6 +113,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--dry-run',
                         help='Do not actually submit the job; just show what would be submitted.',
+                        action='store_true')
+
+    parser.add_argument('--verbose',
+                        help='Add verbose flag -vvvv to fmriprep.',
                         action='store_true')
 
     required.add_argument('--bidsdir',
