@@ -157,6 +157,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    # FIXME
+    # apparently fmriprep 1.4.1 has trouble if you run this from the bidsdir?!
+    if os.getcwd() == args.bidsdir or os.path.exists(pjoin(os.getcwd(), 'dataset_description.json')):
+        print('fmriprep currently messes up if you run it FROM a BIDS dir.')
+        print('Run this script from somewhere else instead, like your $HOME directory.')
+        sys.exit(1)
+
     filename, script = make_runscript(args)
     print(f'Submitting {filename} to qsub, the contents of which are:')
     print('================')
