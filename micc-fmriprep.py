@@ -1,4 +1,7 @@
 #!/cm/shared/anaconda3/bin/python3
+from os.path import join as pjoin
+import os
+import sys
 
 QSUB = '/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qsub'
 
@@ -9,6 +12,12 @@ def make_runscript(args):
     """
 
     import tempfile
+
+    if args.outputdir is None:
+        args.outputdir = pjoin(args.bidsdir, 'derivatives')
+
+    if args.workdir is None:
+        args.workdir = pjoin(args.bidsdir, 'fmriprep-work')
 
     s = []
     s += ['/cm/shared/singularity/bin/singularity run']
@@ -42,7 +51,8 @@ def make_runscript(args):
     if args.verbose:
         s += ['-vvvv']
 
-    s += [f'-w  {args.workdir}']
+    if args.workdir != '__EMPTY__':
+        s += [f'-w  {args.workdir}']
 
 
     script = '#!/bin/bash\n\n' + ' \\\n    '.join(s) + '\n'
@@ -62,7 +72,10 @@ if __name__ == '__main__':
         """Expand user- and relative-paths"""
 
         def __call__(self, parser, namespace, values, option_string=None):
-            setattr(namespace, self.dest, os.path.abspath(os.path.expanduser(values)))
+            if values == '':
+                setattr(namespace, self.dest, '__EMPTY__')
+            else:
+                setattr(namespace, self.dest, os.path.abspath(os.path.expanduser(values)))
 
     def is_dir(dirname):
         """Checks if a path is an actual directory"""
@@ -105,16 +118,25 @@ if __name__ == '__main__':
                         action='store_true')
 
     parser.add_argument('--output-spaces',
-                        help='Specify the output space. Enclose it in double quotes.'
-                             'Default: "MNI152NLin6Asym:res-2 anat func fsaverage"',
+                        help='Specify the output space. Enclose it in double quotes. '
+                             '(Default: "MNI152NLin6Asym:res-2 anat func fsaverage")',
                         default='MNI152NLin6Asym:res-2 anat func fsaverage')
+
+    parser.add_argument('--outputdir',
+                          help='Output directory. (Default: "derivatives" in BIDS dir)',
+                          action=FullPaths)
+
+    parser.add_argument('--workdir',
+                          help='Work directory. Set to "" (empty string) to disable. '
+                               '(Default: "fmriprep-work" in BIDS dir)',
+                          action=FullPaths)
 
     parser.add_argument('--dry-run',
                         help='Do not actually submit the job; just show what would be submitted.',
                         action='store_true')
 
     parser.add_argument('--verbose',
-                        help='Add verbose flag -vvvv to fmriprep.',
+                        help='Verbose logging, for debugging.',
                         action='store_true')
 
     required.add_argument('--bidsdir',
@@ -122,16 +144,6 @@ if __name__ == '__main__':
                           required=True,
                           action=FullPaths,
                           type=is_dir)
-
-    required.add_argument('--outputdir',
-                          help='Output directory.',
-                          required=True,
-                          action=FullPaths)
-
-    required.add_argument('--workdir',
-                          help='Work directory.',
-                          required=True,
-                          action=FullPaths)
 
     required.add_argument('--participant',
                           help='Participant label.',
