@@ -70,11 +70,14 @@ def create_bids():
 "Funding": "Your Funding Source"
 }
 """
-    open('README', 'a').close()
-    open('CHANGES', 'a').close()
     if not os.path.exists('dataset_description.json'):
         with open('dataset_description.json', 'w') as f:
             f.write(dd)
+
+    for filename in ('README', 'CHANGES'):
+        if not os.path.exists(filename):
+            with open(filename, 'w') as f:
+                f.write('\n')
 
 
 if __name__ == '__main__':
