@@ -152,8 +152,8 @@ if __name__ == '__main__':
 
     donttouch.add_argument('--fmriprep-container',
                            help='Path to the fMRIPrep container. '
-                                'Default: "/cm/shared/singularity/images/fmriprep-1.4.1.simg"',
-                           default='/cm/shared/singularity/images/fmriprep-1.4.1.simg')
+                                'Default: "/cm/shared/singularity/images/fmriprep-1.5.0.simg"',
+                           default='/cm/shared/singularity/images/fmriprep-1.5.0.simg')
 
     args = parser.parse_args()
 
