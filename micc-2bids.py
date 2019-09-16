@@ -66,7 +66,7 @@ def create_bids():
     dd = """{
 "Name": "Your Study Title",
 "BIDSVersion": "1.2.0",
-"Authors": ["Your Name"],
+"Authors": ["Your Name", "Co-author's Name"],
 "Funding": "Your Funding Source"
 }
 """
@@ -78,6 +78,10 @@ def create_bids():
         if not os.path.exists(filename):
             with open(filename, 'w') as f:
                 f.write('\n')
+    
+    if not os.path.exists('.bidsignore'):
+        with open('.bidsignore', 'w') as f:
+            f.write('*.ini\n')
 
 
 if __name__ == '__main__':
