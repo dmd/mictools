@@ -29,7 +29,7 @@ def make_runscript(args):
     s += ['participant']
     s += [f'--fs-license-file /cm/shared/freesurfer-6.0.1/license.txt']
     s += [f'--participant_label {args.participant}']
-    s += [f'--output-spaces {args.output_spaces}']
+    s += [f'--output-spaces "{args.output_spaces}"']
     s += [f'--n_cpus {args.ncpus}']
     s += [f'--mem-mb {args.ramsize*1024}']
 
@@ -119,8 +119,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--output-spaces',
                         help='Specify the output space. Enclose it in double quotes. '
-                             '(Default: "MNI152NLin6Asym:res-2 anat func fsaverage")',
-                        default='MNI152NLin6Asym:res-2 anat func fsaverage')
+                             '(Default: "MNI152NLin2009cAsym:res-2 anat func fsaverage")',
+                        default='MNI152NLin2009cAsym:res-2 anat func fsaverage')
 
     parser.add_argument('--outputdir',
                           help='Output directory. (Default: "derivatives" in BIDS dir)',
