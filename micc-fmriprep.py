@@ -1,9 +1,9 @@
-#!/cm/shared/anaconda3/bin/python3
+#!/usr/bin/env python3
 from os.path import join as pjoin
 import os
 import sys
 
-QSUB = '/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qsub'
+QSUB = "/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qsub"
 
 
 def make_runscript(args):
@@ -14,66 +14,67 @@ def make_runscript(args):
     import tempfile
 
     if args.outputdir is None:
-        args.outputdir = pjoin(args.bidsdir, 'derivatives')
+        args.outputdir = pjoin(args.bidsdir, "derivatives")
 
     if args.workdir is None:
-        args.workdir = pjoin(args.bidsdir, 'fmriprep-work')
+        args.workdir = pjoin(args.bidsdir, "fmriprep-work")
 
     pre = []
-    pre += ['export SINGULARITYENV_https_proxy=http://micc:8899']
-    pre += ['export SINGULARITYENV_TEMPLATEFLOW_HOME=/data/TemplateFlow']
+    pre += ["export SINGULARITYENV_https_proxy=http://micc:8899"]
+    pre += ["export SINGULARITYENV_TEMPLATEFLOW_HOME=/data/TemplateFlow"]
 
     s = []
-    s += ['/cm/shared/singularity/bin/singularity run']
-    s += ['-B /data:/data -B /data1:/data1 -B /data2:/data2 -B /data3:/data3 -B /cm/shared:/cm/shared']
-    s += ['-B /data/TemplateFlow:/data/TemplateFlow']
+    s += ["/cm/shared/singularity/bin/singularity run"]
+    s += [
+        "-B /data:/data -B /data1:/data1 -B /data2:/data2 -B /data3:/data3 -B /cm/shared:/cm/shared"
+    ]
+    s += ["-B /data/TemplateFlow:/data/TemplateFlow"]
 
     # should be able to remove this when https://github.com/poldracklab/fmriprep/issues/1777 resolved
-    s += ['-B $HOME/.cache:/home/fmriprep/.cache']  
+    s += ["-B $HOME/.cache:/home/fmriprep/.cache"]
 
-    s += ['--cleanenv']
+    s += ["--cleanenv"]
     s += [args.fmriprep_container]
     s += [args.bidsdir]
     s += [args.outputdir]
-    s += ['participant']
-    s += ['--fs-license-file /cm/shared/freesurfer-6.0.1/license.txt']
-    s += [f'--participant_label {args.participant}']
+    s += ["participant"]
+    s += ["--fs-license-file /cm/shared/freesurfer-6.0.1/license.txt"]
+    s += [f"--participant_label {args.participant}"]
     s += [f'--output-spaces "{args.output_spaces}"']
-    s += [f'--n_cpus {args.ncpus}']
-    s += [f'--mem-mb {args.ramsize*1024}']
-    s += ['--notrack']
+    s += [f"--n_cpus {args.ncpus}"]
+    s += [f"--mem-mb {args.ramsize*1024}"]
+    s += ["--notrack"]
 
     # workaround FIXME
-    s += ['--use-plugin /data/ddrucker/workaround.yml']
+    s += ["--use-plugin /data/ddrucker/workaround.yml"]
 
     if args.aroma:
-        s += ['--use-aroma --ignore-aroma-denoising-errors']
+        s += ["--use-aroma --ignore-aroma-denoising-errors"]
 
     if not args.disable_syn_sdc:
-        s += ['--use-syn-sdc']
+        s += ["--use-syn-sdc"]
 
     if args.anat_only:
-        s += ['--anat-only']
+        s += ["--anat-only"]
 
     if not args.freesurfer:
-        s += ['--fs-no-reconall']
+        s += ["--fs-no-reconall"]
 
     if args.verbose:
-        s += ['-vvvv']
+        s += ["-vvvv"]
 
-    if args.workdir != '__EMPTY__':
-        s += [f'-w  {args.workdir}']
+    if args.workdir != "__EMPTY__":
+        s += [f"-w  {args.workdir}"]
 
-
-    script = '#!/bin/bash\n\n' + '\n'.join(pre) + '\n' + ' \\\n    '.join(s) + '\n'
+    script = "#!/bin/bash\n\n" + "\n".join(pre) + "\n" + " \\\n    ".join(s) + "\n"
 
     _, filename = tempfile.mkstemp()
-    with open(filename, 'w') as fp:
+    with open(filename, "w") as fp:
         fp.write(script)
     return filename, script
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import subprocess
     import os
     import argparse
@@ -82,10 +83,12 @@ if __name__ == '__main__':
         """Expand user- and relative-paths"""
 
         def __call__(self, parser, namespace, values, option_string=None):
-            if values == '':
-                setattr(namespace, self.dest, '__EMPTY__')
+            if values == "":
+                setattr(namespace, self.dest, "__EMPTY__")
             else:
-                setattr(namespace, self.dest, os.path.abspath(os.path.expanduser(values)))
+                setattr(
+                    namespace, self.dest, os.path.abspath(os.path.expanduser(values))
+                )
 
     def is_dir(dirname):
         """Checks if a path is an actual directory"""
@@ -95,102 +98,120 @@ if __name__ == '__main__':
         else:
             return dirname
 
+    parser = argparse.ArgumentParser(
+        description="Run fMRIPrep, with some MIC cluster specific presets."
+    )
 
-    parser = argparse.ArgumentParser(description='Run fMRIPrep, with some MIC cluster specific presets.')
-
-    required = parser.add_argument_group('required arguments')
+    required = parser.add_argument_group("required arguments")
     donttouch = parser.add_argument_group("You don't need to touch these")
 
-    parser.add_argument('--aroma',
-                        help='Turn on AROMA processing. (Default: off)',
-                        action='store_true')
+    parser.add_argument(
+        "--aroma", help="Turn on AROMA processing. (Default: off)", action="store_true"
+    )
 
-    parser.add_argument('--disable-syn-sdc',
-                        help='Turn OFF synthetic field map correction. (Default: on)',
-                        action='store_true')
+    parser.add_argument(
+        "--disable-syn-sdc",
+        help="Turn OFF synthetic field map correction. (Default: on)",
+        action="store_true",
+    )
 
-    parser.add_argument('--ncpus',
-                        help='Number of threads and cores. (Default: 4)',
-                        type=int,
-                        default=4)
+    parser.add_argument(
+        "--ncpus", help="Number of threads and cores. (Default: 4)", type=int, default=4
+    )
 
-    parser.add_argument('--ramsize',
-                        help='RAM size to use, in GB. (Default: 8)',
-                        type=int,
-                        default=8)
+    parser.add_argument(
+        "--ramsize", help="RAM size to use, in GB. (Default: 8)", type=int, default=8
+    )
 
-    parser.add_argument('--freesurfer',
-                        help='Enable FreeSurfer processing. (Default: off)',
-                        action='store_true')
+    parser.add_argument(
+        "--freesurfer",
+        help="Enable FreeSurfer processing. (Default: off)",
+        action="store_true",
+    )
 
-    parser.add_argument('--anat-only',
-                        help='Do only anatomical processing - no fMRI.',
-                        action='store_true')
+    parser.add_argument(
+        "--anat-only",
+        help="Do only anatomical processing - no fMRI.",
+        action="store_true",
+    )
 
-    parser.add_argument('--output-spaces',
-                        help='Specify the output space. Enclose it in double quotes. '
-                             '(Default: "MNI152NLin2009cAsym:res-2 anat func fsaverage")',
-                        default='MNI152NLin2009cAsym:res-2 anat func fsaverage')
+    parser.add_argument(
+        "--output-spaces",
+        help="Specify the output space. Enclose it in double quotes. "
+        '(Default: "MNI152NLin2009cAsym:res-2 anat func fsaverage")',
+        default="MNI152NLin2009cAsym:res-2 anat func fsaverage",
+    )
 
-    parser.add_argument('--outputdir',
-                          help='Output directory. (Default: "derivatives" in BIDS dir)',
-                          action=FullPaths)
+    parser.add_argument(
+        "--outputdir",
+        help='Output directory. (Default: "derivatives" in BIDS dir)',
+        action=FullPaths,
+    )
 
-    parser.add_argument('--workdir',
-                          help='Work directory. Set to "" (empty string) to disable. '
-                               '(Default: "fmriprep-work" in BIDS dir)',
-                          action=FullPaths)
+    parser.add_argument(
+        "--workdir",
+        help='Work directory. Set to "" (empty string) to disable. '
+        '(Default: "fmriprep-work" in BIDS dir)',
+        action=FullPaths,
+    )
 
-    parser.add_argument('--dry-run',
-                        help='Do not actually submit the job; just show what would be submitted.',
-                        action='store_true')
+    parser.add_argument(
+        "--dry-run",
+        help="Do not actually submit the job; just show what would be submitted.",
+        action="store_true",
+    )
 
-    parser.add_argument('--verbose',
-                        help='Verbose logging, for debugging.',
-                        action='store_true')
+    parser.add_argument(
+        "--verbose", help="Verbose logging, for debugging.", action="store_true"
+    )
 
-    required.add_argument('--bidsdir',
-                          help='BIDS directory.',
-                          required=True,
-                          action=FullPaths,
-                          type=is_dir)
+    required.add_argument(
+        "--bidsdir",
+        help="BIDS directory.",
+        required=True,
+        action=FullPaths,
+        type=is_dir,
+    )
 
-    required.add_argument('--participant',
-                          help='Participant label.',
-                          required=True,
-                          type=str)
+    required.add_argument(
+        "--participant", help="Participant label.", required=True, type=str
+    )
 
-    donttouch.add_argument('--fmriprep-container',
-                           help='Path to the fMRIPrep container. '
-                                'Default: "/cm/shared/singularity/images/fmriprep-1.5.0.simg"',
-                           default='/cm/shared/singularity/images/fmriprep-1.5.0.simg')
+    donttouch.add_argument(
+        "--fmriprep-container",
+        help="Path to the fMRIPrep container. "
+        'Default: "/cm/shared/singularity/images/fmriprep-1.5.0.simg"',
+        default="/cm/shared/singularity/images/fmriprep-1.5.0.simg",
+    )
 
     args = parser.parse_args()
 
     # FIXME
     # apparently fmriprep 1.4.1 has trouble if you run this from the bidsdir?!
-    if os.getcwd() == args.bidsdir or os.path.exists(pjoin(os.getcwd(), 'dataset_description.json')):
-        print('fmriprep currently messes up if you run it FROM a BIDS dir.')
-        print('Run this script from somewhere else instead, like your $HOME directory.')
+    if os.getcwd() == args.bidsdir or os.path.exists(
+        pjoin(os.getcwd(), "dataset_description.json")
+    ):
+        print("fmriprep currently messes up if you run it FROM a BIDS dir.")
+        print("Run this script from somewhere else instead, like your $HOME directory.")
         sys.exit(1)
 
     filename, script = make_runscript(args)
-    print(f'Submitting {filename} to qsub, the contents of which are:')
-    print('================')
+    print(f"Submitting {filename} to qsub, the contents of which are:")
+    print("================")
     print(script)
-    print('================')
+    print("================")
 
-    qsub_cmd = f'{QSUB} -cwd -q bigmem.q -N fmriprep -pe fmriprep {args.ncpus} -w e -R y {filename}'.split()
+    qsub_cmd = f"{QSUB} -cwd -q bigmem.q -N fmriprep -pe fmriprep {args.ncpus} -w e -R y {filename}".split()
     print(qsub_cmd)
     if args.dry_run:
-        print('Not running; dry run only.')
+        print("Not running; dry run only.")
     else:
-        proc = subprocess.Popen(qsub_cmd,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(
+            qsub_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
         stdout, stderr = proc.communicate()
-        print('stdout:\n')
+        print("stdout:\n")
         print(stdout)
-        print('\n\nstderr:')
+        print("\n\nstderr:")
         print(stderr)
     # os.unlink(filename)
