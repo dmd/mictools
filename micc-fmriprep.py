@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-from os.path import join as pjoin
+from os.path import expanduser, join as pjoin
 import os
 import sys
 from pathlib import Path
 
 QSUB = "/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qsub"
-
+cachedir = expanduser("~/.cache/fmriprep")
 
 def make_runscript(args):
     """
@@ -18,18 +18,18 @@ def make_runscript(args):
         args.outputdir = pjoin(args.bidsdir, "derivatives")
 
     pre = []
-    pre += ["export SINGULARITYENV_https_proxy=http://micc:8899"]
-    pre += ["export SINGULARITYENV_TEMPLATEFLOW_HOME=/data/TemplateFlow"]
+    # re += ["export SINGULARITYENV_https_proxy=http://micc:8899"]
+    pre += ["export SINGULARITYENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"]
 
     s = []
     s += ["/cm/shared/singularity/bin/singularity run"]
     s += [
         "-B /data:/data -B /data1:/data1 -B /data2:/data2 -B /data3:/data3 -B /cm/shared:/cm/shared"
     ]
-    s += ["-B /data/TemplateFlow:/data/TemplateFlow"]
+    #s += ["-B /data/TemplateFlow:/data/TemplateFlow"]
 
     # should be able to remove this when https://github.com/poldracklab/fmriprep/issues/1777 resolved
-    s += ["-B $HOME/.cache:/home/fmriprep/.cache"]
+    s += [f"-B {cachedir}:/home/fmriprep/.cache/fmriprep"]
 
     s += ["--cleanenv"]
     s += [args.fmriprep_container]
@@ -185,6 +185,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    os.makedirs(cachedir, exist_ok=True)
     # FIXME
     # apparently fmriprep 1.4.1 has trouble if you run this from the bidsdir?!
     if os.getcwd() == args.bidsdir or os.path.exists(
