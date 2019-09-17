@@ -19,19 +19,29 @@ def make_runscript(args):
     if args.workdir is None:
         args.workdir = pjoin(args.bidsdir, 'fmriprep-work')
 
+    pre = []
+    pre += ['export SINGULARITYENV_https_proxy=http://micc:8899']
+    pre += ['export SINGULARITYENV_TEMPLATEFLOW_HOME=/data/TemplateFlow']
+
     s = []
     s += ['/cm/shared/singularity/bin/singularity run']
     s += ['-B /data:/data -B /data1:/data1 -B /data2:/data2 -B /data3:/data3 -B /cm/shared:/cm/shared']
+    s += ['-B /data/TemplateFlow:/data/TemplateFlow']
+
+    # should be able to remove this when https://github.com/poldracklab/fmriprep/issues/1777 resolved
+    s += ['-B $HOME/.cache:/home/fmriprep/.cache']  
+
     s += ['--cleanenv']
     s += [args.fmriprep_container]
     s += [args.bidsdir]
     s += [args.outputdir]
     s += ['participant']
-    s += [f'--fs-license-file /cm/shared/freesurfer-6.0.1/license.txt']
+    s += ['--fs-license-file /cm/shared/freesurfer-6.0.1/license.txt']
     s += [f'--participant_label {args.participant}']
     s += [f'--output-spaces "{args.output_spaces}"']
     s += [f'--n_cpus {args.ncpus}']
     s += [f'--mem-mb {args.ramsize*1024}']
+    s += ['--notrack']
 
     # workaround FIXME
     s += ['--use-plugin /data/ddrucker/workaround.yml']
@@ -55,7 +65,7 @@ def make_runscript(args):
         s += [f'-w  {args.workdir}']
 
 
-    script = '#!/bin/bash\n\n' + ' \\\n    '.join(s) + '\n'
+    script = '#!/bin/bash\n\n' + '\n'.join(pre) + '\n' + ' \\\n    '.join(s) + '\n'
 
     _, filename = tempfile.mkstemp()
     with open(filename, 'w') as fp:
