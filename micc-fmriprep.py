@@ -167,9 +167,9 @@ if __name__ == "__main__":
     required.add_argument(
         "--workdir",
         help='Work directory. Set to "" (empty string) to disable. '
-        'This directory must not be inside your BIDS dir.',
+        "This directory must not be inside your BIDS dir.",
         required=True,
-        action=FullPaths
+        action=FullPaths,
     )
 
     required.add_argument(
@@ -197,7 +197,6 @@ if __name__ == "__main__":
     if Path(args.bidsdir) in Path(args.workdir).parents or args.bidsdir == args.workdir:
         print("Your workdir cannot be in your BIDS dir.")
         sys.exit(1)
-
 
     filename, script = make_runscript(args)
     print(f"Submitting {filename} to qsub, the contents of which are:")
