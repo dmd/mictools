@@ -2,6 +2,7 @@
 from os.path import join as pjoin
 import os
 import sys
+from pathlib import Path
 
 QSUB = "/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qsub"
 
@@ -15,9 +16,6 @@ def make_runscript(args):
 
     if args.outputdir is None:
         args.outputdir = pjoin(args.bidsdir, "derivatives")
-
-    if args.workdir is None:
-        args.workdir = pjoin(args.bidsdir, "fmriprep-work")
 
     pre = []
     pre += ["export SINGULARITYENV_https_proxy=http://micc:8899"]
@@ -149,13 +147,6 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--workdir",
-        help='Work directory. Set to "" (empty string) to disable. '
-        '(Default: "fmriprep-work" in BIDS dir)',
-        action=FullPaths,
-    )
-
-    parser.add_argument(
         "--dry-run",
         help="Do not actually submit the job; just show what would be submitted.",
         action="store_true",
@@ -171,6 +162,14 @@ if __name__ == "__main__":
         required=True,
         action=FullPaths,
         type=is_dir,
+    )
+
+    required.add_argument(
+        "--workdir",
+        help='Work directory. Set to "" (empty string) to disable. '
+        'This directory must not be inside your BIDS dir.',
+        required=True,
+        action=FullPaths
     )
 
     required.add_argument(
@@ -194,6 +193,11 @@ if __name__ == "__main__":
         print("fmriprep currently messes up if you run it FROM a BIDS dir.")
         print("Run this script from somewhere else instead, like your $HOME directory.")
         sys.exit(1)
+
+    if Path(args.bidsdir) in Path(args.workdir).parents or args.bidsdir == args.workdir:
+        print("Your workdir cannot be in your BIDS dir.")
+        sys.exit(1)
+
 
     filename, script = make_runscript(args)
     print(f"Submitting {filename} to qsub, the contents of which are:")
