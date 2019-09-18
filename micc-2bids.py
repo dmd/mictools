@@ -94,6 +94,7 @@ def create_bids():
     if not os.path.exists(".bidsignore"):
         with open(".bidsignore", "w") as f:
             f.write("*.ini\n")
+            f.write("fmriprep-working\n")
 
 
 if __name__ == "__main__":
