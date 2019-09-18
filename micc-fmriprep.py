@@ -3,11 +3,9 @@ from os.path import expanduser, join as pjoin
 import os
 import sys
 from pathlib import Path
-import pathspec
 
 QSUB = "/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qsub"
 cachedir = expanduser("~/.cache/fmriprep")
-
 
 def make_runscript(args):
     """
@@ -21,16 +19,14 @@ def make_runscript(args):
 
     pre = []
     # re += ["export SINGULARITYENV_https_proxy=http://micc:8899"]
-    pre += [
-        "export SINGULARITYENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"
-    ]
+    pre += ["export SINGULARITYENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"]
 
     s = []
     s += ["/cm/shared/singularity/bin/singularity run"]
     s += [
         "-B /data:/data -B /data1:/data1 -B /data2:/data2 -B /data3:/data3 -B /cm/shared:/cm/shared"
     ]
-    # s += ["-B /data/TemplateFlow:/data/TemplateFlow"]
+    #s += ["-B /data/TemplateFlow:/data/TemplateFlow"]
 
     # should be able to remove this when https://github.com/poldracklab/fmriprep/issues/1777 resolved
     s += [f"-B {cachedir}:/home/fmriprep/.cache/fmriprep"]
@@ -199,28 +195,8 @@ if __name__ == "__main__":
         print("Run this script from somewhere else instead, like your $HOME directory.")
         sys.exit(1)
 
-    def workdir_ok(bidsdir, workdir):
-        if bidsdir == workdir:
-            print("Your workdir cannot be identical to your BIDS dir.")
-            return False
-
-        # is the workdir explicitly ignored by .bidsignore?
-        bidsignore_file = pjoin(args.bidsdir, ".bidsignore")
-        if os.path.exists(bidsignore_file):
-            with open(bidsignore_file) as fh:
-                spec = pathspec.PathSpec.from_lines("gitignore", fh)
-            if spec.match_file(workdir):
-                return True
-
-        if Path(bidsdir) in Path(workdir).parents:
-            print(
-                "Your workdir cannot be in your BIDS dir unless you add it to .bidsignore."
-            )
-            return False
-
-        return True
-
-    if not workdir_ok(args.bidsdir, args.workdir):
+    if Path(args.bidsdir) in Path(args.workdir).parents or args.bidsdir == args.workdir:
+        print("Your workdir cannot be in your BIDS dir.")
         sys.exit(1)
 
     filename, script = make_runscript(args)
