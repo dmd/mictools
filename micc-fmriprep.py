@@ -205,13 +205,11 @@ if __name__ == "__main__":
             return False
 
         # is the workdir explicitly ignored by .bidsignore?
-        workdir_ignored = False
         bidsignore_file = pjoin(args.bidsdir, ".bidsignore")
         if os.path.exists(bidsignore_file):
             with open(bidsignore_file) as fh:
                 spec = pathspec.PathSpec.from_lines("gitignore", fh)
-            workdir_ignored = spec.match_file(workdir)
-            if workdir_ignored:
+            if spec.match_file(workdir):
                 return True
 
         if Path(bidsdir) in Path(workdir).parents:
