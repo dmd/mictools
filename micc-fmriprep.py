@@ -44,7 +44,7 @@ def make_runscript(args):
     s += ["--notrack"]
 
     # workaround FIXME
-    s += ["--use-plugin /data/ddrucker/workaround.yml"]
+    #s += ["--use-plugin /data/ddrucker/workaround.yml"]
 
     if args.aroma:
         s += ["--use-aroma --ignore-aroma-denoising-errors"]
