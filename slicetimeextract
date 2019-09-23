@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# extracts slice timing data from bids json and writes it to
+# FSL compatible file in OUTPUTDIR
+
+INPUTFILE=$1
+OUTPUTDIR=$2
+OUTNAME=$(basename $INPUTFILE)
+OUTNAME=${OUTNAME/%_bold.json/_slicetimes.txt}
+/usr/bin/jq .SliceTiming[] < $1 > $OUTPUTDIR/$OUTNAME
