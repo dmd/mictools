@@ -3,6 +3,16 @@
 # extracts slice timing data from bids json and writes it to
 # FSL compatible file in OUTPUTDIR
 
+usage(){
+    echo "Usage: $0 INPUTFILE OUTPUTDIRECTORY"
+    echo "INPUTFILE should be a BIDS functional sidecar json file"
+    echo "OUTPUTDIRECTORY is where I will write your FSL-compatible slice timing"
+    echo "I will write foo_bold.json to OUTPUTDIRECTORY/foo_slicetimes.txt"
+    exit 1
+}
+
+[[ $# -eq 2 ]] || usage
+
 INPUTFILE=$1
 OUTPUTDIR=$2
 OUTNAME=$(basename $INPUTFILE)
