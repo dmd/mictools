@@ -200,7 +200,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     filename, script = make_runscript(args)
-    print(f"Submitting {filename} to qsub, the contents of which are:")
+    action = "NOT submitting" if args.dry_run else "Submitting" 
+    print(f"{action} {filename} to qsub, the contents of which are:")
     print("================")
     print(script)
     print("================")
@@ -208,7 +209,7 @@ if __name__ == "__main__":
     qsub_cmd = f"{QSUB} -cwd -q bigmem.q -N fmriprep -pe fmriprep {args.ncpus} -w e -R y {filename}".split()
     print(qsub_cmd)
     if args.dry_run:
-        print("Not running; dry run only.")
+        print("NOT running; dry run only.")
     else:
         proc = subprocess.Popen(
             qsub_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
