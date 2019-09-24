@@ -7,6 +7,7 @@ from pathlib import Path
 QSUB = "/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qsub"
 cachedir = expanduser("~/.cache/fmriprep")
 
+
 def make_runscript(args):
     """
     Create a temporary script file we can submit to qsub.
@@ -19,14 +20,16 @@ def make_runscript(args):
 
     pre = []
     # re += ["export SINGULARITYENV_https_proxy=http://micc:8899"]
-    pre += ["export SINGULARITYENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"]
+    pre += [
+        "export SINGULARITYENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"
+    ]
 
     s = []
     s += ["/cm/shared/singularity/bin/singularity run"]
     s += [
         "-B /data:/data -B /data1:/data1 -B /data2:/data2 -B /data3:/data3 -B /cm/shared:/cm/shared"
     ]
-    #s += ["-B /data/TemplateFlow:/data/TemplateFlow"]
+    # s += ["-B /data/TemplateFlow:/data/TemplateFlow"]
 
     # should be able to remove this when https://github.com/poldracklab/fmriprep/issues/1777 resolved
     s += [f"-B {cachedir}:/home/fmriprep/.cache/fmriprep"]
@@ -44,7 +47,7 @@ def make_runscript(args):
     s += ["--notrack"]
 
     # workaround FIXME
-    #s += ["--use-plugin /data/ddrucker/workaround.yml"]
+    # s += ["--use-plugin /data/ddrucker/workaround.yml"]
 
     if args.aroma:
         s += ["--use-aroma --ignore-aroma-denoising-errors"]
@@ -187,11 +190,13 @@ if __name__ == "__main__":
 
     os.makedirs(cachedir, exist_ok=True)
     # FIXME
-    # apparently fmriprep 1.4.1 has trouble if you run this from the bidsdir?!
-    if os.getcwd() == args.bidsdir or os.path.exists(
-        pjoin(os.getcwd(), "dataset_description.json")
+    # apparently fmriprep has trouble if you run this from inside BIDS dir
+    if (
+        Path(args.bidsdir) in Path(os.getcwd()).parents
+        or os.getcwd() == args.bidsdir
+        or os.path.exists(pjoin(os.getcwd(), "dataset_description.json"))
     ):
-        print("fmriprep currently messes up if you run it FROM a BIDS dir.")
+        print("fmriprep currently messes up if you run it from inside the BIDS dir.")
         print("Run this script from somewhere else instead, like your $HOME directory.")
         sys.exit(1)
 
@@ -200,7 +205,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     filename, script = make_runscript(args)
-    action = "NOT submitting" if args.dry_run else "Submitting" 
+    action = "NOT submitting" if args.dry_run else "Submitting"
     print(f"{action} {filename} to qsub, the contents of which are:")
     print("================")
     print(script)
