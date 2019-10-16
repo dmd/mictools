@@ -1,5 +1,16 @@
 #!/bin/bash
 
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run via sudo"
+   exit 1
+fi
+
+if [ $# -eq 0 ]
+  then
+    echo "Usage: $0 newusername"
+    exit 1
+fi
+
 U=$1
 
 /cm/local/apps/cmd/bin/cmsh -c "user; add ${U}; set loginshell /bin/tcsh; set password; commit;"
