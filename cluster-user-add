@@ -1,0 +1,10 @@
+#!/bin/bash
+
+U=$1
+
+/cm/local/apps/cmd/bin/cmsh -c "user; add ${U}; set loginshell /bin/tcsh; set password; commit;"
+mkdir /data/$U
+cp /home/proto/.cshrc /home/proto/.cshrc.local /home/$U
+chown -R $U:$U /home/$U /data/$U
+echo Now please run "su - $U" and make sure that worked.
+echo Important: tell Daniel to add /data/$U to backups.
