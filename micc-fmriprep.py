@@ -26,6 +26,7 @@ def make_runscript(args):
 
     s = []
     s += ["/cm/shared/singularity/bin/singularity run"]
+    s += ["--contain"]
     s += [
         "-B /data:/data -B /data1:/data1 -B /data2:/data2 -B /data3:/data3 -B /cm/shared:/cm/shared"
     ]
