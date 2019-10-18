@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+DIR=$1
+mkdir ${DIR}_nifti
+/mictools/getalldicominfo $(find ${DIR} -type f | head -1) \
+  | grep "0008, 1030" \
+  | cut -d\' -f2 \
+  > ${DIR}_nifti/WHOSE_DATA_IS_THIS
+dcm2niix -o ${DIR}_nifti -z y -f %d_%s ${DIR}
+rm -rf ${DIR}
