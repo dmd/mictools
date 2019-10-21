@@ -6,6 +6,7 @@ from os.path import join as pjoin
 from pathlib import Path
 from pwd import getpwnam
 from grp import getgrnam
+import csv
 
 
 def eprint(*args, **kwargs):
@@ -21,32 +22,36 @@ def _chown(path, uid, gid):
             os.chown(os.path.join(root, _), uid, gid)
 
 
-studydir = sys.argv[1]
-DICOMIN = "/data/ddrucker/dicomin"
-REGISTRY_FILE = pjoin("/data/ddrucker/dicomin", "registry.txt")
-owner = None
+def registry_chown(studydir):
+    if Path(DICOMIN) not in Path(studydir).resolve().parents:
+        eprint(f"STUDYDIR {studydir} needs to be within DICOMIN {DICOMIN}")
+        sys.exit(1)
 
-if Path(DICOMIN) not in Path(studydir).resolve().parents:
-    eprint(f"STUDYDIR {studydir} needs to be within DICOMIN {DICOMIN}")
-    sys.exit(1)
+    WHOSE_FILE = pjoin(studydir, "WHOSE_DATA_IS_THIS")
+    if not os.path.exists(WHOSE_FILE):
+        eprint("WHOSE_DATA_IS_THIS file does not exist")
+        sys.exit(1)
 
-WHOSE_FILE = pjoin(studydir, "WHOSE_DATA_IS_THIS")
-if not os.path.exists(WHOSE_FILE):
-    eprint("WHOSE_DATA_IS_THIS file does not exist")
-    sys.exit(1)
+    studydescription = open(WHOSE_FILE).read().rstrip()
 
-studydescription = open(WHOSE_FILE).read().rstrip()
+    if studydescription not in owners:
+        eprint(f"{studydescription} not found in registry")
+        sys.exit(1)
+    else:
+        owner, group = owners[studydescription]
 
-with open(REGISTRY_FILE) as f:
-    for line in f:
-        sd, o, g = line.rstrip().split()
-        if sd == studydescription:
-            owner, group = o, g
-            break
-
-if owner:
     print(owner)
     _chown(studydir, getpwnam(owner).pw_uid, getgrnam(group).gr_gid)
     os.unlink(WHOSE_FILE)
-else:
-    print("not found")
+
+
+DICOMIN = "/data/ddrucker/dicomin"
+REGISTRY_FILE = pjoin("/data/ddrucker/dicomin", "registry.txt")
+
+owners = {}
+for row in csv.reader(open(REGISTRY_FILE), delimiter="\t"):
+    owners[row[0]] = row[1], row[2]
+
+for p in Path(DICOMIN).glob("*/WHOSE_DATA_IS_THIS"):
+    print(p.parent)
+    registry_chown(p.parent)
