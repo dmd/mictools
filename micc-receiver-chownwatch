@@ -1,0 +1,9 @@
+#!/bin/bash
+
+TARGET=/data/ddrucker/dicomin
+
+for d in $(find $TARGET -maxdepth 2 -name WHOSE_DATA_IS_THIS -exec dirname {} \;)
+do
+   /cm/shared/anaconda3/bin/python /home/ddrucker/mictools/micc-receiver-chown $d
+done
+
