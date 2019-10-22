@@ -26,10 +26,7 @@ def make_runscript(args):
 
     s = []
     s += ["/cm/shared/singularity/bin/singularity run"]
-    s += [
-        "-B /data:/data -B /data1:/data1 -B /data2:/data2 -B /data3:/data3 -B /cm/shared:/cm/shared"
-    ]
-    # s += ["-B /data/TemplateFlow:/data/TemplateFlow"]
+    s += ["-B /data -B /data1 -B /data2 -B /data3 -B /cm/shared"]
 
     # should be able to remove this when https://github.com/poldracklab/fmriprep/issues/1777 resolved
     s += [f"-B {cachedir}:/home/fmriprep/.cache/fmriprep"]
@@ -45,9 +42,6 @@ def make_runscript(args):
     s += [f"--n_cpus {args.ncpus}"]
     s += [f"--mem-mb {args.ramsize*1024}"]
     s += ["--notrack"]
-
-    # workaround FIXME
-    # s += ["--use-plugin /data/ddrucker/workaround.yml"]
 
     if args.aroma:
         s += ["--use-aroma --ignore-aroma-denoising-errors"]

@@ -1,3 +1,4 @@
 micc-fmriprep
 .idea/
 .vscode
+__pycache__
