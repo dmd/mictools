@@ -1,6 +1,7 @@
 import configparser
 from os.path import join as pjoin
 from pathlib import Path
+import sys
 
 DICOMIN = "/data/pipeline"
 SDFNAME = "STUDY_DESCRIPTION"

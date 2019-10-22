@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 
-import sys
 import os
 from os.path import join as pjoin
 from pathlib import Path
-from pwd import getpwnam
-from grp import getgrnam
 import shutil
 from nipype.interfaces.dcm2nii import Dcm2niix
 from registry import DICOMIN, SDFNAME, registry_info

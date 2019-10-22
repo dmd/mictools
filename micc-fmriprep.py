@@ -71,7 +71,6 @@ def make_runscript(args):
 
 if __name__ == "__main__":
     import subprocess
-    import os
     import argparse
 
     class FullPaths(argparse.Action):
