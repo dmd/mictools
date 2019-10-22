@@ -2,12 +2,12 @@
 
 singularity run -c \
   -B /home/ddrucker/mictools:/mictools:ro \
-  -B /data/ddrucker/dicomin:/dicomin \
+  -B /data/pipeline:/data/pipeline \
   /cm/shared/singularity/images/dcm.sif \
-     storescp --output-directory /dicomin \
+     storescp --output-directory /data/pipeline \
               --verbose \
               --sort-on-patientname \
               --eostudy-timeout 10 \
               --aetitle MICC \
-              --exec-on-eostudy '/mictools/miccpipe/micc-receiver-eostudy #p' \
+              --exec-on-eostudy '/mictools/miccpipe/receiver-eostudy #p' \
               11050
