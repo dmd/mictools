@@ -9,5 +9,5 @@ singularity run -c \
               --sort-on-patientname \
               --eostudy-timeout 10 \
               --aetitle MICC \
-              --exec-on-eostudy '/mictools/micc-receiver-eostudy #p' \
+              --exec-on-eostudy '/mictools/miccpipe/micc-receiver-eostudy #p' \
               11050

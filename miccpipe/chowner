@@ -28,8 +28,8 @@ def registry_chown(studydir):
         eprint(f"STUDYDIR {studydir} needs to be within DICOMIN {DICOMIN}")
         sys.exit(1)
 
-    WHOSE_FILE = pjoin(studydir, "WHOSE_DATA_IS_THIS")
-    studydescription = open(WHOSE_FILE).read().rstrip()
+    STUDY_DESCRIPTION_FILE = pjoin(studydir, "STUDY_DESCRIPTION")
+    studydescription = open(STUDY_DESCRIPTION_FILE).read().rstrip()
 
     if studydescription not in config:
         eprint(f"{studydescription} not found in registry")
@@ -40,7 +40,7 @@ def registry_chown(studydir):
 
     print(user)
     _chown(studydir, getpwnam(user).pw_uid, getgrnam(group).gr_gid)
-    os.unlink(WHOSE_FILE)
+    os.unlink(STUDY_DESCRIPTION_FILE)
 
 
 if __name__ == "__main__":
@@ -48,6 +48,6 @@ if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read(REGISTRY_FILE)
 
-    for p in Path(DICOMIN).glob("*/WHOSE_DATA_IS_THIS"):
+    for p in Path(DICOMIN).glob("*/STUDY_DESCRIPTION"):
         print(p.parent)
         registry_chown(p.parent)
