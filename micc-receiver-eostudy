@@ -1,14 +1,6 @@
 #!/bin/bash
-set -e
 
-DIR=$1
-mkdir ${DIR}_nifti
-dcmdump $(find ${DIR} -type f | head -1) \
+dcmdump $(find $1 -type f | head -1) \
   | grep "0008,1030" \
   | awk -F'[\[\]]' '{print $2}' \
-  > ${DIR}_nifti/.WHOSE_DATA_IS_THIS
-dcm2niix -o ${DIR}_nifti -z y -f %d_%s ${DIR}
-rm -rf ${DIR}
-
-# mark that we're done and ready for chowning
-mv ${DIR}_nifti/.WHOSE_DATA_IS_THIS ${DIR}_nifti/WHOSE_DATA_IS_THIS
+  > $1/STUDY_DESCRIPTION
