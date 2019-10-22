@@ -6,8 +6,9 @@ from os.path import join as pjoin
 from pathlib import Path
 from pwd import getpwnam
 from grp import getgrnam
-import csv
+import configparser
 
+DICOMIN = "/data/ddrucker/dicomin"
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -28,30 +29,25 @@ def registry_chown(studydir):
         sys.exit(1)
 
     WHOSE_FILE = pjoin(studydir, "WHOSE_DATA_IS_THIS")
-    if not os.path.exists(WHOSE_FILE):
-        eprint("WHOSE_DATA_IS_THIS file does not exist")
-        sys.exit(1)
-
     studydescription = open(WHOSE_FILE).read().rstrip()
 
-    if studydescription not in owners:
+    if studydescription not in config:
         eprint(f"{studydescription} not found in registry")
         sys.exit(1)
-    else:
-        owner, group = owners[studydescription]
 
-    print(owner)
-    _chown(studydir, getpwnam(owner).pw_uid, getgrnam(group).gr_gid)
+    user = config[studydescription]["user"]
+    group = config[studydescription]["group"]
+
+    print(user)
+    _chown(studydir, getpwnam(user).pw_uid, getgrnam(group).gr_gid)
     os.unlink(WHOSE_FILE)
 
 
-DICOMIN = "/data/ddrucker/dicomin"
-REGISTRY_FILE = pjoin("/data/ddrucker/dicomin", "registry.txt")
+if __name__ == "__main__":
+    REGISTRY_FILE = pjoin(DICOMIN, "registry.cfg")
+    config = configparser.ConfigParser()
+    config.read(REGISTRY_FILE)
 
-owners = {}
-for row in csv.reader(open(REGISTRY_FILE), delimiter="\t"):
-    owners[row[0]] = row[1], row[2]
-
-for p in Path(DICOMIN).glob("*/WHOSE_DATA_IS_THIS"):
-    print(p.parent)
-    registry_chown(p.parent)
+    for p in Path(DICOMIN).glob("*/WHOSE_DATA_IS_THIS"):
+        print(p.parent)
+        registry_chown(p.parent)
