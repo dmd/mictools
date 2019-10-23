@@ -19,19 +19,19 @@ def make_runscript(args):
         args.outputdir = pjoin(args.bidsdir, "derivatives")
 
     pre = []
-    # re += ["export SINGULARITYENV_https_proxy=http://micc:8899"]
     pre += [
         "export SINGULARITYENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"
     ]
 
     s = []
     s += ["/cm/shared/singularity/bin/singularity run"]
-    s += ["-B /data -B /data1 -B /data2 -B /data3 -B /cm/shared"]
+    s += ["--contain"]
+    s += ["--cleanenv"]
+    s += ["-B /tmp -B /data -B /data1 -B /data2 -B /data3 -B /cm/shared"]
 
     # should be able to remove this when https://github.com/poldracklab/fmriprep/issues/1777 resolved
     s += [f"-B {cachedir}:/home/fmriprep/.cache/fmriprep"]
 
-    s += ["--cleanenv"]
     s += [args.fmriprep_container]
     s += [args.bidsdir]
     s += [args.outputdir]
