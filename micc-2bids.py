@@ -41,7 +41,7 @@ def movedcmdir(sourcename, suffix):
 
 def final_scan(sourcenames):
     # given ['FOO_BAR_BAZ_11', 'FOO_BAR_BAZ_2']
-    # return ('FOO_BAR_BAZ_11', 'FOO_BAR_BAZ')
+    # return ('FOO_BAR_BAZ', 'FOO_BAR_BAZ_11')
     # i.e., the unnumbered basename, and the highest valued dicomdir
 
     source = sorted(sourcenames, key=lambda x: int(x.rsplit("_", 1)[-1]))[-1]
