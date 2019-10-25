@@ -15,6 +15,7 @@ def convert_to_nifti(studydir):
     c = Dcm2niix()
     c.inputs.source_dir = studydir
     c.inputs.output_dir = niftidir
+    c.inputs.out_filename = "%d_%s"
     c.run()
     shutil.copyfile(pjoin(studydir, SDFNAME), pjoin(niftidir, SDFNAME))
     shutil.rmtree(studydir)
