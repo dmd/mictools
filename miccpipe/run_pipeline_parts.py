@@ -9,7 +9,6 @@ from registry import DICOMIN, SDFNAME, registry_info
 
 
 def convert_to_nifti(studydir):
-    # using external Singularity container
     niftidir = str(studydir) + "_nifti"
     os.mkdir(niftidir)
     c = Dcm2niix()
@@ -28,7 +27,7 @@ if __name__ == "__main__":
         os.remove(pjoin(studydir, ".pipeready"))
         reg_info = registry_info(studydir)
         print(f"┌───── start {studydir}")
-        if reg_info.getboolean("nifti"):
+        if reg_info["nifti"]:
             convert_to_nifti(studydir)
 
         open(pjoin(studydir, ".pipecomplete"), "a").close()
