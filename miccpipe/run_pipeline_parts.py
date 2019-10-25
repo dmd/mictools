@@ -87,9 +87,8 @@ def main():
         print(f"┌───── start {studydir}")
         if reg_info["nifti"]:
             convert_to_nifti(studydir)
-        if reg_info["bids"]:
-            convert_to_bids(studydir)
-
+            if reg_info["bids"]:
+                convert_to_bids(studydir)
         open(pjoin(studydir, ".pipecomplete"), "a").close()
         print(f"└───── end   {studydir}\n")
 
