@@ -14,7 +14,7 @@ from registry import DICOMIN, SDFNAME, registry_info
 
 class colors:
     HEADER = "\033[95m"
-    OK = "\033[93m"
+    OK = "\033[94m"
     WARN = "\033[93m"
     END = "\033[0m"
 
