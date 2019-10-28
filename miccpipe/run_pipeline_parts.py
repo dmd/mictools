@@ -14,7 +14,7 @@ class colors:
     HEADER = "\033[95m"
     OK = "\033[93m"
     WARN = "\033[93m"
-    END = "{colors.END}"
+    END = "\033[0m"
 
 
 def final_scan(sourcenames):
