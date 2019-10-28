@@ -4,7 +4,9 @@ import os
 from os.path import join as pjoin
 from pathlib import Path
 from glob import glob
+from collections import defaultdict
 from time import sleep
+import subprocess
 import shutil
 from nipype.interfaces.dcm2nii import Dcm2niix
 from registry import DICOMIN, SDFNAME, registry_info
@@ -24,6 +26,39 @@ def final_scan(sourcenames):
     return sorted(
         sourcenames, key=lambda x: int(x.replace(".nii.gz", "").rsplit("_", 1)[-1])
     )[-1]
+
+
+def submit_fmriprep(studydir):
+    print(f"{colors.OK}│      running fmriprep{colors.END}")
+    args = defaultdict(bool, registry_info(studydir).get("fmriprep", {}))
+
+    # build the command line rather than call, because it does
+    # a bunch of work in main I don't want to re-implement.
+
+    s = []
+    s += ["/home/ddrucker/mictools/micc_fmriprep.py"]
+
+    s += ["--bidsdir", studydir]
+    s += ["--workdir", pjoin(DICOMIN, "fmriprep-working", os.path.basename(studydir))]
+    s += ["--participant", "XXXX"]
+
+    if args["aroma"]:
+        s += ["--aroma"]
+    if args["ncpus"]:
+        s += ["--ncpus", str(args["ncpus"])]
+    if args["ramsize"]:
+        s += ["--ramsize", str(args["ramsize"])]
+    if args["freesurfer"]:
+        s += ["--freesurfer"]
+    if args["anat-only"]:
+        s += ["--anat-only"]
+    if args["output-spaces"]:
+        s += ["--output-spaces", args["output-spaces"]]
+    if args["dry-run"]:
+        s += ["--dry-run"]
+
+    print(f"{colors.OK}│      running: " + " ".join(s) + f"{colors.END}")
+    subprocess.call(s)
 
 
 def convert_to_nifti(studydir):
@@ -114,7 +149,7 @@ def main():
                 print(f"{colors.OK}│      Organizing in BIDS format{colors.END}")
                 convert_to_bids(studydir)
             if tasks["fmriprep"]:
-                print(f"{colors.WARN}│      fmriprep not yet implemented{colors.END}")
+                submit_fmriprep(studydir)
             print(f"\033[95m└───── end   {studydir}\n")
             open(pjoin(studydir, ".pipecomplete"), "a").close()
         sleep(5)
