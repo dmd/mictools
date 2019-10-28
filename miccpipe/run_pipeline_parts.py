@@ -10,6 +10,13 @@ from nipype.interfaces.dcm2nii import Dcm2niix
 from registry import DICOMIN, SDFNAME, registry_info
 
 
+class colors:
+    HEADER = "\033[95m"
+    OK = "\033[93m"
+    WARN = "\033[93m"
+    END = "{colors.END}"
+
+
 def final_scan(sourcenames):
     # given ['FOO_BAR_11.nii.gz', 'FOO_BAR_2.nii.gz', 'FOO_BAR_3.nii.gz']
     # return 'FOO_BAR_11.nii.gz', the highest numbered scan
@@ -57,7 +64,7 @@ def convert_to_bids(studydir, subject="sub-XXXX"):
     )
     open(pjoin(studydir, "README"), "w").write("\n")
     open(pjoin(studydir, "CHANGES"), "w").write("\n")
-    open(pjoin(studydir, ".bidsignore"), "w").write("STUDY_DESCRIPTION\n")
+    open(pjoin(studydir, ".bidsignore"), "w").write("STUDY_DESCRIPTION\n.pipe*\n")
 
     bidsnames = registry_info(studydir)["bidsnames"]
     for scantype in bidsnames:  # ('anat', 'func')
@@ -98,16 +105,18 @@ def main():
             studydir = str(ready_dir.parent)
             reg_info = registry_info(studydir)
             os.remove(pjoin(studydir, ".pipeready"))
-            print(f"┌───── start {studydir}")
+            print(f"{colors.HEADER}┌───── start {studydir}{colors.END}")
             tasks = task_select(reg_info["run"])
             if tasks["nifti"]:
+                print(f"{colors.OK}│      Converting to nifti{colors.END}")
                 convert_to_nifti(studydir)
             if tasks["bids"]:
+                print(f"{colors.OK}│      Organizing in BIDS format{colors.END}")
                 convert_to_bids(studydir)
             if tasks["fmriprep"]:
-                print("fmriprep selected but not yet implemented")
+                print(f"{colors.WARN}│      fmriprep not yet implemented{colors.END}")
+            print(f"\033[95m└───── end   {studydir}\n")
             open(pjoin(studydir, ".pipecomplete"), "a").close()
-            print(f"└───── end   {studydir}\n")
         sleep(5)
 
 
