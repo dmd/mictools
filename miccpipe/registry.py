@@ -2,6 +2,7 @@ import yaml
 from os.path import join as pjoin
 from pathlib import Path
 import sys
+from glob import glob
 
 DICOMIN = "/data/pipeline"
 SDFNAME = "STUDY_DESCRIPTION"
@@ -12,8 +13,9 @@ def eprint(*args, **kwargs):
 
 
 def registry_info(studydir):
-    REGISTRY_FILE = pjoin(DICOMIN, "registry.yml")
-    registry = yaml.safe_load(open(REGISTRY_FILE))
+    registry = {}
+    for _ in glob(pjoin(DICOMIN, "registry") + "/*.yaml"):
+        registry.update(yaml.safe_load(open(_)))
 
     if Path(DICOMIN) not in Path(studydir).resolve().parents:
         eprint(f"STUDYDIR {studydir} needs to be within DICOMIN {DICOMIN}")

@@ -4,6 +4,7 @@ import os
 from os.path import join as pjoin
 from pathlib import Path
 from glob import glob
+from time import sleep
 import shutil
 from nipype.interfaces.dcm2nii import Dcm2niix
 from registry import DICOMIN, SDFNAME, registry_info
@@ -79,18 +80,35 @@ def convert_to_bids(studydir, subject="sub-XXXX"):
             )
 
 
+def task_select(choice):
+    tasks = {"nifti": False, "bids": False, "fmriprep": False}
+    if choice in ("nifti", "bids", "fmriprep"):
+        tasks["nifti"] = True
+    if choice in ("bids", "fmriprep"):
+        tasks["bids"] = True
+    if choice in ("fmriprep",):
+        tasks["fmriprep"] = True
+    return tasks
+
+
 def main():
-    for ready_dir in Path(DICOMIN).glob("*/.pipeready"):
-        studydir = str(ready_dir.parent)
-        os.remove(pjoin(studydir, ".pipeready"))
-        reg_info = registry_info(studydir)
-        print(f"┌───── start {studydir}")
-        if reg_info["nifti"]:
-            convert_to_nifti(studydir)
-            if reg_info["bids"]:
+    print("scanning for .pipeready ...")
+    while True:
+        for ready_dir in Path(DICOMIN).glob("*/.pipeready"):
+            studydir = str(ready_dir.parent)
+            reg_info = registry_info(studydir)
+            os.remove(pjoin(studydir, ".pipeready"))
+            print(f"┌───── start {studydir}")
+            tasks = task_select(reg_info["run"])
+            if tasks["nifti"]:
+                convert_to_nifti(studydir)
+            if tasks["bids"]:
                 convert_to_bids(studydir)
-        open(pjoin(studydir, ".pipecomplete"), "a").close()
-        print(f"└───── end   {studydir}\n")
+            if tasks["fmriprep"]:
+                print("fmriprep selected but not yet implemented")
+            open(pjoin(studydir, ".pipecomplete"), "a").close()
+            print(f"└───── end   {studydir}\n")
+        sleep(5)
 
 
 if __name__ == "__main__":

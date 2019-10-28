@@ -1,0 +1,12 @@
+Investigators^Janes^5HT_Cocaine:
+  group: fiarl
+  user: ajanes
+  run: bids
+
+  bidsnames:
+    anat:
+      T1_MEMPRAGE_64ch_RMS: T1w
+    func:
+      cue_mb6_gr2_1: task-cue_bold
+      gonogo_mb6_gr2_1: task-gonogo_bold
+      resting_mb6_gr2_64ch: task-rest_bold
