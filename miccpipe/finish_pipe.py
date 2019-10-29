@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 from pathlib import Path
 from pwd import getpwnam
 from grp import getgrnam
@@ -8,7 +9,7 @@ from os.path import join as pjoin
 import subprocess
 import smtplib
 from email.message import EmailMessage
-from registry import registry_info, DICOMIN
+from registry import registry_info, DICOMIN, eprint
 
 
 def _chown(path, uid, gid):
@@ -69,6 +70,10 @@ def fmriprep_running(studydir):
 
 
 if __name__ == "__main__":
+    if os.geteuid() != 0:
+        eprint("This program must run as root in order to chown study directories.")
+        sys.exit(1)
+
     for p in Path(DICOMIN).glob("*/" + ".pipe_complete"):
         studydir = str(p.parent)
         if fmriprep_running(studydir):
