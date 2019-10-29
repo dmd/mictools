@@ -4,4 +4,4 @@ dcmdump $(find $1 -type f | head -1) \
   | grep "0008,1030" \
   | awk -F'[\[\]]' '{print $2}' \
   > $1/STUDY_DESCRIPTION
-touch $1/.pipeready
+touch $1/.pipe_ready

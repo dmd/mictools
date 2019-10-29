@@ -23,7 +23,7 @@ def registry_chown(studydir, reg_info):
     group = reg_info["group"]
 
     print(f"chown {studydir} to {user}:{group}")
-    os.rename(pjoin(studydir, ".pipecomplete"), pjoin(studydir, ".pipechowned"))
+    os.rename(pjoin(studydir, ".pipe_complete"), pjoin(studydir, ".pipe_chowned"))
     _chown(studydir, getpwnam(user).pw_uid, getgrnam(group).gr_gid)
 
 
@@ -51,7 +51,7 @@ def fmriprep_running(studydir):
 
 
 if __name__ == "__main__":
-    for p in Path(DICOMIN).glob("*/" + ".pipecomplete"):
+    for p in Path(DICOMIN).glob("*/" + ".pipe_complete"):
         studydir = str(p.parent)
         if fmriprep_running(studydir):
             print(f"not chowning {studydir}; fmriprep job incomplete")

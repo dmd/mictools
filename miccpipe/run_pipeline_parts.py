@@ -110,7 +110,7 @@ def convert_to_bids(studydir, subject="sub-XXXX"):
     )
     open(pjoin(studydir, "README"), "w").write("\n")
     open(pjoin(studydir, "CHANGES"), "w").write("\n")
-    open(pjoin(studydir, ".bidsignore"), "w").write("STUDY_DESCRIPTION\n.pipe*\n")
+    open(pjoin(studydir, ".bidsignore"), "w").write("STUDY_DESCRIPTION\n.pipe_*\n")
 
     bidsnames = registry_info(studydir)["bidsnames"]
     for scantype in bidsnames:  # ('anat', 'func')
@@ -145,12 +145,12 @@ def task_select(choice):
 
 
 def main():
-    print("scanning for .pipeready ...")
+    print("scanning for .pipe_ready ...")
     while True:
-        for ready_dir in Path(DICOMIN).glob("*/.pipeready"):
+        for ready_dir in Path(DICOMIN).glob("*/.pipe_ready"):
             studydir = str(ready_dir.parent)
             reg_info = registry_info(studydir)
-            os.remove(pjoin(studydir, ".pipeready"))
+            os.remove(pjoin(studydir, ".pipe_ready"))
             print(f"{colors.HEADER}┌───── start {studydir}{colors.END}")
             tasks = task_select(reg_info["run"])
             if tasks["nifti"]:
@@ -162,7 +162,7 @@ def main():
             if tasks["fmriprep"]:
                 submit_fmriprep(studydir)
             print(f"\033[95m└───── end   {studydir}\n")
-            open(pjoin(studydir, ".pipecomplete"), "a").close()
+            open(pjoin(studydir, ".pipe_complete"), "a").close()
         sleep(5)
 
 
