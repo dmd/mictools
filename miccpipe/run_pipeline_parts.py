@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 from os.path import join as pjoin
 from pathlib import Path
 from glob import glob
@@ -163,6 +164,7 @@ def main():
                 submit_fmriprep(studydir)
             print(f"{colors.HEADER}└───── end   {studydir}{colors.END}\n\n")
             open(pjoin(studydir, ".pipe_complete"), "a").close()
+        sys.stdout.flush()
         sleep(5)
 
 

@@ -1,7 +1,6 @@
 [Unit]
 Description=MICC DICOM Pipeline Receiver service
 After=network.target
-StartLimitIntervalSec=0
 
 [Service]
 Type=simple
