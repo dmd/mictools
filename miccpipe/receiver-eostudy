@@ -1,6 +1,6 @@
 #!/bin/bash
 
-dcmdump $(find $1 -type f | head -1) \
+dcmdump $(find $1 -type f 2>/dev/null | head -1 ) \
   | grep "0008,1030" \
   | awk -F'[\[\]]' '{print $2}' \
   > $1/STUDY_DESCRIPTION
