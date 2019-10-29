@@ -39,6 +39,7 @@ def submit_fmriprep(studydir):
     # a bunch of work in main I don't want to re-implement.
 
     s = []
+    s += ["/cm/shared/anaconda3/envs/rapidtide/bin/python3"]
     s += ["/home/ddrucker/mictools/micc_fmriprep.py"]
 
     s += ["--bidsdir", studydir]
