@@ -6,6 +6,8 @@ from pwd import getpwnam
 from grp import getgrnam
 from os.path import join as pjoin
 import subprocess
+import smtplib
+from email.message import EmailMessage
 from registry import registry_info, DICOMIN
 
 
@@ -43,6 +45,21 @@ def sge_job_running(job_id):
     return job_status in ("r", "qw", "hqw")
 
 
+def email(studydir, address):
+    msg = EmailMessage()
+    msg.set_content(
+        f"The MICC Pipeline has finished processing {studydir}."
+        "\n\nPlease note that this simply means the pipeline has no more work to do;"
+        "it does NOT necessarily mean that everything succeeded! You must check your data."
+    )
+    msg["Subject"] = f"[MICCPIPE] DONE: {studydir}"
+    msg["From"] = "Do Not Reply <do-not-reply@micc.mclean.harvard.edu>"
+    msg["To"] = address
+    s = smtplib.SMTP("phsmgout.partners.org")
+    s.send_message(msg)
+    s.quit()
+
+
 def fmriprep_running(studydir):
     job_id_file = pjoin(studydir, ".pipe_sgejobid")
     if not os.path.exists(job_id_file):
@@ -58,4 +75,6 @@ if __name__ == "__main__":
             print(f"not chowning {studydir}; fmriprep job incomplete")
             continue
         reg_info = registry_info(studydir)
+        if "email" in reg_info:
+            email(studydir, reg_info["email"])
         registry_chown(studydir, reg_info)
