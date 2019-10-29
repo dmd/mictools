@@ -1,6 +1,6 @@
 #!/bin/bash
 
-singularity run -c \
+/cm/shared/singularity/bin/singularity run -c \
   -B /home/ddrucker/mictools:/mictools:ro \
   -B /data/pipeline:/data/pipeline \
   /cm/shared/singularity/images/dcm.sif \
