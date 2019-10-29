@@ -1,0 +1,14 @@
+[Unit]
+Description=MICC DICOM Pipeline Receiver service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+User=pipeline
+ExecStart=/home/ddrucker/mictools/miccpipe/receiver
+
+[Install]
+WantedBy=multi-user.target
