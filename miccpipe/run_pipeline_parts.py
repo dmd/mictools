@@ -5,6 +5,7 @@ from os.path import join as pjoin
 from pathlib import Path
 from glob import glob
 from collections import defaultdict
+import re
 from time import sleep
 import subprocess
 import shutil
@@ -17,6 +18,7 @@ class colors:
     OK = "\033[94m"
     WARN = "\033[93m"
     END = "\033[0m"
+    FAIL = "\033[91m"
 
 
 def final_scan(sourcenames):
@@ -58,7 +60,16 @@ def submit_fmriprep(studydir):
         s += ["--dry-run"]
 
     print(f"{colors.OK}│      running: " + " ".join(s) + f"{colors.END}")
-    subprocess.call(s)
+
+    proc = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    stdout, stderr = proc.communicate()
+    if b"has been submitted" in stdout:
+        job_id = re.search(r"Your job (\d{6})", str(stdout)).group(1)
+        print(f"{colors.OK}│      submitted job {job_id}{colors.END}")
+        open(pjoin(studydir, ".pipe_sgejobid"), "w").write(job_id)
+    else:
+        print(f"{colors.FAIL}│      something went wrong submitting to the queue:")
+        print(f"STDOUT:\n{stdout}STDERR:\n{stderr}{colors.END}")
 
 
 def convert_to_nifti(studydir):
