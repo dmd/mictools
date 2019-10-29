@@ -30,7 +30,8 @@ def registry_chown(studydir, reg_info):
 def sge_job_running(job_id):
     qstat = (
         subprocess.check_output(
-            ["/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qstat", "-u", "*"]
+            ["/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qstat", "-u", "*"],
+            env={"SGE_ROOT": "/cm/shared/apps/sge/current"},
         )
         .decode()
         .split("\n")
