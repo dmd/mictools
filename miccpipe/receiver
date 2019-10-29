@@ -8,6 +8,6 @@
               --verbose \
               --sort-on-patientname \
               --eostudy-timeout 10 \
-              --aetitle MICC \
+              --aetitle MICCPIPE \
               --exec-on-eostudy '/mictools/miccpipe/receiver-eostudy #p' \
               11050
