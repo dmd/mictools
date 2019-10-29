@@ -2,6 +2,7 @@ Investigators^Janes^5HT_Cocaine:
   group: fiarl
   user: ajanes
   run: bids
+  email: ajanes@mclean.harvard.edu
 
   bidsnames:
     anat:
