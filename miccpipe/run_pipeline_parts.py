@@ -161,7 +161,7 @@ def main():
                 convert_to_bids(studydir)
             if tasks["fmriprep"]:
                 submit_fmriprep(studydir)
-            print(f"\033[95m└───── end   {studydir}\n")
+            print(f"{colors.HEADER}└───── end   {studydir}{colors.END}\n\n")
             open(pjoin(studydir, ".pipe_complete"), "a").close()
         sleep(5)
 
