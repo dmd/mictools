@@ -49,16 +49,18 @@ def sge_job_running(job_id):
 def email(studydir, address):
     msg = EmailMessage()
     msg.set_content(
-        f"The MICC Pipeline has finished processing {studydir}."
-        "\n\nPlease note that this simply means the pipeline has no more work to do;"
-        "it does NOT necessarily mean that everything succeeded! You must check your data."
+        f"The MICC Pipeline has finished processing {studydir}.\n\n"
+        "Please note that this simply means the pipeline has no more work to do.\n"
+        "It does NOT necessarily mean that everything succeeded!\n"
+        "You must check your data.\n"
     )
     msg["Subject"] = f"[MICCPIPE] DONE: {studydir}"
-    msg["From"] = "Do Not Reply <do-not-reply@micc.mclean.harvard.edu>"
+    msg["From"] = "MICC Pipeline <do-not-reply@micc.mclean.harvard.edu>"
     msg["To"] = address
     s = smtplib.SMTP("phsmgout.partners.org")
     s.send_message(msg)
     s.quit()
+    print(f"sent completion email for {studydir} to {address}")
 
 
 def fmriprep_running(studydir):
@@ -77,9 +79,10 @@ if __name__ == "__main__":
     for p in Path(DICOMIN).glob("*/" + ".pipe_complete"):
         studydir = str(p.parent)
         if fmriprep_running(studydir):
-            print(f"not chowning {studydir}; fmriprep job incomplete")
+            print(f"not chowning {studydir} yet; fmriprep job incomplete")
             continue
         reg_info = registry_info(studydir)
         if "email" in reg_info:
             email(studydir, reg_info["email"])
         registry_chown(studydir, reg_info)
+        print(f"chowned {studydir}")

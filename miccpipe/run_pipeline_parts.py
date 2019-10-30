@@ -167,5 +167,6 @@ def main():
     if not list(ready_dirs):
         print(f"{colors.OK}Nothing to do.{colors.END}")
 
+
 if __name__ == "__main__":
     main()
