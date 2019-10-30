@@ -1,16 +1,10 @@
 [Unit]
-Description=MICC Pipeline Runner service
-After=network.target
+Description=MICC Pipeline Runner
 
 [Service]
-Type=simple
-Restart=always
-RestartSec=5
+Type=oneshot
 User=pipeline
 Environment="PATH=/cm/shared/mricrogl:/cm/shared/anaconda3/condabin"
 Environment="SGE_ROOT=/cm/shared/apps/sge/current"
 WorkingDirectory=/home/pipeline
 ExecStart=/cm/shared/anaconda3/envs/rapidtide/bin/python3 /home/ddrucker/mictools/miccpipe/run_pipeline_parts.py
-
-[Install]
-WantedBy=multi-user.target

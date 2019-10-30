@@ -1,0 +1,9 @@
+[Unit]
+Description=Run the MICC pipeline every 15 seconds
+
+[Timer]
+OnActiveSec=0
+OnUnitActiveSec=15
+
+[Install]
+WantedBy=timers.target

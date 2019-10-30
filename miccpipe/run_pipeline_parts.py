@@ -147,27 +147,25 @@ def task_select(choice):
 
 
 def main():
-    print("scanning for .pipe_ready ...")
-    while True:
-        for ready_dir in Path(DICOMIN).glob("*/.pipe_ready"):
-            studydir = str(ready_dir.parent)
-            reg_info = registry_info(studydir)
-            os.remove(pjoin(studydir, ".pipe_ready"))
-            print(f"{colors.HEADER}┌───── start {studydir}{colors.END}")
-            tasks = task_select(reg_info["run"])
-            if tasks["nifti"]:
-                print(f"{colors.OK}│      Converting to nifti{colors.END}")
-                convert_to_nifti(studydir)
-            if tasks["bids"]:
-                print(f"{colors.OK}│      Organizing in BIDS format{colors.END}")
-                convert_to_bids(studydir)
-            if tasks["fmriprep"]:
-                submit_fmriprep(studydir)
-            print(f"{colors.HEADER}└───── end   {studydir}{colors.END}\n\n")
-            open(pjoin(studydir, ".pipe_complete"), "a").close()
-        sys.stdout.flush()
-        sleep(5)
-
+    ready_dirs = Path(DICOMIN).glob("*/.pipe_ready")
+    for ready_dir in ready_dirs:
+        studydir = str(ready_dir.parent)
+        reg_info = registry_info(studydir)
+        os.remove(pjoin(studydir, ".pipe_ready"))
+        print(f"{colors.HEADER}┌───── start {studydir}{colors.END}")
+        tasks = task_select(reg_info["run"])
+        if tasks["nifti"]:
+            print(f"{colors.OK}│      Converting to nifti{colors.END}")
+            convert_to_nifti(studydir)
+        if tasks["bids"]:
+            print(f"{colors.OK}│      Organizing in BIDS format{colors.END}")
+            convert_to_bids(studydir)
+        if tasks["fmriprep"]:
+            submit_fmriprep(studydir)
+        print(f"{colors.HEADER}└───── end   {studydir}{colors.END}\n\n")
+        open(pjoin(studydir, ".pipe_complete"), "a").close()
+    if not list(ready_dirs):
+        print(f"{colors.OK}Nothing to do.{colors.END}")
 
 if __name__ == "__main__":
     main()
