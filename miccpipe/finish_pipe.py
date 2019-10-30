@@ -24,10 +24,9 @@ def _chown(path, uid, gid):
 def registry_chown(studydir, reg_info):
     user = reg_info["user"]
     group = reg_info["group"]
-
-    print(f"chown {studydir} to {user}:{group}")
     os.rename(pjoin(studydir, ".pipe_complete"), pjoin(studydir, ".pipe_chowned"))
     _chown(studydir, getpwnam(user).pw_uid, getgrnam(group).gr_gid)
+    print(f"chowned {studydir} to {user}:{group}")
 
 
 def sge_job_running(job_id):
@@ -85,4 +84,3 @@ if __name__ == "__main__":
         if "email" in reg_info:
             email(studydir, reg_info["email"])
         registry_chown(studydir, reg_info)
-        print(f"chowned {studydir}")
