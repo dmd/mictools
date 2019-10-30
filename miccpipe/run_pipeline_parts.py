@@ -61,16 +61,16 @@ def submit_fmriprep(studydir):
     if args["dry-run"]:
         s += ["--dry-run"]
 
-    print(f"{colors.OK}│      running: " + " ".join(s) + f"{colors.END}")
+    print(f"{colors.OK}Running command: " + " ".join(s) + f"{colors.END}")
 
     proc = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     stdout, stderr = proc.communicate()
     if b"has been submitted" in stdout:
         job_id = re.search(r"Your job (\d{6})", str(stdout)).group(1)
-        print(f"{colors.OK}│      submitted job {job_id}{colors.END}")
+        print(f"{colors.OK}Submitted job {job_id} to SGE{colors.END}")
         open(pjoin(studydir, ".pipe_sgejobid"), "w").write(job_id)
     else:
-        print(f"{colors.FAIL}│      something went wrong submitting to the queue:")
+        print(f"{colors.FAIL}Something went wrong submitting to the queue:")
         print(f"STDOUT:\n{stdout}STDERR:\n{stderr}{colors.END}")
 
 
@@ -152,17 +152,17 @@ def main():
         studydir = str(ready_dir.parent)
         reg_info = registry_info(studydir)
         os.remove(pjoin(studydir, ".pipe_ready"))
-        print(f"{colors.HEADER}┌───── start {studydir}{colors.END}")
+        print(f"{colors.HEADER}START processing {studydir}{colors.END}")
         tasks = task_select(reg_info["run"])
         if tasks["nifti"]:
-            print(f"{colors.OK}│      Converting to nifti{colors.END}")
+            print(f"{colors.OK}Converting to nifti{colors.END}")
             convert_to_nifti(studydir)
         if tasks["bids"]:
-            print(f"{colors.OK}│      Organizing in BIDS format{colors.END}")
+            print(f"{colors.OK}Organizing in BIDS format{colors.END}")
             convert_to_bids(studydir)
         if tasks["fmriprep"]:
             submit_fmriprep(studydir)
-        print(f"{colors.HEADER}└───── end   {studydir}{colors.END}\n\n")
+        print(f"{colors.HEADER}END {studydir}{colors.END}\n\n")
         open(pjoin(studydir, ".pipe_complete"), "a").close()
     if not list(ready_dirs):
         print(f"{colors.OK}Nothing to do.{colors.END}")
