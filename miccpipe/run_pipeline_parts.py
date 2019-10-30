@@ -46,20 +46,12 @@ def submit_fmriprep(studydir):
     s += ["--workdir", pjoin(DICOMIN, "fmriprep-working", os.path.basename(studydir))]
     s += ["--participant", "XXXX"]
 
-    if args["aroma"]:
-        s += ["--aroma"]
-    if args["ncpus"]:
-        s += ["--ncpus", str(args["ncpus"])]
-    if args["ramsize"]:
-        s += ["--ramsize", str(args["ramsize"])]
-    if args["freesurfer"]:
-        s += ["--freesurfer"]
-    if args["anat-only"]:
-        s += ["--anat-only"]
-    if args["output-spaces"]:
-        s += ["--output-spaces", args["output-spaces"]]
-    if args["dry-run"]:
-        s += ["--dry-run"]
+    for arg in ("aroma", "freesurfer", "anat-only", "dry-run"):
+        if args[arg]:
+            s += ["--" + arg]
+    for arg in ("ncpus", "ramsize", "output-spaces"):
+        if args[arg]:
+            s += ["--" + arg, str(args[arg])]
 
     print(f"{colors.OK}Running command: " + " ".join(s) + f"{colors.END}")
 
