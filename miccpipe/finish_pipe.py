@@ -5,20 +5,21 @@ import sys
 from pathlib import Path
 from pwd import getpwnam
 from grp import getgrnam
-from os.path import join as pjoin
+from os.path import basename, join as pjoin
+from glob import glob
 import subprocess
 import smtplib
 from email.message import EmailMessage
-from registry import registry_info, DICOMIN, eprint
+from registry import registry_info, DICOMIN, eprint, SDTNAME
 
 
 def _chown(path, uid, gid):
     os.chown(path, uid, gid)
     for root, dirs, files in os.walk(path):
         for _ in dirs:
-            os.chown(os.path.join(root, _), uid, gid)
+            os.chown(pjoin(root, _), uid, gid)
         for _ in files:
-            os.chown(os.path.join(root, _), uid, gid)
+            os.chown(pjoin(root, _), uid, gid)
 
 
 def registry_chown(studydir, reg_info):
@@ -46,20 +47,29 @@ def sge_job_running(job_id):
 
 
 def email(studydir, address):
+    study_dt = open(pjoin(studydir, SDTNAME)).read().rstrip()
+    subjdir = glob(studydir + "/sub-*")
+    subj_msg = ""
+    if subjdir:
+        subj_msg = "Random subject ID used: " + basename(subjdir[0])
+
+    short = studydir.replace(DICOMIN + "/", "")
     msg = EmailMessage()
     msg.set_content(
-        f"The MICC Pipeline has finished processing {studydir}.\n\n"
-        "Please note that this simply means the pipeline has no more work to do.\n"
+        f"The MICC Pipeline has finished processing {studydir}.\n"
+        f"The acquisition time was {study_dt}.\n"
+        + subj_msg
+        + "\n\nPlease note that this simply means the pipeline has no more work to do.\n"
         "It does NOT necessarily mean that everything succeeded!\n"
         "You must check your data.\n"
     )
-    msg["Subject"] = f"[MICCPIPE] DONE: {studydir}"
+    msg["Subject"] = f"[MICCPIPE] DONE: {short}"
     msg["From"] = "MICC Pipeline <do-not-reply@micc.mclean.harvard.edu>"
     msg["To"] = address
     s = smtplib.SMTP("phsmgout.partners.org")
     s.send_message(msg)
     s.quit()
-    print(f"sent completion email for {studydir} to {address}")
+    print(f"sent completion email for {short} to {address}")
 
 
 def fmriprep_running(studydir):

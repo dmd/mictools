@@ -5,7 +5,8 @@ import sys
 from glob import glob
 
 DICOMIN = "/data/pipeline"
-SDFNAME = "STUDY_DESCRIPTION"
+SDFNAME = ".STUDY_DESCRIPTION"
+SDTNAME = ".STUDY_DATETIME"
 
 
 def eprint(*args, **kwargs):

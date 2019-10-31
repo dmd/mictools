@@ -5,13 +5,15 @@ import sys
 from os.path import join as pjoin
 from pathlib import Path
 from glob import glob
+import string
+import random
 from collections import defaultdict
 import re
 from time import sleep
 import subprocess
 import shutil
 from nipype.interfaces.dcm2nii import Dcm2niix
-from registry import DICOMIN, SDFNAME, registry_info
+from registry import DICOMIN, SDFNAME, SDTNAME, registry_info
 
 
 class colors:
@@ -31,7 +33,7 @@ def final_scan(sourcenames):
     )[-1]
 
 
-def submit_fmriprep(studydir):
+def submit_fmriprep(studydir, subject):
     print(f"{colors.OK}│      running fmriprep{colors.END}")
     args = defaultdict(bool, registry_info(studydir).get("fmriprep", {}))
 
@@ -44,7 +46,7 @@ def submit_fmriprep(studydir):
 
     s += ["--bidsdir", studydir]
     s += ["--workdir", pjoin(DICOMIN, "fmriprep-working", os.path.basename(studydir))]
-    s += ["--participant", "XXXX"]
+    s += ["--participant", subject]
 
     for arg in ("aroma", "freesurfer", "anat-only", "dry-run"):
         if args[arg]:
@@ -75,13 +77,14 @@ def convert_to_nifti(studydir):
     dcm.inputs.out_filename = "%d_%s"
     dcm.run()
     shutil.copyfile(pjoin(studydir, SDFNAME), pjoin(niftidir, SDFNAME))
+    shutil.copyfile(pjoin(studydir, SDTNAME), pjoin(niftidir, SDTNAME))
     shutil.rmtree(studydir)
     os.rename(niftidir, studydir)
 
 
-def convert_to_bids(studydir, subject="sub-XXXX"):
-    sourcedata_dir = pjoin(studydir, "sourcedata", subject)
-    subject_dir = pjoin(studydir, subject)
+def convert_to_bids(studydir, subject):
+    sourcedata_dir = pjoin(studydir, "sourcedata", 'sub-' + subject)
+    subject_dir = pjoin(studydir, 'sub-' + subject)
 
     # make a totally generic bids folder
     os.makedirs(sourcedata_dir)
@@ -104,7 +107,7 @@ def convert_to_bids(studydir, subject="sub-XXXX"):
     )
     open(pjoin(studydir, "README"), "w").write("\n")
     open(pjoin(studydir, "CHANGES"), "w").write("\n")
-    open(pjoin(studydir, ".bidsignore"), "w").write("STUDY_DESCRIPTION\n.pipe_*\n")
+    open(pjoin(studydir, ".bidsignore"), "w").write(".STUDY_*\n.pipe_*\n")
 
     bidsnames = registry_info(studydir)["bidsnames"]
     for scantype in bidsnames:  # ('anat', 'func')
@@ -117,7 +120,7 @@ def convert_to_bids(studydir, subject="sub-XXXX"):
                 for _ in glob(pjoin(sourcedata_dir, scanname + "*.nii.gz"))
             ]
             source = final_scan(scans)
-            basename = subject + "_" + bidsnames[scantype][scanname]
+            basename = 'sub-' + subject + "_" + bidsnames[scantype][scanname]
             shutil.copyfile(
                 pjoin(sourcedata_dir, source), pjoin(scantype_dir, basename + ".nii.gz")
             )
@@ -146,14 +149,15 @@ def main():
         os.remove(pjoin(studydir, ".pipe_ready"))
         print(f"{colors.HEADER}START processing {studydir}{colors.END}")
         tasks = task_select(reg_info["run"])
+        subject = ''.join([random.choice(string.ascii_uppercase) for n in range(4)])
         if tasks["nifti"]:
             print(f"{colors.OK}Converting to nifti{colors.END}")
             convert_to_nifti(studydir)
         if tasks["bids"]:
             print(f"{colors.OK}Organizing in BIDS format{colors.END}")
-            convert_to_bids(studydir)
+            convert_to_bids(studydir, subject)
         if tasks["fmriprep"]:
-            submit_fmriprep(studydir)
+            submit_fmriprep(studydir, subject)
         print(f"{colors.HEADER}END {studydir}{colors.END}\n\n")
         open(pjoin(studydir, ".pipe_complete"), "a").close()
     if not list(ready_dirs):
