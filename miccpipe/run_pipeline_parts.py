@@ -13,8 +13,10 @@ from time import sleep
 import subprocess
 import shutil
 from nipype.interfaces.dcm2nii import Dcm2niix
+import numpy
+import hashlib
 from registry import DICOMIN, registry_info
-from receiver_eostudy import SMDNAME
+from receiver_eostudy import SMDNAME, metadata
 
 
 class colors:
@@ -145,6 +147,21 @@ def task_select(choice):
     return tasks
 
 
+def subject_from_uid(studydir):
+    return "".join(
+        [
+            _
+            for _ in numpy.base_repr(
+                int.from_bytes(
+                    hashlib.sha256(metadata(studydir)["uid"].encode()).digest(), "big"
+                ),
+                36,
+            )
+            if _ in string.ascii_uppercase
+        ]
+    )[:4]
+
+
 def main():
     ready_dirs = Path(DICOMIN).glob("*/.pipe_ready")
     for ready_dir in ready_dirs:
@@ -153,7 +170,7 @@ def main():
         os.remove(pjoin(studydir, ".pipe_ready"))
         print(f"{colors.HEADER}START processing {studydir}{colors.END}")
         tasks = task_select(reg_info["run"])
-        subject = "".join([random.choice(string.ascii_uppercase) for n in range(4)])
+        subject = subject_from_uid(studydir)
         if tasks["nifti"]:
             print(f"{colors.OK}Converting to nifti{colors.END}")
             convert_to_nifti(studydir)
