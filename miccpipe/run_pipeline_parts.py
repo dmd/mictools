@@ -13,7 +13,8 @@ from time import sleep
 import subprocess
 import shutil
 from nipype.interfaces.dcm2nii import Dcm2niix
-from registry import DICOMIN, SDFNAME, SDTNAME, registry_info
+from registry import DICOMIN, registry_info
+from receiver_eostudy import SMDNAME
 
 
 class colors:
@@ -76,15 +77,14 @@ def convert_to_nifti(studydir):
     dcm.inputs.output_dir = niftidir
     dcm.inputs.out_filename = "%d_%s"
     dcm.run()
-    shutil.copyfile(pjoin(studydir, SDFNAME), pjoin(niftidir, SDFNAME))
-    shutil.copyfile(pjoin(studydir, SDTNAME), pjoin(niftidir, SDTNAME))
+    shutil.copyfile(pjoin(studydir, SMDNAME), pjoin(niftidir, SMDNAME))
     shutil.rmtree(studydir)
     os.rename(niftidir, studydir)
 
 
 def convert_to_bids(studydir, subject):
-    sourcedata_dir = pjoin(studydir, "sourcedata", 'sub-' + subject)
-    subject_dir = pjoin(studydir, 'sub-' + subject)
+    sourcedata_dir = pjoin(studydir, "sourcedata", "sub-" + subject)
+    subject_dir = pjoin(studydir, "sub-" + subject)
 
     # make a totally generic bids folder
     os.makedirs(sourcedata_dir)
@@ -119,11 +119,15 @@ def convert_to_bids(studydir, subject):
                 os.path.basename(_)
                 for _ in glob(pjoin(sourcedata_dir, scanname + "*[0-9].nii.gz"))
             ]
+            if not scans:
+                print(f"{colors.WARN}No scans found named {scanname}.{colors.END}")
+                continue
             source = final_scan(scans)
-            basename = 'sub-' + subject + "_" + bidsnames[scantype][scanname]
+            basename = "sub-" + subject + "_" + bidsnames[scantype][scanname]
             shutil.copyfile(
                 pjoin(sourcedata_dir, source), pjoin(scantype_dir, basename + ".nii.gz")
             )
+            print(f"{colors.OK}Copying {source} to {basename}.")
             shutil.copyfile(
                 pjoin(sourcedata_dir, source.replace(".nii.gz", ".json")),
                 pjoin(scantype_dir, basename + ".json"),
@@ -149,7 +153,7 @@ def main():
         os.remove(pjoin(studydir, ".pipe_ready"))
         print(f"{colors.HEADER}START processing {studydir}{colors.END}")
         tasks = task_select(reg_info["run"])
-        subject = ''.join([random.choice(string.ascii_uppercase) for n in range(4)])
+        subject = "".join([random.choice(string.ascii_uppercase) for n in range(4)])
         if tasks["nifti"]:
             print(f"{colors.OK}Converting to nifti{colors.END}")
             convert_to_nifti(studydir)

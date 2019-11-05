@@ -3,10 +3,9 @@ from os.path import join as pjoin
 from pathlib import Path
 import sys
 from glob import glob
+import receiver_eostudy
 
 DICOMIN = "/data/pipeline"
-SDFNAME = ".STUDY_DESCRIPTION"
-SDTNAME = ".STUDY_DATETIME"
 
 
 def eprint(*args, **kwargs):
@@ -22,8 +21,7 @@ def registry_info(studydir):
         eprint(f"STUDYDIR {studydir} needs to be within DICOMIN {DICOMIN}")
         sys.exit(1)
 
-    STUDY_DESCRIPTION_FILE = pjoin(studydir, SDFNAME)
-    studydescription = open(STUDY_DESCRIPTION_FILE).read().rstrip()
+    studydescription = receiver_eostudy.metadata(studydir)["description"]
 
     if studydescription not in registry:
         eprint(f"{studydescription} not found in registry")

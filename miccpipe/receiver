@@ -9,5 +9,5 @@
               --sort-on-patientname \
               --eostudy-timeout 10 \
               --aetitle MICCPIPE \
-              --exec-on-eostudy '/mictools/miccpipe/receiver-eostudy #p' \
+              --exec-on-eostudy '/mictools/miccpipe/receiver_eostudy.py #p' \
               11050

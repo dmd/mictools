@@ -10,7 +10,8 @@ from glob import glob
 import subprocess
 import smtplib
 from email.message import EmailMessage
-from registry import registry_info, DICOMIN, eprint, SDTNAME
+from registry import registry_info, DICOMIN, eprint
+import receiver_eostudy
 
 
 def _chown(path, uid, gid):
@@ -47,7 +48,7 @@ def sge_job_running(job_id):
 
 
 def email(studydir, address):
-    study_dt = open(pjoin(studydir, SDTNAME)).read().rstrip()
+    study_dt = receiver_eostudy.metadata(studydir)["dt"]
     subjdir = glob(studydir + "/sub-*")
     subj_msg = ""
     if subjdir:
