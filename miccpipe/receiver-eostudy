@@ -9,8 +9,8 @@ function dicomfield {
 cd $1
 DICOM=$(find . -type f 2>/dev/null | head -1 )
 dicomfield 0008,1030 > .STUDY_DESCRIPTION
-dicomfield 0008,0022 > .STUDY_DATETIME
-dicomfield 0008,0032 >> .STUDY_DATETIME
+dicomfield 0008,0020 > .STUDY_DATETIME
+dicomfield 0008,0030 >> .STUDY_DATETIME
 python -c "from datetime import datetime; print(datetime.strptime(open('.STUDY_DATETIME').read(), '%Y%m%d\n%H%M%S.%f\n').strftime('%Y-%m-%d %H:%M'))" > ._STUDY_DATETIME
 mv ._STUDY_DATETIME .STUDY_DATETIME
 touch .pipe_ready
