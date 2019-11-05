@@ -114,10 +114,10 @@ def convert_to_bids(studydir, subject):
         scantype_dir = pjoin(subject_dir, scantype)
         os.mkdir(scantype_dir)
         for scanname in bidsnames[scantype]:
-            # take only the latest
+            # take only the latest; exclude _ph.nii.gz phase component
             scans = [
                 os.path.basename(_)
-                for _ in glob(pjoin(sourcedata_dir, scanname + "*.nii.gz"))
+                for _ in glob(pjoin(sourcedata_dir, scanname + "*[0-9].nii.gz"))
             ]
             source = final_scan(scans)
             basename = 'sub-' + subject + "_" + bidsnames[scantype][scanname]
