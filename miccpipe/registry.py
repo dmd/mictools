@@ -21,13 +21,13 @@ def registry_info(studydir):
         eprint(f"STUDYDIR {studydir} needs to be within DICOMIN {DICOMIN}")
         sys.exit(1)
 
-    studydescription = receiver_eostudy.metadata(studydir)["description"]
+    StudyDescription = receiver_eostudy.metadata(studydir)["StudyDescription"]
 
-    if studydescription not in registry:
-        eprint(f"{studydescription} not found in registry")
+    if StudyDescription not in registry:
+        eprint(f"{StudyDescription} not found in registry")
         sys.exit(1)
 
     config = dict(registry["DEFAULT"])
-    config.update(registry[studydescription])
+    config.update(registry[StudyDescription])
 
     return config

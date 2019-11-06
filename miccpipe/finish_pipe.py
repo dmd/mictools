@@ -48,7 +48,7 @@ def sge_job_running(job_id):
 
 
 def email(studydir, address):
-    study_dt = receiver_eostudy.metadata(studydir)["dt"]
+    StudyDateTime = receiver_eostudy.metadata(studydir)["StudyDateTime"]
     subjdir = glob(studydir + "/sub-*")
     subj_msg = ""
     if subjdir:
@@ -58,7 +58,7 @@ def email(studydir, address):
     msg = EmailMessage()
     msg.set_content(
         f"The MICC Pipeline has finished processing {studydir}.\n"
-        f"The acquisition time was {study_dt}.\n"
+        f"The acquisition time was {StudyDateTime}.\n"
         + subj_msg
         + "\n\nPlease note that this simply means the pipeline has no more work to do.\n"
         "It does NOT necessarily mean that everything succeeded!\n"

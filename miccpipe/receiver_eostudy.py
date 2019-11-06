@@ -22,11 +22,14 @@ if __name__ == "__main__":
 
     config = configparser.ConfigParser()
     config["dicom"] = {}
-    config["dicom"]["description"] = ds.StudyDescription
-    config["dicom"]["uid"] = ds.StudyInstanceUID
-    config["dicom"]["dt"] = datetime.strptime(
+    config["dicom"]["StudyDescription"] = ds.StudyDescription
+    config["dicom"]["StudyInstanceUID"] = ds.StudyInstanceUID
+    config["dicom"]["StudyDateTime"] = datetime.strptime(
         ds.StudyDate + ds.StudyTime, "%Y%m%d%H%M%S.%f"
     ).strftime("%Y-%m-%d %H:%M")
+    if hasattr(ds, "AccessionNumber"):
+        config["dicom"]["AccessionNumber"] = ds.AccessionNumber
+
     config.write(open(SMDNAME, "w"))
 
     open(".pipe_ready", "w").write("")

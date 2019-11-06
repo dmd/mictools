@@ -153,7 +153,10 @@ def subject_from_uid(studydir):
             _
             for _ in numpy.base_repr(
                 int.from_bytes(
-                    hashlib.sha256(metadata(studydir)["uid"].encode()).digest(), "big"
+                    hashlib.sha256(
+                        metadata(studydir)["StudyInstanceUID"].encode()
+                    ).digest(),
+                    "big",
                 ),
                 36,
             )
