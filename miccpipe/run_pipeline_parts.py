@@ -85,13 +85,17 @@ def convert_to_nifti(studydir):
     os.rename(niftidir, studydir)
 
 
-def convert_to_bids(studydir, subject):
+def convert_to_bids(studydir, subject, session=None):
     sourcedata_dir = pjoin(studydir, "sourcedata", "sub-" + subject)
     subject_dir = pjoin(studydir, "sub-" + subject)
 
+    if session:
+        sourcedata_dir = pjoin(sourcedata_dir, "ses-" + session)
+        subject_dir = pjoin(subject_dir, "ses-" + session)
+
     # make a totally generic bids folder
     os.makedirs(sourcedata_dir)
-    os.mkdir(subject_dir)
+    os.makedirs(subject_dir)
 
     # move data into sourcedata
     for _ in os.listdir(studydir):
@@ -126,7 +130,10 @@ def convert_to_bids(studydir, subject):
                 print(f"{colors.WARN}No scans found named {scanname}.{colors.END}")
                 continue
             source = final_scan(scans)
-            basename = "sub-" + subject + "_" + bidsnames[scantype][scanname]
+            basename = f"sub-{subject}_"
+            if session:
+                basename += f"ses-{session}_"
+            basename += bidsnames[scantype][scanname]
             shutil.copyfile(
                 pjoin(sourcedata_dir, source), pjoin(scantype_dir, basename + ".nii.gz")
             )
@@ -135,24 +142,6 @@ def convert_to_bids(studydir, subject):
                 pjoin(sourcedata_dir, source.replace(".nii.gz", ".json")),
                 pjoin(scantype_dir, basename + ".json"),
             )
-
-
-def subject_from_uid(studydir):
-    return "".join(
-        [
-            _
-            for _ in numpy.base_repr(
-                int.from_bytes(
-                    hashlib.sha256(
-                        metadata(studydir)["StudyInstanceUID"].encode()
-                    ).digest(),
-                    "big",
-                ),
-                36,
-            )
-            if _ in string.ascii_uppercase
-        ]
-    )[:4]
 
 
 def main():
@@ -187,7 +176,7 @@ def main():
             convert_to_nifti(studydir)
         if tasks["bids"]:
             print(f"{colors.OK}Organizing in BIDS format{colors.END}")
-            convert_to_bids(studydir, subject)
+            convert_to_bids(studydir, subject, session)
         if tasks["fmriprep"]:
             submit_fmriprep(studydir, subject)
         print(f"{colors.HEADER}END {studydir}{colors.END}\n\n")
