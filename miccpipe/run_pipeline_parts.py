@@ -182,7 +182,7 @@ def main():
         print(f"{colors.HEADER}END {studydir}{colors.END}\n\n")
         open(pjoin(studydir, ".pipe_complete"), "a").close()
     if not list(ready_dirs):
-        print(f"{colors.OK}Nothing to do.{colors.END}")
+        print(f"{colors.OK}Nothing left to do.{colors.END}")
 
 
 if __name__ == "__main__":
