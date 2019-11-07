@@ -52,7 +52,7 @@ def email(studydir, address):
     subjdir = glob(studydir + "/sub-*")
     subj_msg = ""
     if subjdir:
-        subj_msg = "Arbitrary subject ID used: " + basename(subjdir[0])
+        subj_msg = "Subject ID used: " + basename(subjdir[0])
 
     short = studydir.replace(DICOMIN + "/", "")
     msg = EmailMessage()

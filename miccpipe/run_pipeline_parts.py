@@ -15,8 +15,9 @@ import shutil
 from nipype.interfaces.dcm2nii import Dcm2niix
 import numpy
 import hashlib
-from registry import DICOMIN, registry_info
+from registry import DICOMIN, registry_info, task_select
 from receiver_eostudy import SMDNAME, metadata
+from sub_ses_matcher import send_form_email, sheet_lookup
 
 
 class colors:
@@ -136,17 +137,6 @@ def convert_to_bids(studydir, subject):
             )
 
 
-def task_select(choice):
-    tasks = {"nifti": False, "bids": False, "fmriprep": False}
-    if choice in ("nifti", "bids", "fmriprep"):
-        tasks["nifti"] = True
-    if choice in ("bids", "fmriprep"):
-        tasks["bids"] = True
-    if choice in ("fmriprep",):
-        tasks["fmriprep"] = True
-    return tasks
-
-
 def subject_from_uid(studydir):
     return "".join(
         [
@@ -169,11 +159,29 @@ def main():
     ready_dirs = Path(DICOMIN).glob("*/.pipe_ready")
     for ready_dir in ready_dirs:
         studydir = str(ready_dir.parent)
-        reg_info = registry_info(studydir)
+        tasks = task_select(registry_info(studydir)["run"])
+        AccessionNumber = metadata(studydir)["AccessionNumber"]
+        if tasks["bids"]:
+            if not os.path.exists(pjoin(studydir, ".pipe_emailsent")):
+                send_form_email(studydir)
+                print(
+                    f"{colors.OK}Sending AccessionNumber form email request.{colors.END}"
+                )
+                print(
+                    f"{colors.WARN}Can't do any more work without that, so skipping.{colors.END}"
+                )
+                continue
+            else:
+                subject, session = sheet_lookup(AccessionNumber)
+                if not subject:
+                    print(
+                        f"{colors.WARN}Didn't find {AccessionNumber} in sheet yet. Skipping.{colors.END}"
+                    )
+                    continue
+
         os.remove(pjoin(studydir, ".pipe_ready"))
         print(f"{colors.HEADER}START processing {studydir}{colors.END}")
-        tasks = task_select(reg_info["run"])
-        subject = subject_from_uid(studydir)
+
         if tasks["nifti"]:
             print(f"{colors.OK}Converting to nifti{colors.END}")
             convert_to_nifti(studydir)
