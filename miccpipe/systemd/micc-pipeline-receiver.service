@@ -1,13 +1,16 @@
 [Unit]
 Description=MICC DICOM Pipeline Receiver service
-After=network.target
+After=docker.service
+Requires=docker.service
 
 [Service]
-Type=simple
+TimeoutStartSec=0
 Restart=always
-RestartSec=5
 User=pipeline
+ExecStartPre=-/cm/local/apps/docker/current/bin/docker stop micc-pipeline-receiver
+ExecStartPre=-/cm/local/apps/docker/current/bin/docker rm micc-pipeline-receiver
 ExecStart=/home/ddrucker/mictools/miccpipe/receiver
+ExecStop=-/cm/local/apps/docker/current/bin/docker stop micc-pipeline-receiver
 
 [Install]
 WantedBy=multi-user.target

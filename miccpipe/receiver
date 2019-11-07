@@ -1,13 +1,16 @@
 #!/bin/bash
 
-/cm/shared/singularity/bin/singularity run -c \
-  -B /home/ddrucker/mictools:/mictools:ro \
-  -B /data/pipeline:/data/pipeline \
-  /cm/shared/singularity/images/dcm.sif \
-     storescp --output-directory /data/pipeline \
-              --verbose \
-              --sort-on-patientname \
-              --eostudy-timeout 10 \
-              --aetitle MICCPIPE \
-              --exec-on-eostudy '/mictools/miccpipe/receiver_eostudy.py #p' \
-              11050
+/cm/local/apps/docker/current/bin/docker run \
+  --name micc-pipeline-receiver \
+  -v /home/ddrucker/mictools:/mictools:ro \
+  -v /data/pipeline:/data/pipeline \
+  --user 1061:1095 \
+  -p 11050:11050 \
+  pydicom/dicom \
+  storescp --output-directory /data/pipeline \
+          --verbose \
+          --sort-on-patientname \
+          --eostudy-timeout 10 \
+          --aetitle MICCPIPE \
+          --exec-on-eostudy '/mictools/miccpipe/receiver_eostudy.py #p' \
+          11050
