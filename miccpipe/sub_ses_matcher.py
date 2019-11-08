@@ -8,7 +8,7 @@ from email.message import EmailMessage
 from registry import registry_info, task_select, DICOMIN
 from receiver_eostudy import metadata
 
-SHEET = "http://micc.mclean.harvard.edu/~pipeline/?AccessionNumber="
+SHEET = "http://micc.mclean.harvard.edu:11051/?AccessionNumber="
 SHEETFILE = pjoin(DICOMIN, "registry", "accession.csv")
 
 

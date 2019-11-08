@@ -1,0 +1,46 @@
+version: '3'
+services:
+
+  runner:
+    build: .
+    command: bash -c "while true; do /miccpipe/run_pipeline_parts.py; sleep 15; done"
+    volumes:
+      - /data/pipeline:/data/pipeline
+    # run as pipeline user
+    user: 1061:1095
+
+  finisher:
+    build: .
+    command: bash -c "while true; do /miccpipe/finish_pipe.py; sleep 15; done"
+    volumes:
+      - /data/pipeline:/data/pipeline
+      - /etc/nsswitch.conf:/etc/nsswitch.conf:ro
+      - /var/run/nslcd/socket:/var/run/nslcd/socket:ro
+
+  receiver:
+    build:
+      dockerfile: Dockerfile-receiver
+      context: .
+    ports:
+        - 11050:11050
+    # run as pipeline user
+    user: 1061:1095
+    volumes:
+        - /data/pipeline:/data/pipeline
+    command: >
+        storescp --output-directory /data/pipeline
+            --verbose
+            --sort-on-patientname
+            --eostudy-timeout 10
+            --aetitle MICCPIPE
+            --exec-on-eostudy '/miccpipe/receiver_eostudy.py #p' 11050
+
+  web:
+    build:
+      dockerfile: Dockerfile-web
+      context: .
+    ports:
+      - 11051:80
+    volumes:
+      - /data/pipeline/registry:/data/pipeline/registry
+      

@@ -1,0 +1,3 @@
+FROM pydicom/dicom
+MAINTAINER ddrucker@mclean.harvard.edu
+ADD receiver_eostudy.py /miccpipe/
