@@ -8,6 +8,8 @@ services:
       - /data/pipeline:/data/pipeline
     # run as pipeline user
     user: 1061:1095
+    environment:
+      - SGEPROXY=http://micc:11052
 
   finisher:
     build: .
@@ -16,6 +18,8 @@ services:
       - /data/pipeline:/data/pipeline
       - /etc/nsswitch.conf:/etc/nsswitch.conf:ro
       - /var/run/nslcd/socket:/var/run/nslcd/socket:ro
+    environment:
+      - SGEPROXY=http://micc:11052
 
   receiver:
     build:

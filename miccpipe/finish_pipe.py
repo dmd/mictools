@@ -9,6 +9,7 @@ from os.path import basename, join as pjoin
 from glob import glob
 import subprocess
 import smtplib
+import requests
 from email.message import EmailMessage
 from registry import registry_info, DICOMIN, eprint
 import receiver_eostudy
@@ -47,6 +48,14 @@ def sge_job_running(job_id):
     return job_status in ("r", "qw", "hqw")
 
 
+def fmriprep_running(studydir):
+    job_id_file = pjoin(studydir, ".pipe_sgejobid")
+    if not os.path.exists(job_id_file):
+        return False
+    job_id = open(job_id_file).read()
+    return sge_job_running(job_id)
+
+
 def email(studydir, address):
     StudyDateTime = receiver_eostudy.metadata(studydir)["StudyDateTime"]
     subjdir = glob(studydir + "/sub-*")
@@ -73,14 +82,6 @@ def email(studydir, address):
     print(f"sent completion email for {short} to {address}")
 
 
-def fmriprep_running(studydir):
-    job_id_file = pjoin(studydir, ".pipe_sgejobid")
-    if not os.path.exists(job_id_file):
-        return False
-    job_id = open(job_id_file).read()
-    return sge_job_running(job_id)
-
-
 if __name__ == "__main__":
     if os.geteuid() != 0:
         eprint("This program must run as root in order to chown study directories.")
@@ -88,7 +89,22 @@ if __name__ == "__main__":
 
     for p in Path(DICOMIN).glob("*/" + ".pipe_complete"):
         studydir = str(p.parent)
-        if fmriprep_running(studydir):
+
+        if os.environ.get("INSIDE_DOCKER", False) == "yes":
+            # get status via web app
+            SGEPROXY = os.environ["SGEPROXY"]
+            response = requests.get(
+                SGEPROXY + "/jobstatus", params={"studydir": studydir}
+            )
+            if response.status_code != 200:
+                print(f"Problem fetching SGE status")
+                continue
+            fmriprep_jobstatus = response.json()["running"]
+        else:
+            # normal
+            fmriprep_jobstatus = fmriprep_running(studydir)
+
+        if fmriprep_jobstatus:
             print(f"not chowning {studydir} yet; fmriprep job incomplete")
             continue
         reg_info = registry_info(studydir)
