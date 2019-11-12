@@ -82,6 +82,7 @@ def submitsge():
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
+    os.rename(runcmd, pjoin(randir, cmd))
     stdout, stderr = proc.communicate()
     if b"has been submitted" in stdout:
         job_id = re.search(r"Your job (\d{6})", str(stdout)).group(1)
@@ -99,9 +100,6 @@ def submitsge():
         )
     else:
         return jsonify({"stdout": stdout, "stderr": stderr, "info": "error"}), 500
-
-
-#        os.rename(runcmd, pjoin(randir, cmd))
 
 
 if __name__ == "__main__":
