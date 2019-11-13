@@ -12,6 +12,7 @@ import smtplib
 import requests
 from email.message import EmailMessage
 from registry import registry_info, DICOMIN, eprint
+from run_pipeline_parts import SSH_COMMAND
 import receiver_eostudy
 
 
@@ -33,11 +34,11 @@ def registry_chown(studydir, reg_info):
 
 
 def sge_job_running(job_id):
+    cmd = ["/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qstat", "-u", '"*"']
+    if os.environ.get("INSIDE_DOCKER", False) == "yes":
+        cmd = SSH_COMMAND + cmd
     qstat = (
-        subprocess.check_output(
-            ["/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qstat", "-u", "*"],
-            env={"SGE_ROOT": "/cm/shared/apps/sge/current"},
-        )
+        subprocess.check_output(cmd, env={"SGE_ROOT": "/cm/shared/apps/sge/current"})
         .decode()
         .split("\n")
     )
@@ -90,19 +91,7 @@ if __name__ == "__main__":
     for p in Path(DICOMIN).glob("*/" + ".pipe_complete"):
         studydir = str(p.parent)
 
-        if os.environ.get("INSIDE_DOCKER", False) == "yes":
-            # get status via web app
-            SGEPROXY = os.environ["SGEPROXY"]
-            response = requests.get(
-                SGEPROXY + "/jobstatus", params={"studydir": studydir}
-            )
-            if response.status_code != 200:
-                print(f"Problem fetching SGE status")
-                continue
-            fmriprep_jobstatus = response.json()["running"]
-        else:
-            # normal
-            fmriprep_jobstatus = fmriprep_running(studydir)
+        fmriprep_jobstatus = fmriprep_running(studydir)
 
         if fmriprep_jobstatus:
             print(f"not chowning {studydir} yet; fmriprep job incomplete")

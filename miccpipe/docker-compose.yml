@@ -6,10 +6,11 @@ services:
     command: bash -c "while true; do /miccpipe/run_pipeline_parts.py; sleep 15; done"
     volumes:
       - /data/pipeline:/data/pipeline
+      - /home/pipeline/.ssh:/pipeline.ssh:ro
+      - /etc/nsswitch.conf:/etc/nsswitch.conf:ro
+      - /var/run/nslcd/socket:/var/run/nslcd/socket:ro
     # run as pipeline user
     user: 1061:1095
-    environment:
-      - SGEPROXY=http://micc:11052
 
   finisher:
     build: .
@@ -18,8 +19,7 @@ services:
       - /data/pipeline:/data/pipeline
       - /etc/nsswitch.conf:/etc/nsswitch.conf:ro
       - /var/run/nslcd/socket:/var/run/nslcd/socket:ro
-    environment:
-      - SGEPROXY=http://micc:11052
+      - /home/pipeline/.ssh:/pipeline.ssh:ro
 
   receiver:
     build:
@@ -47,4 +47,3 @@ services:
       - 11051:80
     volumes:
       - /data/pipeline/registry:/data/pipeline/registry
-      

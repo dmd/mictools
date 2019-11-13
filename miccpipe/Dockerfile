@@ -7,7 +7,7 @@ MAINTAINER ddrucker@mclean.harvard.edu
 # -v /etc/nsswitch.conf:/etc/nsswitch.conf:ro
 # -v /var/run/nslcd/socket:/var/run/nslcd/socket:ro
 
-RUN yum -y install nss-pam-ldapd pigz
+RUN yum -y install openssh-clients nss-pam-ldapd pigz
 
 RUN conda install -y -c conda-forge \
              pyyaml \

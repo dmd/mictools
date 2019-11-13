@@ -21,6 +21,8 @@ from registry import DICOMIN, registry_info, task_select
 from receiver_eostudy import SMDNAME, metadata
 from sub_ses_matcher import send_form_email, sheet_lookup
 
+SSH_COMMAND = "ssh -i /pipeline.ssh/id_ecdsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no pipeline@micc".split()
+
 
 class colors:
     HEADER = "\033[95m"
@@ -64,36 +66,20 @@ def submit_fmriprep(studydir, subject):
     print(f"{colors.OK}Running command: " + " ".join(s) + f"{colors.END}")
 
     if os.environ.get("INSIDE_DOCKER", False) == "yes":
-        # submit via web app
-        rundir = pjoin(DICOMIN, "run")
+        # submit via ssh
+        print("Submitting job via ssh")
+        s = SSH_COMMAND + s
+        print(s)
 
-        SGEPROXY = os.environ["SGEPROXY"]
-
-        cmdfile = NamedTemporaryFile(dir=rundir, delete=False).name
-        print(f"{colors.OK}Writing {cmdfile} for execution{colors.END}")
-        open(cmdfile, "w").write("\0".join(s))
-        os.chmod(cmdfile, 0o700)
-        response = requests.post(
-            SGEPROXY + "/jobsubmit", data={"studydir": studydir, "cmdfile": cmdfile}
-        )
-        if response.status_code != 200:
-            print(f"{colors.FAIL}Error submitting to the queue remotely...")
-        else:
-            print(f"{colors.OK}Submitting to the queue remotely...")
-        print(response.text)
-        print(f"{colors.END}")
-
+    proc = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    stdout, stderr = proc.communicate()
+    if b"has been submitted" in stdout:
+        job_id = re.search(r"Your job (\d{6})", str(stdout)).group(1)
+        print(f"{colors.OK}Submitted job {job_id} to SGE{colors.END}")
+        open(pjoin(studydir, ".pipe_sgejobid"), "w").write(job_id)
     else:
-        # running normally
-        proc = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        stdout, stderr = proc.communicate()
-        if b"has been submitted" in stdout:
-            job_id = re.search(r"Your job (\d{6})", str(stdout)).group(1)
-            print(f"{colors.OK}Submitted job {job_id} to SGE{colors.END}")
-            open(pjoin(studydir, ".pipe_sgejobid"), "w").write(job_id)
-        else:
-            print(f"{colors.FAIL}Something went wrong submitting to the queue:")
-            print(f"STDOUT:\n{stdout}STDERR:\n{stderr}{colors.END}")
+        print(f"{colors.FAIL}Something went wrong submitting to the queue:")
+        print(f"STDOUT:\n{stdout}STDERR:\n{stderr}{colors.END}")
 
 
 def convert_to_nifti(studydir):
@@ -174,6 +160,10 @@ def main():
         studydir = str(ready_dir.parent)
         tasks = task_select(registry_info(studydir)["run"])
         AccessionNumber = metadata(studydir)["AccessionNumber"]
+        subject, session = sheet_lookup(AccessionNumber)
+        if subject:
+            # don't send email if it's already there
+            open(pjoin(studydir, ".pipe_emailsent"), "a").write("")
         if tasks["bids"]:
             if not os.path.exists(pjoin(studydir, ".pipe_emailsent")):
                 send_form_email(studydir)
@@ -184,13 +174,11 @@ def main():
                     f"{colors.WARN}Can't do any more work without that, so skipping.{colors.END}"
                 )
                 continue
-            else:
-                subject, session = sheet_lookup(AccessionNumber)
-                if not subject:
-                    print(
-                        f"{colors.WARN}Didn't find {AccessionNumber} in sheet yet. Skipping.{colors.END}"
-                    )
-                    continue
+            if not subject:
+                print(
+                    f"{colors.WARN}Didn't find {AccessionNumber} in sheet yet. Skipping.{colors.END}"
+                )
+                continue
 
         os.remove(pjoin(studydir, ".pipe_ready"))
         print(f"{colors.HEADER}START processing {studydir}{colors.END}")
