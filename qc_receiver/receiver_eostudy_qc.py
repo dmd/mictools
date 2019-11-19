@@ -19,10 +19,11 @@ def convert_to_nifti(studydir, newdir):
     dcm.inputs.out_filename = "%d_%s"
     dcm.run()
     shutil.rmtree(studydir)
+    newold = newdir.with_suffix(".old")
     if os.path.exists(newdir):
-        if os.path.exists(newdir + ".old"):
-            shutil.rmtree(newdir + ".old", ignore_errors=True)
-        os.rename(newdir, newdir + ".old")
+        if os.path.exists(newold):
+            shutil.rmtree(newold)
+        os.rename(newdir, newold)
     os.rename(niftidir, newdir)
 
 if __name__ == "__main__":
