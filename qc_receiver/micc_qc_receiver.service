@@ -7,7 +7,7 @@ Type=oneshot
 RemainAfterExit=yes
 StandardError=null
 StandardOutput=null
-WorkingDirectory=/home/stabilitycalc/micc_qc_receiver
+WorkingDirectory=/home/stabilitycalc/mictools/qc_receiver
 ExecStart=/usr/local/bin/docker-compose up -d
 ExecStop=/usr/local/bin/docker-compose down
 
