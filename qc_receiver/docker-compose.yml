@@ -4,7 +4,7 @@ services:
   receiver:
     build: .
     ports:
-        - 11050:11050
+        - 11112:11112
     # run as pipeline user
     user: pipeline
     volumes:
@@ -15,4 +15,4 @@ services:
             --sort-on-patientname
             --eostudy-timeout 10
             --aetitle QC
-            --exec-on-eostudy '/pipebin/receiver_eostudy_qc.py #p' 11050
+            --exec-on-eostudy '/pipebin/receiver_eostudy_qc.py #p' 11112
