@@ -1,0 +1,18 @@
+version: '3'
+services:
+
+  receiver:
+    build: .
+    ports:
+        - 11050:11050
+    # run as pipeline user
+    user: pipeline
+    volumes:
+        - /qc:/qc
+    command: >
+        storescp --output-directory /qc/dicom-in
+            --verbose
+            --sort-on-patientname
+            --eostudy-timeout 10
+            --aetitle QC
+            --exec-on-eostudy '/pipebin/receiver_eostudy_qc.py #p' 11050
