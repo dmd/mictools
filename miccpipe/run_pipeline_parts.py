@@ -96,6 +96,7 @@ def convert_to_nifti(studydir):
 
 
 def convert_to_bids(studydir, subject, session=None):
+    EXTENSIONS = (".json", ".bval", ".bvec", ".tsv", ".nii.gz")
     sourcedata_dir = pjoin(studydir, "sourcedata", "sub-" + subject)
     subject_dir = pjoin(studydir, "sub-" + subject)
 
@@ -109,8 +110,9 @@ def convert_to_bids(studydir, subject, session=None):
 
     # move data into sourcedata
     for _ in os.listdir(studydir):
-        if _.endswith(".nii.gz") or _.endswith(".json"):
-            os.rename(pjoin(studydir, _), pjoin(sourcedata_dir, _))
+        for extension in EXTENSIONS:
+            if _.endswith(extension):
+                os.rename(pjoin(studydir, _), pjoin(sourcedata_dir, _))
 
     open(pjoin(studydir, "dataset_description.json"), "w").write(
         """
@@ -148,10 +150,14 @@ def convert_to_bids(studydir, subject, session=None):
                 pjoin(sourcedata_dir, source), pjoin(scantype_dir, basename + ".nii.gz")
             )
             print(f"{colors.OK}Copying {source} to {basename}.")
-            shutil.copyfile(
-                pjoin(sourcedata_dir, source.replace(".nii.gz", ".json")),
-                pjoin(scantype_dir, basename + ".json"),
-            )
+            for extension in EXTENSIONS:
+                try:
+                    shutil.copyfile(
+                        pjoin(sourcedata_dir, source.replace(".nii.gz", extension)),
+                        pjoin(scantype_dir, basename + extension),
+                    )
+                except FileNotFoundError:
+                    pass
 
 
 def main():
