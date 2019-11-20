@@ -10,7 +10,7 @@ DICOMIN = "/data/pipeline"
 
 
 def condensed_name(s):
-    return re.sub(r"[^a-zA-Z0-9]", "", s)
+    return re.sub(r"[^A-Z0-9]", "", s.upper())
 
 
 def task_select(choice):
