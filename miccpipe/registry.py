@@ -4,8 +4,13 @@ from pathlib import Path
 import sys
 from glob import glob
 import receiver_eostudy
+import re
 
 DICOMIN = "/data/pipeline"
+
+
+def condensed_name(s):
+    return re.sub(r"[^a-zA-Z0-9]", "", s)
 
 
 def task_select(choice):
@@ -24,9 +29,15 @@ def eprint(*args, **kwargs):
 
 
 def registry_info(studydir):
+    rawregistry = {}
     registry = {}
+
     for _ in glob(pjoin(DICOMIN, "registry") + "/*.yaml"):
-        registry.update(yaml.safe_load(open(_)))
+        rawregistry.update(yaml.safe_load(open(_)))
+
+    # condense to alphanumeric
+    for k in rawregistry:
+        registry[condensed_name(k)] = rawregistry[k]
 
     if Path(DICOMIN) not in Path(studydir).resolve().parents:
         eprint(f"STUDYDIR {studydir} needs to be within DICOMIN {DICOMIN}")
@@ -34,11 +45,11 @@ def registry_info(studydir):
 
     StudyDescription = receiver_eostudy.metadata(studydir)["StudyDescription"]
 
-    if StudyDescription not in registry:
+    if condensed_name(StudyDescription) not in registry:
         eprint(f"{StudyDescription} not found in registry")
         sys.exit(1)
 
     config = dict(registry["DEFAULT"])
-    config.update(registry[StudyDescription])
+    config.update(registry[condensed_name(StudyDescription)])
 
     return config
