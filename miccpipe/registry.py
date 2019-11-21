@@ -41,13 +41,13 @@ def registry_info(studydir):
 
     if Path(DICOMIN) not in Path(studydir).resolve().parents:
         eprint(f"STUDYDIR {studydir} needs to be within DICOMIN {DICOMIN}")
-        sys.exit(1)
+        raise RuntimeError
 
     StudyDescription = receiver_eostudy.metadata(studydir)["StudyDescription"]
 
     if condensed_name(StudyDescription) not in registry:
         eprint(f"{StudyDescription} not found in registry")
-        sys.exit(1)
+        raise KeyError
 
     config = dict(registry["DEFAULT"])
     config.update(registry[condensed_name(StudyDescription)])

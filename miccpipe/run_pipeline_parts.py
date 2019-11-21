@@ -164,7 +164,10 @@ def main():
     ready_dirs = Path(DICOMIN).glob("*/.pipe_ready")
     for ready_dir in ready_dirs:
         studydir = str(ready_dir.parent)
-        tasks = task_select(registry_info(studydir)["run"])
+        try:
+            tasks = task_select(registry_info(studydir)["run"])
+        except (RuntimeError, KeyError):
+            continue
         AccessionNumber = metadata(studydir)["AccessionNumber"]
         subject, session = sheet_lookup(AccessionNumber)
         if subject:
