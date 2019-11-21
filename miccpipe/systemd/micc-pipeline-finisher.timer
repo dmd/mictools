@@ -1,9 +1,0 @@
-[Unit]
-Description=Run the MICC finisher every minute
-
-[Timer]
-OnActiveSec=0
-OnUnitActiveSec=60
-
-[Install]
-WantedBy=timers.target

@@ -1,6 +1,0 @@
-[Unit]
-Description=MICC Pipeline Finisher
-
-[Service]
-Type=oneshot
-ExecStart=/cm/shared/anaconda3/envs/rapidtide/bin/python3 /home/ddrucker/mictools/miccpipe/finish_pipe.py
