@@ -97,6 +97,6 @@ if __name__ == "__main__":
             print(f"not chowning {studydir} yet; fmriprep job incomplete")
             continue
         reg_info = registry_info(studydir)
+        registry_chown(studydir, reg_info)
         if "email" in reg_info:
             email(studydir, reg_info["email"])
-        registry_chown(studydir, reg_info)
