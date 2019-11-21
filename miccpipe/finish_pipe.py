@@ -72,7 +72,11 @@ def email(studydir, address):
         + subj_msg
         + "\n\nPlease note that this simply means the pipeline has no more work to do.\n"
         "It does NOT necessarily mean that everything succeeded!\n"
-        "You must check your data.\n"
+        "You must check your data.\n\n"
+        "You MUST move your data out of " + DICOMIN + " to your own data area.\n"
+        "Data left in "
+        + DICOMIN
+        + " is not backed up, and will be removed after 30 days.\n"
     )
     msg["Subject"] = f"[MICCPIPE] DONE: {short}"
     msg["From"] = "MICC Pipeline <do-not-reply@micc.mclean.harvard.edu>"
