@@ -38,7 +38,7 @@ def registry_info(studydir):
         except:
             eprint(f"Failed to load {_}, continuing without it.")
             continue
-    print(rawregistry)
+
     # condense to alphanumeric
     for k in rawregistry:
         registry[condensed_name(k)] = rawregistry[k]
