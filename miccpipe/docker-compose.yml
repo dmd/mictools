@@ -1,3 +1,5 @@
+# ports come from .env
+
 version: '3'
 services:
 
@@ -26,7 +28,7 @@ services:
       dockerfile: Dockerfile-receiver
       context: .
     ports:
-        - 11050:11050
+        - ${RECVPORT}:11050
     # run as pipeline user
     user: 1061:1095
     volumes:
@@ -44,6 +46,6 @@ services:
       dockerfile: Dockerfile-web
       context: .
     ports:
-      - 11051:80
+      - ${WEBPORT}:80
     volumes:
       - /data/pipeline/registry:/data/pipeline/registry
