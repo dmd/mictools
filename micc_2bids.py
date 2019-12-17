@@ -44,15 +44,15 @@ def final_scan(sourcenames):
     # return ('FOO_BAR_BAZ', 'FOO_BAR_BAZ_11')
     # i.e., the unnumbered basename, and the highest valued dicomdir
 
+    if len(sourcenames) == 0:
+        return None, None
     source = sorted(sourcenames, key=lambda x: int(x.rsplit("_", 1)[-1]))[-1]
     dest = source.rsplit("_", 1)[0]
     return dest, source
 
 
-def convertdicoms(subjectdir, dicomsubdir, niftisubdir, niftiname):
-    sourcedir = pjoin("sourcedata", subjectdir, dicomsubdir)
+def convertdicoms(sourcedir, destdir, niftiname):
     if os.path.isdir(sourcedir):
-        destdir = pjoin(subjectdir, niftisubdir)
         os.makedirs(destdir, exist_ok=True)
         silentremove(niftiname + ".nii.gz")
         silentremove(niftiname + ".json")
@@ -63,6 +63,8 @@ def convertdicoms(subjectdir, dicomsubdir, niftisubdir, niftiname):
             "y",
             "-z",
             "y",
+            "-w",
+            "1",
             "-f",
             niftiname,
             "-o",
@@ -97,18 +99,11 @@ def create_bids():
 
 
 if __name__ == "__main__":
-
-    def is_file_or_dir(arg):
-        if not (os.path.exists(arg) or os.path.exists(pjoin("sourcedata", arg))):
-            raise argparse.ArgumentTypeError(f"{arg} does not exist")
-        else:
-            return arg
-
     parser = argparse.ArgumentParser(
         description=(
             "Convert dicoms from the scanner to quasi-BIDS format, using a config file.\n"
             "You should run this from the top level of a BIDS directory.\n"
-            "Your dicoms should be in ./sourcedata/SUBJECTDIR.\n\n"
+            "Your dicoms should be in ./sourcedata/DICOMDIR.\n\n"
             'Why "quasi"? Because BIDS is a rather complex set of formats and rules,\n'
             'and this tool is very very simple. If you want "real" BIDS, use one of:\n\n'
             "  * https://github.com/nipy/heudiconv\n"
@@ -122,8 +117,21 @@ if __name__ == "__main__":
     mug = parser.add_mutually_exclusive_group(required=True)
 
     mug.add_argument(
-        "--subjectdir",
-        help='SUBJECTDIR to be processed, to be found under "sourcedata"',
+        "--dicomdir", help="DICOMDIR to be processed, to be found under sourcedata"
+    )
+
+    parser.add_argument(
+        "--bidsdir", help="BIDSDIR to use for the processed data", default="."
+    )
+
+    parser.add_argument(
+        "--subject", help="SUBJECT to use for the processed data", default=None
+    )
+
+    parser.add_argument(
+        "--session",
+        help="SESSION to use for the processed data (if not specified, will assume a single session)",
+        default=None,
     )
 
     parser.add_argument(
@@ -157,6 +165,7 @@ and others ignored.
 It is your responsibility to use names that are BIDS-compliant!
 
 E.g.:
+
 [anat]
 T1_MEMPRAGE_64ch_RMS = T1w
 
@@ -173,15 +182,32 @@ cue_mb6_gr2_3 = task-cue3_bold
         create_bids()
         sys.exit(0)
 
-    if not os.path.exists(pjoin("sourcedata", args.subjectdir)):
-        print(f"subjectdir {args.subjectdir} does not exist")
+    bidsdir = args.bidsdir
+
+    if args.bidsdir is not None:
+        if not os.path.exists(args.bidsdir):
+            print(f"bidsdir {args.bidsdir} does not exist")
+            sys.exit(1)
+    else:
+        print("bidsdir must be specified")
         sys.exit(1)
+
+    dicomdir = pjoin(bidsdir, "sourcedata", args.dicomdir)
+
+    if not os.path.exists(dicomdir):
+        print(f"dicomdir {dicomdir} does not exist")
+        sys.exit(1)
+
+    if args.subject is None:
+        print(f"must specify a subject number")
+        sys.exit(1)
+
     if not os.path.exists(args.config):
         print(f"config file {args.config} does not exist")
         sys.exit(1)
 
-    subjectdir = args.subjectdir
-    _, subject = os.path.split(subjectdir)
+    subject = args.subject
+    session = args.session
     config = read_config(args.config)
 
     for scantype in config:  # ('anat', 'func')
@@ -192,20 +218,22 @@ cue_mb6_gr2_3 = task-cue3_bold
             dest, source = final_scan(
                 [
                     f
-                    for f in os.listdir(pjoin("sourcedata", subjectdir))
+                    for f in os.listdir(dicomdir)
                     if re.search(re.escape(scanname) + r"_[0-9]*$", f)
                 ]
             )
-            dest = pjoin("sourcedata", subjectdir, dest)
-            if os.path.exists(dest):
-                print("destination directory already exists - skipping")
+            if dest is None:
+                print(config[scantype][scanname], "not found - skipping")
             else:
-                print(f"linking {source} to {dest}")
-                os.symlink(source, dest)
+                if session is None:
+                    destroot = pjoin(bidsdir, "sub-" + subject, scantype)
+                    destname = "_".join(["sub-" + subject, config[scantype][scanname]])
+                else:
+                    destroot = pjoin(
+                        bidsdir, "sub-" + subject, "ses-" + session, scantype
+                    )
+                    destname = "_".join(
+                        ["sub-" + subject, "ses-" + session, config[scantype][scanname]]
+                    )
 
-            convertdicoms(
-                subjectdir,
-                scanname,
-                scantype,
-                subject + "_" + config[scantype][scanname],
-            )
+                convertdicoms(pjoin(dicomdir, source), destroot, destname)
