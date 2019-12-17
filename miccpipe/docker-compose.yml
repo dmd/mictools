@@ -1,4 +1,4 @@
-# ports come from .env
+# ports and paths come from .env
 
 version: '3'
 services:
@@ -7,7 +7,7 @@ services:
     build: .
     command: bash -c "while true; do /miccpipe/run_pipeline_parts.py; sleep 15; done"
     volumes:
-      - /data/pipeline:/data/pipeline
+      - ${DATA}:/data/pipeline
       - /home/pipeline/.ssh:/pipeline.ssh:ro
       - /etc/nsswitch.conf:/etc/nsswitch.conf:ro
       - /var/run/nslcd/socket:/var/run/nslcd/socket:ro
@@ -18,7 +18,7 @@ services:
     build: .
     command: bash -c "while true; do /miccpipe/finish_pipe.py; sleep 15; done"
     volumes:
-      - /data/pipeline:/data/pipeline
+      - ${DATA}:/data/pipeline
       - /etc/nsswitch.conf:/etc/nsswitch.conf:ro
       - /var/run/nslcd/socket:/var/run/nslcd/socket:ro
       - /home/pipeline/.ssh:/pipeline.ssh:ro
@@ -32,7 +32,7 @@ services:
     # run as pipeline user
     user: 1061:1095
     volumes:
-        - /data/pipeline:/data/pipeline
+        - ${DATA}:/data/pipeline
     command: >
         storescp --output-directory /data/pipeline
             --verbose
@@ -48,4 +48,4 @@ services:
     ports:
       - ${WEBPORT}:80
     volumes:
-      - /data/pipeline/registry:/data/pipeline/registry
+      - ${DATA}/registry:/data/pipeline/registry
