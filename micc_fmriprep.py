@@ -36,6 +36,9 @@ def make_runscript(args):
     s += [f"--mem-mb {args.ramsize*1024}"]
     s += ["--notrack"]
 
+    if args.ignore:
+        s += ["--ignore " + " ".join(args.ignore)]
+
     if args.aroma:
         s += ["--use-aroma --ignore-aroma-denoising-errors"]
 
@@ -100,6 +103,15 @@ if __name__ == "__main__":
         "--disable-syn-sdc",
         help="Turn OFF synthetic field map correction. (Default: on)",
         action="store_true",
+    )
+
+    parser.add_argument(
+        "--ignore",
+        action="store",
+        nargs="+",
+        choices=["fieldmaps", "slicetiming", "sbref"],
+        help="ignore selected aspects of the input dataset to disable corresponding "
+        "parts of the workflow (a space delimited list)",
     )
 
     parser.add_argument(
