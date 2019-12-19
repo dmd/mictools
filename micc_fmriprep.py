@@ -40,7 +40,7 @@ def make_runscript(args):
         s += ["--ignore " + " ".join(args.ignore)]
 
     if args.aroma:
-        s += ["--use-aroma --ignore-aroma-denoising-errors"]
+        s += ["--use-aroma"]
 
     if not args.disable_syn_sdc:
         s += ["--use-syn-sdc"]
