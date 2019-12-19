@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 
 QSUB = "/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qsub"
-cachedir = expanduser("~/.cache/fmriprep")
 
 
 def make_runscript(args):
@@ -19,18 +18,12 @@ def make_runscript(args):
         args.outputdir = pjoin(args.bidsdir, "derivatives")
 
     pre = []
-    pre += [
-        "export SINGULARITYENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"
-    ]
 
     s = []
     s += ["/cm/shared/singularity/bin/singularity run"]
     s += ["--contain"]
     s += ["--cleanenv"]
     s += ["-B /tmp -B /data -B /data1 -B /data2 -B /data3 -B /cm/shared"]
-
-    # should be able to remove this when https://github.com/poldracklab/fmriprep/issues/1777 resolved
-    s += [f"-B {cachedir}:/home/fmriprep/.cache/fmriprep"]
 
     s += [args.fmriprep_container]
     s += [args.bidsdir]
@@ -181,8 +174,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    os.makedirs(cachedir, exist_ok=True)
-    # FIXME
     # apparently fmriprep has trouble if you run this from inside BIDS dir
     if (
         Path(args.bidsdir) in Path(os.getcwd()).parents
