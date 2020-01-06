@@ -83,16 +83,21 @@ def submit_fmriprep(studydir, subject):
 
 
 def convert_to_nifti(studydir):
-    niftidir = str(studydir) + "_nifti"
+    niftidir = pjoin(studydir, 'nifti')
+    dicomdir = pjoin(studydir, 'dicom')
+    os.rename(studydir, str(studydir) + '_')
+    os.mkdir(studydir)
     os.mkdir(niftidir)
+    os.rename(str(studydir) + '_', dicomdir)
+    # so now we have /data/pipeline/studyname/nifti (empty)
+    # and            /data/pipeline/studyname/dicom (original contents)
+
     dcm = Dcm2niix()
-    dcm.inputs.source_dir = studydir
+    dcm.inputs.source_dir = dicomdir
     dcm.inputs.output_dir = niftidir
     dcm.inputs.out_filename = "%d_%s"
     dcm.run()
-    shutil.copyfile(pjoin(studydir, SMDNAME), pjoin(niftidir, SMDNAME))
-    shutil.rmtree(studydir)
-    os.rename(niftidir, studydir)
+    shutil.copyfile(pjoin(dicomdir, SMDNAME), pjoin(niftidir, SMDNAME))
 
 
 def convert_to_bids(studydir, subject, session=None):
