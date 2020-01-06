@@ -45,6 +45,13 @@ def submit_fmriprep(studydir, subject):
     print(f"{colors.OK}│      running fmriprep{colors.END}")
     args = defaultdict(bool, registry_info(studydir).get("fmriprep", {}))
 
+    if os.environ.get("INSIDE_DOCKER", False) == "yes":
+        real_DICOMIN = os.environ["REAL_DICOMIN"]
+        real_studydir = studydir.replace(DICOMIN, real_DICOMIN)
+    else:
+        real_DICOMIN = DICOMIN
+        real_studydir = studydir
+
     # build the command line rather than call, because it does
     # a bunch of work in main I don't want to re-implement.
 
@@ -52,8 +59,11 @@ def submit_fmriprep(studydir, subject):
     s += ["/cm/shared/anaconda3/envs/rapidtide/bin/python3"]
     s += ["/home/ddrucker/mictools/micc_fmriprep.py"]
 
-    s += ["--bidsdir", studydir]
-    s += ["--workdir", pjoin(DICOMIN, "fmriprep-working", os.path.basename(studydir))]
+    s += ["--bidsdir", real_studydir]
+    s += [
+        "--workdir",
+        pjoin(real_DICOMIN, "fmriprep-working", os.path.basename(studydir)),
+    ]
     s += ["--participant", subject]
 
     for arg in ("aroma", "freesurfer", "anat-only", "dry-run"):
@@ -83,21 +93,14 @@ def submit_fmriprep(studydir, subject):
 
 
 def convert_to_nifti(studydir):
-    niftidir = pjoin(studydir, 'nifti')
-    dicomdir = pjoin(studydir, 'dicom')
-    os.rename(studydir, str(studydir) + '_')
-    os.mkdir(studydir)
+    niftidir = pjoin(studydir, "nifti")
+    dicomdir = pjoin(studydir, "dicom")
     os.mkdir(niftidir)
-    os.rename(str(studydir) + '_', dicomdir)
-    # so now we have /data/pipeline/studyname/nifti (empty)
-    # and            /data/pipeline/studyname/dicom (original contents)
-
     dcm = Dcm2niix()
     dcm.inputs.source_dir = dicomdir
     dcm.inputs.output_dir = niftidir
     dcm.inputs.out_filename = "%d_%s"
     dcm.run()
-    shutil.copyfile(pjoin(dicomdir, SMDNAME), pjoin(niftidir, SMDNAME))
 
 
 def convert_to_bids(studydir, subject, session=None):
@@ -113,12 +116,6 @@ def convert_to_bids(studydir, subject, session=None):
     os.makedirs(sourcedata_dir)
     os.makedirs(subject_dir)
 
-    # move data into sourcedata
-    for _ in os.listdir(studydir):
-        for extension in EXTENSIONS:
-            if _.endswith(extension):
-                os.rename(pjoin(studydir, _), pjoin(sourcedata_dir, _))
-
     open(pjoin(studydir, "dataset_description.json"), "w").write(
         """
         {
@@ -133,6 +130,12 @@ def convert_to_bids(studydir, subject, session=None):
     open(pjoin(studydir, "CHANGES"), "w").write("\n")
     open(pjoin(studydir, ".bidsignore"), "w").write(".STUDY_*\n.pipe_*\n")
 
+    # move data into sourcedata
+    for _ in ("nifti", "dicom"):
+        shutil.move(pjoin(studydir, _), sourcedata_dir)
+
+    niftidir = pjoin(sourcedata_dir, "nifti")
+
     bidsnames = registry_info(studydir)["bidsnames"]
     for scantype in bidsnames:  # ('anat', 'func')
         scantype_dir = pjoin(subject_dir, scantype)
@@ -141,7 +144,7 @@ def convert_to_bids(studydir, subject, session=None):
             # take only the latest; exclude _ph.nii.gz phase component
             scans = [
                 os.path.basename(_)
-                for _ in glob(pjoin(sourcedata_dir, scanname + "*[0-9].nii.gz"))
+                for _ in glob(pjoin(niftidir, scanname + "*[0-9].nii.gz"))
             ]
             if not scans:
                 print(f"{colors.WARN}No scans found named {scanname}.{colors.END}")
@@ -152,13 +155,13 @@ def convert_to_bids(studydir, subject, session=None):
                 basename += f"ses-{session}_"
             basename += bidsnames[scantype][scanname]
             shutil.copyfile(
-                pjoin(sourcedata_dir, source), pjoin(scantype_dir, basename + ".nii.gz")
+                pjoin(niftidir, source), pjoin(scantype_dir, basename + ".nii.gz")
             )
             print(f"{colors.OK}Copying {source} to {basename}.")
             for extension in EXTENSIONS:
                 try:
                     shutil.copyfile(
-                        pjoin(sourcedata_dir, source.replace(".nii.gz", extension)),
+                        pjoin(niftidir, source.replace(".nii.gz", extension)),
                         pjoin(scantype_dir, basename + extension),
                     )
                 except FileNotFoundError:

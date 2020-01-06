@@ -7,18 +7,20 @@ services:
     build: .
     command: bash -c "while true; do /miccpipe/run_pipeline_parts.py; sleep 15; done"
     volumes:
-      - ${DATA}:/data/pipeline
+      - ${DICOMIN}:/data/pipeline
       - /home/pipeline/.ssh:/pipeline.ssh:ro
       - /etc/nsswitch.conf:/etc/nsswitch.conf:ro
       - /var/run/nslcd/socket:/var/run/nslcd/socket:ro
     # run as pipeline user
     user: 1061:1095
+    environment:
+      - REAL_DICOMIN=${DICOMIN}
 
   finisher:
     build: .
     command: bash -c "while true; do /miccpipe/finish_pipe.py; sleep 15; done"
     volumes:
-      - ${DATA}:/data/pipeline
+      - ${DICOMIN}:/data/pipeline
       - /etc/nsswitch.conf:/etc/nsswitch.conf:ro
       - /var/run/nslcd/socket:/var/run/nslcd/socket:ro
       - /home/pipeline/.ssh:/pipeline.ssh:ro
@@ -32,7 +34,7 @@ services:
     # run as pipeline user
     user: 1061:1095
     volumes:
-        - ${DATA}:/data/pipeline
+        - ${DICOMIN}:/data/pipeline
     command: >
         storescp --output-directory /data/pipeline
             --verbose
@@ -48,4 +50,4 @@ services:
     ports:
       - ${WEBPORT}:80
     volumes:
-      - ${DATA}/registry:/data/pipeline/registry
+      - ${DICOMIN}/registry:/data/pipeline/registry

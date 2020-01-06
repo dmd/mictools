@@ -29,5 +29,11 @@ if __name__ == "__main__":
     ).strftime("%Y-%m-%d %H:%M")
     config["dicom"]["AccessionNumber"] = ds.AccessionNumber
 
-    config.write(open(pjoin(studydir, SMDNAME), "w"))
+    # move files into dicomdir
+    dicomdir = pjoin(studydir, "dicom")
+    os.rename(studydir, str(studydir) + "_")
+    os.mkdir(studydir)
+    os.rename(str(studydir) + "_", dicomdir)
+
     open(pjoin(studydir, ".pipe_ready"), "w").write("")
+    config.write(open(pjoin(studydir, SMDNAME), "w"))
