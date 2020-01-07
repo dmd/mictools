@@ -4,6 +4,12 @@ ssh x5backup "find /durga -not -name '.*' -maxdepth 1 -mindepth 1 -type d " | so
 ssh x5backup cat /opt/bacula/etc/conf.d/Director/x5backup-dir/Fileset/durga*|grep " File ="|cut -d\" -f2|sort > /tmp/x5-durga-dirs
 comm -23 /tmp/durga-dirs /tmp/x5-durga-dirs
 
+echo === The following DURGA-DATA dirs have no backup job ===
+ssh x5backup "find /durga/data -not -name '.*' -maxdepth 1 -mindepth 1 -type d " | sort  > /tmp/durga-data-dirs
+ssh x5backup cat /opt/bacula/etc/conf.d/Director/x5backup-dir/Fileset/durga-data*|grep " File ="|cut -d\" -f2|sort > /tmp/x5-durga-data-dirs
+comm -23 /tmp/durga-data-dirs /tmp/x5-durga-data-dirs
+
+
 echo === The following MICC dirs have no backup job ===
 ssh micc "find /data1 /data  -not -name '.*' -maxdepth 1 -mindepth 1  -type d "  | sort > /tmp/micc-data-dirs
 ssh x5backup 'cat /opt/bacula/etc/conf.d/Director/x5backup-dir/Fileset/micc-data-* /opt/bacula/etc/conf.d/Director/x5backup-dir/Fileset/micc-data1-*' |grep " File ="|cut -d\" -f2|sort > /tmp/x5-data-dirs
