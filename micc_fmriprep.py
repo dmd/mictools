@@ -36,6 +36,9 @@ def make_runscript(args):
     s += [f"--mem-mb {args.ramsize*1024}"]
     s += ["--notrack"]
 
+    if args.dummy_scans != 0:
+        s += [f"--dummy-scans {args.dummy_scans}"]
+
     if args.ignore:
         s += ["--ignore " + " ".join(args.ignore)]
 
@@ -116,6 +119,10 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--ncpus", help="Number of threads and cores. (Default: 4)", type=int, default=4
+    )
+
+    parser.add_argument(
+        "--dummy-scans", help="Number of dummy scans. (Default: 0)", type=int, default=0
     )
 
     parser.add_argument(
