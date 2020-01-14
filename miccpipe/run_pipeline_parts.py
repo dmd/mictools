@@ -66,7 +66,7 @@ def submit_fmriprep(studydir, subject):
     ]
     s += ["--participant", subject]
 
-    for arg in ("aroma", "freesurfer", "anat-only", "dry-run"):
+    for arg in ("aroma", "freesurfer", "anat-only", "longitudinal", "dry-run"):
         if args[arg]:
             s += ["--" + arg]
     for arg in ("ncpus", "ramsize", "output-spaces", "ignore", "dummy-scans"):
