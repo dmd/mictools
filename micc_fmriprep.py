@@ -54,6 +54,9 @@ def make_runscript(args):
     if not args.freesurfer:
         s += ["--fs-no-reconall"]
 
+    if args.longitudinal:
+        s += ["--longitudinal"]
+
     if args.verbose:
         s += ["-vvvv"]
 
@@ -132,6 +135,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--freesurfer",
         help="Enable FreeSurfer processing. (Default: off)",
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "--longitudinal",
+        help="Enable longitudinal anatomic processing (this will increase run time). (Default: off)",
         action="store_true",
     )
 
