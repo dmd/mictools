@@ -219,13 +219,15 @@ cue_mb6_gr2_3 = task-cue3_bold
     subject = args.subject
     session = args.session
     config = read_config(args.config)
-
-    t1anatfile = ""  # T1 must come before T2 in registry, or T2 defacing will fail
+    print(args.config)
+    t1anatfile = ""
     for scantype in config:  # ('anat', 'func')
         if scantype == "DEFAULT":  # ignore configparser silliness
             continue
 
-        for scanname in config[scantype]:
+        # sorted because T1 must be done before T2
+        for scanname, _ in sorted(config[scantype].items(), key=lambda x: x[1]):
+            print("=== scanname: " + scanname)
             dest, source = final_scan(
                 [
                     f
@@ -246,10 +248,11 @@ cue_mb6_gr2_3 = task-cue3_bold
                     destname = "_".join(
                         ["sub-" + subject, "ses-" + session, config[scantype][scanname]]
                     )
-
+                print("=== convert dicoms: " + destname)
                 convertdicoms(pjoin(dicomdir, source), destroot, destname)
 
                 if args.deface and config[scantype][scanname] == "T1w":
+                    print("=== defacing T1")
                     t1anatfile = pjoin(destroot, destname) + ".nii.gz"
                     defacecmd = [
                         "mri_deface",
@@ -259,9 +262,10 @@ cue_mb6_gr2_3 = task-cue3_bold
                         t1anatfile,
                     ]
                     subprocess.call(defacecmd)
-                    os.remove(Path(t1anatfile).with_suffix(".log").name)
+                    silentremove(Path(t1anatfile).with_suffix(".log").name)
 
                 if args.deface and config[scantype][scanname] == "T2w" and t1anatfile:
+                    print("=== defacing T2")
                     t2anatfile = pjoin(destroot, destname) + ".nii.gz"
                     subprocess.call(
                         [
@@ -306,6 +310,6 @@ cue_mb6_gr2_3 = task-cue3_bold
                             t2anatfile,
                         ]
                     )
-                    os.remove("t1mask.nii.gz")
-                    os.remove("t1tot2.mat")
-                    os.remove("t2mask.nii.gz")
+                    silentremove("t1mask.nii.gz")
+                    silentremove("t1tot2.mat")
+                    silentremove("t2mask.nii.gz")
