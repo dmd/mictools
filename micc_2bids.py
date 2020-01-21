@@ -4,9 +4,12 @@ import sys
 import argparse
 from argparse import RawTextHelpFormatter
 import re
+from pathlib import Path
 from os.path import join as pjoin
 import subprocess
 import errno
+
+FST = "/cm/shared/freesurfer-6.0.1/average/"
 
 
 def silentremove(filename):
@@ -140,6 +143,13 @@ if __name__ == "__main__":
         default="scantypes.ini",
     )
 
+    parser.add_argument(
+        "--no-deface",
+        help="Disable de-facing of high-res anatomicals (T1w, T2w).",
+        dest="deface",
+        action="store_false",
+    )
+
     mug.add_argument(
         "--config-help",
         help="Print a sample config file and then exit.",
@@ -210,6 +220,7 @@ cue_mb6_gr2_3 = task-cue3_bold
     session = args.session
     config = read_config(args.config)
 
+    t1anatfile = ""  # T1 must come before T2 in registry, or T2 defacing will fail
     for scantype in config:  # ('anat', 'func')
         if scantype == "DEFAULT":  # ignore configparser silliness
             continue
@@ -237,3 +248,64 @@ cue_mb6_gr2_3 = task-cue3_bold
                     )
 
                 convertdicoms(pjoin(dicomdir, source), destroot, destname)
+
+                if args.deface and config[scantype][scanname] == "T1w":
+                    t1anatfile = pjoin(destroot, destname) + ".nii.gz"
+                    defacecmd = [
+                        "mri_deface",
+                        t1anatfile,
+                        pjoin(FST, "talairach_mixed_with_skull.gca"),
+                        pjoin(FST, "face.gca"),
+                        t1anatfile,
+                    ]
+                    subprocess.call(defacecmd)
+                    os.remove(Path(t1anatfile).with_suffix(".log").name)
+
+                if args.deface and config[scantype][scanname] == "T2w" and t1anatfile:
+                    t2anatfile = pjoin(destroot, destname) + ".nii.gz"
+                    subprocess.call(
+                        [
+                            "flirt",
+                            "-in",
+                            t1anatfile,
+                            "-ref",
+                            t2anatfile,
+                            "-applyxfm",
+                            "-init",
+                            pjoin(os.environ["FSLDIR"], "data/atlases/bin/eye.mat"),
+                            "-omat",
+                            "t1tot2.mat",
+                        ]
+                    )
+                    subprocess.call(
+                        ["fslmaths", t1anatfile, "-thr", "1", "-bin", "t1mask"]
+                    )
+                    subprocess.call(
+                        [
+                            "flirt",
+                            "-in",
+                            "t1mask",
+                            "-ref",
+                            t2anatfile,
+                            "-applyxfm",
+                            "-init",
+                            "t1tot2.mat",
+                            "-out",
+                            "t2mask",
+                        ]
+                    )
+                    subprocess.call(
+                        [
+                            "fslmaths",
+                            "t2mask",
+                            "-mul",
+                            "2",
+                            "-bin",
+                            "-mul",
+                            t2anatfile,
+                            t2anatfile,
+                        ]
+                    )
+                    os.remove("t1mask.nii.gz")
+                    os.remove("t1tot2.mat")
+                    os.remove("t2mask.nii.gz")
