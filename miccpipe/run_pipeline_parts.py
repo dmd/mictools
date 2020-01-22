@@ -17,19 +17,11 @@ import numpy
 import hashlib
 import requests
 from tempfile import NamedTemporaryFile
-from registry import DICOMIN, registry_info, task_select
+from registry import DICOMIN, registry_info, task_select, colors, cprint
 from receiver_eostudy import SMDNAME, metadata
 from sub_ses_matcher import send_form_email, sheet_lookup
 
 SSH_COMMAND = "ssh -i /pipeline.ssh/id_ecdsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no pipeline@micc".split()
-
-
-class colors:
-    HEADER = "\033[95m"
-    OK = "\033[94m"
-    WARN = "\033[93m"
-    END = "\033[0m"
-    FAIL = "\033[91m"
 
 
 def final_scan(sourcenames):
@@ -42,7 +34,7 @@ def final_scan(sourcenames):
 
 
 def submit_fmriprep(studydir, subject):
-    print(f"{colors.OK}│      running fmriprep{colors.END}")
+    cprint(colors.OK, f"│      running fmriprep")
     args = defaultdict(bool, registry_info(studydir).get("fmriprep", {}))
 
     if os.environ.get("INSIDE_DOCKER", False) == "yes":
@@ -73,23 +65,25 @@ def submit_fmriprep(studydir, subject):
         if args[arg]:
             s += ["--" + arg, str(args[arg])]
 
-    print(f"{colors.OK}Running command: " + " ".join(s) + f"{colors.END}")
+    cprint(colors.OK, "Running command: " + " ".join(s))
 
     if os.environ.get("INSIDE_DOCKER", False) == "yes":
         # submit via ssh
-        print("Submitting job via ssh")
+        cprint(colors.OK, "Submitting job via ssh")
         s = SSH_COMMAND + s
-        print(s)
+        cprint(colors.OK, s)
 
     proc = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     stdout, stderr = proc.communicate()
     if b"has been submitted" in stdout:
         job_id = re.search(r"Your job (\d{6})", str(stdout)).group(1)
-        print(f"{colors.OK}Submitted job {job_id} to SGE{colors.END}")
+        cprint(colors.OK, f"Submitted job {job_id} to SGE")
         open(pjoin(studydir, ".pipe_sgejobid"), "w").write(job_id)
     else:
-        print(f"{colors.FAIL}Something went wrong submitting to the queue:")
-        print(f"STDOUT:\n{stdout}STDERR:\n{stderr}{colors.END}")
+        cprint(
+            colors.FAIL,
+            f"Something went wrong submitting to the queue:\nSTDOUT:\n{stdout}STDERR:\n{stderr}",
+        )
 
 
 def convert_to_nifti(studydir):
@@ -147,17 +141,14 @@ def convert_to_bids(studydir, subject, session=None):
                 for _ in glob(pjoin(niftidir, scanname + "*[0-9].nii.gz"))
             ]
             if not scans:
-                print(f"{colors.WARN}No scans found named {scanname}.{colors.END}")
+                cprint(colors.WARN, f"No scans found named {scanname}.")
                 continue
             source = final_scan(scans)
             basename = f"sub-{subject}_"
             if session:
                 basename += f"ses-{session}_"
             basename += bidsnames[scantype][scanname]
-            shutil.copyfile(
-                pjoin(niftidir, source), pjoin(scantype_dir, basename + ".nii.gz")
-            )
-            print(f"{colors.OK}Copying {source} to {basename}.")
+            cprint(colors.OK, f"Copying {source} to {basename}.")
             for extension in EXTENSIONS:
                 try:
                     shutil.copyfile(
@@ -184,34 +175,28 @@ def main():
         if tasks["bids"]:
             if not os.path.exists(pjoin(studydir, ".pipe_emailsent")):
                 send_form_email(studydir)
-                print(
-                    f"{colors.OK}Sending AccessionNumber form email request.{colors.END}"
-                )
-                print(
-                    f"{colors.WARN}Can't do any more work without that, so skipping.{colors.END}"
-                )
+                cprint(colors.OK, "Sending AccessionNumber form email request.")
+                cprint(colors.WARN, "Can't do any more work without that, so skipping.")
                 continue
             if not subject:
-                print(
-                    f"{colors.WARN}Didn't find {AccessionNumber} in sheet yet. Skipping.{colors.END}"
-                )
+                cprint(colors.WARN, f"{AccessionNumber} not yet in sheet. Skipping.")
                 continue
 
         os.remove(pjoin(studydir, ".pipe_ready"))
-        print(f"{colors.HEADER}START processing {studydir}{colors.END}")
+        cprint(colors.HEADER, f"START processing {studydir}")
 
         if tasks["nifti"]:
-            print(f"{colors.OK}Converting to nifti{colors.END}")
+            cprint(colors.OK, "Converting to nifti")
             convert_to_nifti(studydir)
         if tasks["bids"]:
-            print(f"{colors.OK}Organizing in BIDS format{colors.END}")
+            cprint(colors.OK, "Organizing in BIDS format")
             convert_to_bids(studydir, subject, session)
         if tasks["fmriprep"]:
             submit_fmriprep(studydir, subject)
-        print(f"{colors.HEADER}END {studydir}{colors.END}\n\n")
+        cprint(colors.HEADER, f"END {studydir}")
         open(pjoin(studydir, ".pipe_complete"), "a").close()
     if not list(ready_dirs):
-        print(f"{colors.OK}Nothing left to do.{colors.END}")
+        cprint(colors.OK, "Nothing left to do.")
 
 
 if __name__ == "__main__":

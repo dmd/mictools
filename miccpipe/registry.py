@@ -3,10 +3,18 @@ from os.path import join as pjoin
 from pathlib import Path
 import sys
 from glob import glob
-import receiver_eostudy
 import re
+import receiver_eostudy
 
 DICOMIN = "/data/pipeline"
+
+
+class colors:
+    HEADER = "\033[95m"
+    OK = "\033[94m"
+    WARN = "\033[93m"
+    END = "\033[0m"
+    FAIL = "\033[91m"
 
 
 def condensed_name(s):
@@ -26,6 +34,12 @@ def task_select(choice):
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+
+
+def cprint(color, *args, **kwargs):
+    print(color, end="")
+    print(*args, **kwargs, end="")
+    print(colors.END, flush=True)
 
 
 def registry_info(studydir):
