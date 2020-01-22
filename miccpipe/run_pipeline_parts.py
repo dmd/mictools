@@ -33,6 +33,56 @@ def final_scan(sourcenames):
     )[-1]
 
 
+def deface_t1(infile, outfile):
+    work = Path(outfile).parent
+    defacecmd = [
+        "/miccpipe/mri_deface",
+        infile,
+        "/miccpipe/talairach_mixed_with_skull.gca",
+        "/miccpipe/face.gca",
+        outfile,
+    ]
+    subprocess.call(defacecmd, cwd=work)
+    os.remove(Path(outfile).with_suffix(".log"))
+
+
+def deface_t2(infile, outfile, t1anatfile):
+    work = Path(infile).parent
+    subprocess.call(
+        ["/miccpipe/fslmaths", t1anatfile, "-thr", "1", "-bin", work / "t1mask"]
+    )
+    subprocess.call(
+        [
+            "/miccpipe/flirt",
+            "-in",
+            work / "t1mask",
+            "-ref",
+            infile,
+            "-applyxfm",
+            "-init",
+            "/miccpipe/eye.mat",
+            "-out",
+            work / "t2mask",
+        ],
+        cwd=work,
+    )
+    subprocess.call(
+        [
+            "/miccpipe/fslmaths",
+            work / "t2mask",
+            "-mul",
+            "2",
+            "-bin",
+            "-mul",
+            outfile,
+            outfile,
+        ],
+        cwd=work,
+    )
+    os.remove(work / "t1mask.nii.gz")
+    os.remove(work / "t2mask.nii.gz")
+
+
 def submit_fmriprep(studydir, subject):
     cprint(colors.OK, f"│      running fmriprep")
     args = defaultdict(bool, registry_info(studydir).get("fmriprep", {}))
@@ -131,10 +181,13 @@ def convert_to_bids(studydir, subject, session=None):
     niftidir = pjoin(sourcedata_dir, "nifti")
 
     bidsnames = registry_info(studydir)["bidsnames"]
+    deface = registry_info(studydir).get("deface", True)
+
+    t1anatfile = ""
     for scantype in bidsnames:  # ('anat', 'func')
         scantype_dir = pjoin(subject_dir, scantype)
         os.mkdir(scantype_dir)
-        for scanname in bidsnames[scantype]:
+        for scanname, _ in sorted(bidsnames[scantype].items(), key=lambda x: x[1]):
             # take only the latest; exclude _ph.nii.gz phase component
             scans = [
                 os.path.basename(_)
@@ -157,6 +210,16 @@ def convert_to_bids(studydir, subject, session=None):
                     )
                 except FileNotFoundError:
                     pass
+
+            anatfile = pjoin(scantype_dir, basename) + ".nii.gz"
+            if bidsnames[scantype][scanname] == "T1w" and deface:
+                cprint(colors.OK, f"Defacing {anatfile}")
+                t1anatfile = anatfile
+                deface_t1(anatfile, anatfile)
+
+            if bidsnames[scantype][scanname] == "T2w" and deface and t1anatfile:
+                cprint(colors.OK, f"Defacing {anatfile}")
+                deface_t2(anatfile, anatfile, t1anatfile)
 
 
 def main():
