@@ -268,20 +268,6 @@ cue_mb6_gr2_3 = task-cue3_bold
                     print("=== defacing T2")
                     t2anatfile = pjoin(destroot, destname) + ".nii.gz"
                     subprocess.call(
-                        [
-                            "flirt",
-                            "-in",
-                            t1anatfile,
-                            "-ref",
-                            t2anatfile,
-                            "-applyxfm",
-                            "-init",
-                            pjoin(os.environ["FSLDIR"], "data/atlases/bin/eye.mat"),
-                            "-omat",
-                            "t1tot2.mat",
-                        ]
-                    )
-                    subprocess.call(
                         ["fslmaths", t1anatfile, "-thr", "1", "-bin", "t1mask"]
                     )
                     subprocess.call(
@@ -293,7 +279,7 @@ cue_mb6_gr2_3 = task-cue3_bold
                             t2anatfile,
                             "-applyxfm",
                             "-init",
-                            "t1tot2.mat",
+                            pjoin(os.environ["FSLDIR"], "data/atlases/bin/eye.mat"),
                             "-out",
                             "t2mask",
                         ]
@@ -311,5 +297,4 @@ cue_mb6_gr2_3 = task-cue3_bold
                         ]
                     )
                     silentremove("t1mask.nii.gz")
-                    silentremove("t1tot2.mat")
                     silentremove("t2mask.nii.gz")
