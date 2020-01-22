@@ -74,7 +74,7 @@ def deface_t2(infile, outfile, t1anatfile):
             "2",
             "-bin",
             "-mul",
-            outfile,
+            infile,
             outfile,
         ],
         cwd=work,
