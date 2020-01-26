@@ -6,3 +6,6 @@ docker :
 
 clean :
 	rm $(notdir $(FSLREQS))
+
+start : docker
+	sudo systemctl restart micc-pipeline-container
