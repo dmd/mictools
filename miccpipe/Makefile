@@ -9,3 +9,6 @@ clean :
 
 start : docker
 	sudo systemctl restart micc-pipeline-container
+
+logs :
+	docker-compose logs -f --tail=10
