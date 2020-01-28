@@ -67,7 +67,7 @@ def email(studydir, address):
     short = studydir.replace(DICOMIN + "/", "")
     msg = EmailMessage()
     msg.set_content(
-        f"The MICC Pipeline has finished processing {studydir}.\n"
+        f"The MICC Pipeline has finished processing {studydir}\n"
         f"The acquisition time was {StudyDateTime}.\n"
         + subj_msg
         + "\n\nPlease note that this simply means the pipeline has no more work to do.\n"
