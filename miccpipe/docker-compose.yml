@@ -41,6 +41,7 @@ services:
             --sort-conc-studies PIPE
             --eostudy-timeout 10
             --aetitle MICCPIPE
+            --promiscuous
             --exec-on-eostudy '/miccpipe/receiver_eostudy.py #p' 11050
 
   web:
