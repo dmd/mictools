@@ -38,7 +38,7 @@ services:
     command: >
         storescp --output-directory /data/pipeline
             --verbose
-            --sort-on-patientname
+            --sort-conc-studies PIPE
             --eostudy-timeout 10
             --aetitle MICCPIPE
             --exec-on-eostudy '/miccpipe/receiver_eostudy.py #p' 11050
