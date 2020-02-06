@@ -1,3 +1,4 @@
 FROM pydicom/dicom
 MAINTAINER ddrucker@mclean.harvard.edu
-ADD receiver_eostudy.py /miccpipe/
+RUN conda install -y -c conda-forge pyyaml
+ADD registry.py eostudy_watch.py receiver_eostudy.py /miccpipe/

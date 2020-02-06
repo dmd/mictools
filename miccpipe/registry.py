@@ -7,6 +7,7 @@ import re
 import receiver_eostudy
 
 DICOMIN = "/data/pipeline"
+EOSTUDY_TIMEOUT = 60
 
 
 class colors:

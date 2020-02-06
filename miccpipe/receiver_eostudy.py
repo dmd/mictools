@@ -16,8 +16,7 @@ def metadata(studydir):
     return config["dicom"]
 
 
-if __name__ == "__main__":
-    studydir = sys.argv[1]
+def prepare_study(studydir):
     ds = pydicom.dcmread(glob(pjoin(studydir, "MR*"))[0])
 
     config = configparser.ConfigParser()
@@ -37,3 +36,7 @@ if __name__ == "__main__":
 
     open(pjoin(studydir, ".pipe_ready"), "w").write("")
     config.write(open(pjoin(studydir, SMDNAME), "w"))
+
+
+if __name__ == "__main__":
+    prepare_study(sys.argv[1])

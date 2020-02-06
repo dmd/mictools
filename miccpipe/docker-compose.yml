@@ -36,13 +36,14 @@ services:
     volumes:
         - ${DICOMIN}:/data/pipeline
     command: >
-        storescp --output-directory /data/pipeline
-            --verbose
-            --sort-conc-studies PIPE
-            --eostudy-timeout 10
-            --aetitle MICCPIPE
-            --promiscuous
-            --exec-on-eostudy '/miccpipe/receiver_eostudy.py #p' 11050
+        bash -c "storescp --output-directory /data/pipeline \
+            --verbose \
+            --sort-conc-studies PIPE \
+            --aetitle MICCPIPE \
+            --promiscuous \
+            --fork \
+            11050 & \
+            /miccpipe/eostudy_watch.py"
 
   web:
     build:
