@@ -59,6 +59,8 @@ def make_runscript(args):
 
     if args.verbose:
         s += ["-vvvv"]
+    else:
+        s += ["-vv"]
 
     if args.workdir != "__EMPTY__":
         s += [f"-w  {args.workdir}"]
