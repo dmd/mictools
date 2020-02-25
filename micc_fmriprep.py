@@ -31,7 +31,12 @@ def make_runscript(args):
     s += ["participant"]
     s += ["--fs-license-file /cm/shared/freesurfer-6.0.1/license.txt"]
     s += [f"--participant_label {args.participant}"]
-    s += [f"--output-spaces {' '.join(args.output_spaces)}"]
+
+    if isinstance(args.output_spaces, str):
+        s += [f"--output-spaces {args.output_spaces}"]
+    if isinstance(args.output_spaces, list):
+        s += [f"--output-spaces {' '.join(args.output_spaces)}"]
+
     s += [f"--n_cpus {args.ncpus}"]
     s += [f"--mem-mb {args.ramsize*1024}"]
     s += ["--notrack"]
