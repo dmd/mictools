@@ -154,7 +154,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--output-spaces",
-        help="Specify the output space. Enclose it in double quotes. "
+        help="Specify the output space(s), as a space-separated list."
         '(Default: "MNI152NLin2009cAsym:res-2 anat func fsaverage")',
         nargs="*",
         default="MNI152NLin2009cAsym:res-2 anat func fsaverage",
