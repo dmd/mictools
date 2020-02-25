@@ -31,7 +31,7 @@ def make_runscript(args):
     s += ["participant"]
     s += ["--fs-license-file /cm/shared/freesurfer-6.0.1/license.txt"]
     s += [f"--participant_label {args.participant}"]
-    s += [f'--output-spaces "{args.output_spaces}"']
+    s += [f"--output-spaces {' '.join(args.output_spaces)}"]
     s += [f"--n_cpus {args.ncpus}"]
     s += [f"--mem-mb {args.ramsize*1024}"]
     s += ["--notrack"]
@@ -156,6 +156,7 @@ if __name__ == "__main__":
         "--output-spaces",
         help="Specify the output space. Enclose it in double quotes. "
         '(Default: "MNI152NLin2009cAsym:res-2 anat func fsaverage")',
+        nargs="*",
         default="MNI152NLin2009cAsym:res-2 anat func fsaverage",
     )
 
