@@ -21,7 +21,7 @@ from registry import DICOMIN, registry_info, task_select, colors, cprint
 from receiver_eostudy import SMDNAME, metadata
 from sub_ses_matcher import send_form_email, sheet_lookup
 
-SSH_COMMAND = "ssh -i /pipeline.ssh/id_ecdsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no pipeline@micc".split()
+SSH_COMMAND = "ssh -i /pipeline.ssh/id_ecdsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o LogLevel=ERROR pipeline@micc".split()
 
 
 def final_scan(sourcenames):
