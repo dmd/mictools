@@ -58,6 +58,13 @@ def registry_info(studydir):
     for k in rawregistry:
         registry[condensed_name(k)] = rawregistry[k]
 
+    # resolve aliases
+    aliased = [sd for sd in registry if "alias" in registry[sd]]
+    for sd in aliased:
+        target = condensed_name(registry[sd]["alias"])
+        if target in registry:
+            registry[sd] = registry[target]
+
     if Path(DICOMIN) not in Path(studydir).resolve().parents:
         eprint(f"STUDYDIR {studydir} needs to be within DICOMIN {DICOMIN}")
         raise RuntimeError
