@@ -29,8 +29,9 @@ def registry_chown(studydir, reg_info):
     user = reg_info["user"]
     group = reg_info["group"]
     os.rename(pjoin(studydir, ".pipe_complete"), pjoin(studydir, ".pipe_chowned"))
-    _chown(studydir, getpwnam(user).pw_uid, getgrnam(group).gr_gid)
-    print(f"chowned {studydir} to {user}:{group}")
+    for p in studydir, pjoin(DICOMIN, "fmriprep-working", basename(studydir)):
+        _chown(p, getpwnam(user).pw_uid, getgrnam(group).gr_gid)
+        print(f"chowned {p} to {user}:{group}")
 
 
 def sge_job_running(job_id):
