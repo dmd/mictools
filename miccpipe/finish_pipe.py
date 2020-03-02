@@ -17,12 +17,13 @@ import receiver_eostudy
 
 
 def _chown(path, uid, gid):
-    os.chown(path, uid, gid)
-    for root, dirs, files in os.walk(path):
-        for _ in dirs:
-            os.chown(pjoin(root, _), uid, gid)
-        for _ in files:
-            os.chown(pjoin(root, _), uid, gid)
+    if os.path.exists(path):
+        os.chown(path, uid, gid)
+        for root, dirs, files in os.walk(path):
+            for _ in dirs:
+                os.chown(pjoin(root, _), uid, gid)
+            for _ in files:
+                os.chown(pjoin(root, _), uid, gid)
 
 
 def registry_chown(studydir, reg_info):
