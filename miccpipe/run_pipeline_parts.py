@@ -111,7 +111,14 @@ def submit_fmriprep(studydir, subject):
     for arg in ("aroma", "freesurfer", "anat-only", "longitudinal", "dry-run"):
         if args[arg]:
             s += ["--" + arg]
-    for arg in ("ncpus", "ramsize", "output-spaces", "ignore", "dummy-scans"):
+    for arg in (
+        "ncpus",
+        "ramsize",
+        "output-spaces",
+        "ignore",
+        "dummy-scans",
+        "fmriprep-container",
+    ):
         if args[arg]:
             s += ["--" + arg, str(args[arg])]
 
