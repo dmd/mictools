@@ -100,7 +100,7 @@ def submit_fmriprep(studydir, subject):
     s = []
     s += ["/cm/shared/anaconda3/envs/rapidtide/bin/python3"]
     s += ["/home/ddrucker/mictools/micc_fmriprep.py"]
-
+    s += ["--jobname", registry_info(studydir).get("user")]
     s += ["--bidsdir", real_studydir]
     s += [
         "--workdir",

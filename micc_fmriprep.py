@@ -172,6 +172,12 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--jobname",
+        help='Name of the SGE job. (Default: "fmriprep")',
+        default="fmriprep",
+    )
+
+    parser.add_argument(
         "--dry-run",
         help="Do not actually submit the job; just show what would be submitted.",
         action="store_true",
@@ -231,7 +237,7 @@ if __name__ == "__main__":
     print(script)
     print("================")
 
-    qsub_cmd = f"{QSUB} -cwd -q fmriprep.q -N fmriprep -pe fmriprep {args.ncpus} -w e -R y {filename}".split()
+    qsub_cmd = f"{QSUB} -cwd -q fmriprep.q -N {args.jobname} -pe fmriprep {args.ncpus} -w e -R y {filename}".split()
     print(qsub_cmd)
     if args.dry_run:
         print("NOT running; dry run only.")
