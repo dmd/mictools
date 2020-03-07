@@ -34,6 +34,7 @@ services:
       - /etc/nsswitch.conf:/etc/nsswitch.conf:ro
       - /var/run/nslcd/socket:/var/run/nslcd/socket:ro
       - /home/pipeline/.ssh:/pipeline.ssh:ro
+      - /home/pipeline:/home/pipeline:ro
 
   receiver:
     build:

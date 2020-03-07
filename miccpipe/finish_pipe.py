@@ -35,6 +35,22 @@ def registry_chown(studydir, reg_info):
         print(f"chowned {p} to {user}:{group}")
 
 
+def fmriprep_job_errorfree(job_id):
+    errorfile = glob("/home/pipeline/*e" + job_id)
+    if len(errorfile) != 1:
+        print(f"Could not find job error output for jobid {job_id}")
+        return False
+    else:
+        errorfile = errorfile[0]
+
+    try:
+        with open(errorfile) as f:
+            return "fMRIPrep finished without errors" in f.read()
+    except:
+        print(f"something went wrong trying to look in the errorfile {errorfile}")
+        return False
+
+
 def sge_job_running(job_id):
     cmd = ["/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qstat", "-u", '"*"']
     if os.environ.get("INSIDE_DOCKER", False) == "yes":
@@ -54,17 +70,23 @@ def sge_job_running(job_id):
 def fmriprep_running(studydir):
     job_id_file = pjoin(studydir, ".pipe_sgejobid")
     if not os.path.exists(job_id_file):
-        return False
+        print(f"job_id_file {job_id_file} not found")
+        return False, False
     job_id = open(job_id_file).read()
-    return sge_job_running(job_id)
+    return sge_job_running(job_id), fmriprep_job_errorfree(job_id)
 
 
-def email(studydir, address):
+def email(studydir, address, fmriprep_was_errorfree):
     StudyDateTime = receiver_eostudy.metadata(studydir)["StudyDateTime"]
     subjdir = glob(studydir + "/sub-*")
     subj_msg = ""
     if subjdir:
         subj_msg = "Subject ID used: " + basename(subjdir[0])
+
+    if fmriprep_was_errorfree:
+        fwe = "fMRIPrep claimed to complete without errors.\n"
+    else:
+        fwe = "It looks like fMRIPrep did NOT complete successfully. Check the logs for details.\n"
 
     short = studydir.replace(DICOMIN + "/", "")
     msg = EmailMessage()
@@ -74,7 +96,8 @@ def email(studydir, address):
         + subj_msg
         + "\n\nPlease note that this simply means the pipeline has no more work to do.\n"
         "It does NOT necessarily mean that everything succeeded!\n"
-        "You must check your data.\n\n"
+        + fwe
+        + "No matter what, it is up to you to check your data.\n\n"
         "You MUST move your data out of " + DICOMIN + " to your own data area.\n"
         "Data left in "
         + DICOMIN
@@ -97,12 +120,12 @@ if __name__ == "__main__":
     for p in Path(DICOMIN).glob("*/" + ".pipe_complete"):
         studydir = str(p.parent)
 
-        fmriprep_jobstatus = fmriprep_running(studydir)
+        fmriprep_is_running, fmriprep_was_errorfree = fmriprep_running(studydir)
 
-        if fmriprep_jobstatus:
+        if fmriprep_is_running:
             print(f"not chowning {studydir} yet; fmriprep job incomplete")
             continue
         reg_info = registry_info(studydir)
         registry_chown(studydir, reg_info)
         if "email" in reg_info:
-            email(studydir, reg_info["email"])
+            email(studydir, reg_info["email"], fmriprep_was_errorfree)
