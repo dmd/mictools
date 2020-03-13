@@ -1,8 +1,6 @@
 #!/bin/bash
 # Extremly simplistic tool to merge subjects from one BIDS directory into another
 
-set -e 
-
 if [ "$#" -ne 2 ] || ! [ -d "$1" ] || ! [ -d "$2" ]; then
   echo "Usage: $0 SOURCEDIR DESTDIR" >&2
   exit 1
@@ -24,10 +22,10 @@ echo mkdir -p "${DEST}"/sourcedata/ \
          "${DEST}"/derivatives/freesurfer/fsaverage/ \
          "${DEST}"/derivatives/fmriprep/logs/
 
-/bin/mv -i "${SOURCE}"/sub-* "${DEST}"/
-/bin/mv -i "${SOURCE}"/sourcedata/sub-* "${DEST}"/sourcedata/
-/bin/mv -i "${SOURCE}"/derivatives/freesurfer/sub-* "${DEST}"/derivatives/freesurfer/
-/bin/mv -i "${SOURCE}"/derivatives/fmriprep/sub-* "${DEST}"/derivatives/fmriprep/
+/bin/mv -v "${SOURCE}"/sub-* "${DEST}"/
+/bin/mv -v "${SOURCE}"/sourcedata/sub-* "${DEST}"/sourcedata/
+/bin/mv -v "${SOURCE}"/derivatives/freesurfer/sub-* "${DEST}"/derivatives/freesurfer/
+/bin/mv -v "${SOURCE}"/derivatives/fmriprep/sub-* "${DEST}"/derivatives/fmriprep/
 
 # /bin/rsync -a --delete "${SOURCE}"/derivatives/fmriprep/logs/ "${DEST}"/derivatives/fmriprep/logs/
 # /bin/rsync -a --delete "${SOURCE}"/derivatives/freesurfer/fsaverage/ "${DEST}"/derivatives/freesurfer/fsaverage/
