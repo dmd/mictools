@@ -109,7 +109,7 @@ if __name__ == "__main__":
     )
 
     required = parser.add_argument_group("required arguments")
-    donttouch = parser.add_argument_group("You don't need to touch these")
+    versioning = parser.add_argument_group("Version")
 
     parser.add_argument(
         "--aroma", help="Turn on AROMA processing. (Default: off)", action="store_true"
@@ -214,7 +214,7 @@ if __name__ == "__main__":
         "--participant", help="Participant label.", required=True, type=str
     )
 
-    donttouch.add_argument(
+    versioning.add_argument(
         "--fmriprep-container",
         help="Path to the fMRIPrep container. "
         'Default: "/cm/shared/singularity/images/fmriprep-20.0.4.simg"',
