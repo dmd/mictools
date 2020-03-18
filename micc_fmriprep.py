@@ -56,6 +56,9 @@ def make_runscript(args):
     if args.anat_only:
         s += ["--anat-only"]
 
+    if args.skip_bids_validation:
+        s += ["--skip_bids_validation"]
+
     if not args.freesurfer:
         s += ["--fs-no-reconall"]
 
@@ -140,6 +143,10 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--skip_bids_validation", help="Skip BIDS validation.", action="store_true"
+    )
+
+    parser.add_argument(
         "--freesurfer",
         help="Enable FreeSurfer processing. (Default: off)",
         action="store_true",
@@ -210,8 +217,8 @@ if __name__ == "__main__":
     donttouch.add_argument(
         "--fmriprep-container",
         help="Path to the fMRIPrep container. "
-        'Default: "/cm/shared/singularity/images/fmriprep-latest.simg"',
-        default="/cm/shared/singularity/images/fmriprep-latest.simg",
+        'Default: "/cm/shared/singularity/images/fmriprep-20.0.4.simg"',
+        default="/cm/shared/singularity/images/fmriprep-20.0.4.simg",
     )
 
     args = parser.parse_args()
