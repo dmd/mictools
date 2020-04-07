@@ -22,6 +22,7 @@ def prepare_study(studydir):
     config = configparser.ConfigParser()
     config["dicom"] = {}
     config["dicom"]["StudyDescription"] = ds.StudyDescription
+    config["dicom"]["ReferringPhysicianName"] = str(ds.ReferringPhysicianName)
     config["dicom"]["StudyInstanceUID"] = ds.StudyInstanceUID
     config["dicom"]["StudyDateTime"] = datetime.strptime(
         ds.StudyDate + ds.StudyTime, "%Y%m%d%H%M%S.%f"
