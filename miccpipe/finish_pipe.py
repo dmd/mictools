@@ -29,10 +29,10 @@ def _chown(path, uid, gid):
 def registry_chown(studydir, reg_info):
     user = reg_info["user"]
     group = reg_info["group"]
-    os.rename(pjoin(studydir, ".pipe_complete"), pjoin(studydir, ".pipe_chowned"))
     for p in studydir, pjoin(DICOMIN, "fmriprep-working", basename(studydir)):
         _chown(p, getpwnam(user).pw_uid, getgrnam(group).gr_gid)
         print(f"chowned {p} to {user}:{group}")
+    os.rename(pjoin(studydir, ".pipe_complete"), pjoin(studydir, ".pipe_chowned"))
 
 
 def fmriprep_job_errorfree(job_id):
@@ -52,6 +52,7 @@ def fmriprep_job_errorfree(job_id):
 
 
 def sge_job_running(job_id):
+    print(f"checking sge_job_running for {job_id}")
     cmd = ["/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qstat", "-u", '"*"']
     if os.environ.get("INSIDE_DOCKER", False) == "yes":
         cmd = SSH_COMMAND + cmd
@@ -120,12 +121,14 @@ if __name__ == "__main__":
     for p in Path(DICOMIN).glob("*/" + ".pipe_complete"):
         studydir = str(p.parent)
 
+        print(f"checking fmriprep_running for {studydir}")
         fmriprep_is_running, fmriprep_was_errorfree = fmriprep_running(studydir)
 
         if fmriprep_is_running:
             print(f"not chowning {studydir} yet; fmriprep job incomplete")
             continue
         reg_info = registry_info(studydir)
+        print(f"chowning {studydir}")
         registry_chown(studydir, reg_info)
         if "email" in reg_info:
             email(studydir, reg_info["email"], fmriprep_was_errorfree)
