@@ -6,6 +6,6 @@ if [ -z "$DIRS" ]; then
     echo "Nothing to do." >&2
     exit;
 fi
-RMDIRS=$(find /data/pipeline/PI* /data/pipeline/fmriprep-working/PI* -maxdepth 0 -ctime +${DAYS} -exec echo rm -rf {} \;)
+RMDIRS=$(find /data/pipeline/PI* /data/pipeline/fmriprep-working/PI* -maxdepth 0 -ctime +${DAYS} -exec echo rm -rf {} \& \;)
 
 echo -e "Ready for cleanup: \n\n$(ls -ld ${DIRS})\n\nRun:\n\n${RMDIRS}" | Mail -s "pipeline cleanup" ddrucker@mclean.harvard.edu 
