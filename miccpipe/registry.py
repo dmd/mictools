@@ -70,12 +70,19 @@ def registry_info(studydir):
         raise RuntimeError
 
     StudyDescription = receiver_eostudy.metadata(studydir)["StudyDescription"]
-
-    if condensed_name(StudyDescription) not in registry:
-        eprint(f"{StudyDescription} not found in registry")
-        raise KeyError
+    ReferringPhysicianName = receiver_eostudy.metadata(studydir).get(
+        "ReferringPhysicianName", "NA"
+    )
 
     config = dict(registry["DEFAULT"])
-    config.update(registry[condensed_name(StudyDescription)])
+    if "RPN" + condensed_name(ReferringPhysicianName) in registry:
+        config.update(registry["RPN" + condensed_name(ReferringPhysicianName)])
+    elif condensed_name(StudyDescription) in registry:
+        config.update(registry[condensed_name(StudyDescription)])
+    else:
+        eprint(
+            f"neither RPN{ReferringPhysicianName} nor {StudyDescription} found in registry"
+        )
+        raise KeyError
 
     return config

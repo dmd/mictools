@@ -217,8 +217,8 @@ if __name__ == "__main__":
     versioning.add_argument(
         "--fmriprep-container",
         help="Path to the fMRIPrep container. "
-        'Default: "/cm/shared/singularity/images/fmriprep-20.0.5.simg"',
-        default="/cm/shared/singularity/images/fmriprep-20.0.5.simg",
+        'Default: "/cm/shared/singularity/images/fmriprep-20.0.6.simg"',
+        default="/cm/shared/singularity/images/fmriprep-20.0.6.simg",
     )
 
     args = parser.parse_args()
