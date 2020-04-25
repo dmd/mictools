@@ -20,6 +20,7 @@ from tempfile import NamedTemporaryFile
 from registry import DICOMIN, registry_info, task_select, colors, cprint
 from receiver_eostudy import SMDNAME, metadata
 from sub_ses_matcher import send_form_email, sheet_lookup
+from preprocess import preprocess
 
 SSH_COMMAND = "ssh -i /pipeline.ssh/id_ecdsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o LogLevel=ERROR pipeline@micc".split()
 
@@ -207,7 +208,8 @@ def convert_to_bids(studydir, subject, session=None):
             basename = f"sub-{subject}_"
             if session:
                 basename += f"ses-{session}_"
-            basename += bidsnames[scantype][scanname]
+            bidsbase = bidsnames[scantype][scanname]
+            basename += bidsbase
             cprint(colors.OK, f"Copying {source} to {basename}.")
             for extension in EXTENSIONS:
                 try:
@@ -215,9 +217,11 @@ def convert_to_bids(studydir, subject, session=None):
                         pjoin(niftidir, source.replace(".nii.gz", extension)),
                         pjoin(scantype_dir, basename + extension),
                     )
+                    preprocess(studydir, scantype_dir, basename, extension, bidsbase)
                 except FileNotFoundError:
                     pass
 
+            # deface if requested
             anatfile = pjoin(scantype_dir, basename) + ".nii.gz"
             if bidsnames[scantype][scanname] == "T1w" and deface:
                 cprint(colors.OK, f"Defacing {anatfile}")
@@ -237,6 +241,10 @@ def main():
             tasks = task_select(registry_info(studydir)["run"])
         except (RuntimeError, KeyError):
             continue
+
+        if tasks["ignore"]:
+            return
+
         AccessionNumber = metadata(studydir)["AccessionNumber"]
         subject, session = sheet_lookup(AccessionNumber)
         if subject:

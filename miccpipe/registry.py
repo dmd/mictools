@@ -23,7 +23,11 @@ def condensed_name(s):
 
 
 def task_select(choice):
-    tasks = {"nifti": False, "bids": False, "fmriprep": False}
+    tasks = {"ignore": False, "nifti": False, "bids": False, "fmriprep": False}
+    if choice in ("ignore",):
+        tasks["ignore"] = True
+        return tasks
+
     if choice in ("nifti", "bids", "fmriprep"):
         tasks["nifti"] = True
     if choice in ("bids", "fmriprep"):

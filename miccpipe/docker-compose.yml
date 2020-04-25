@@ -3,7 +3,6 @@
 version: '3'
 services:
   logview:
-    container_name: dozzle
     image: amir20/dozzle:latest
     environment:
       - DOZZLE_TAILSIZE=100
@@ -11,7 +10,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - 11060:8080
+      - ${LOGVIEW}:8080
 
   runner:
     build: .

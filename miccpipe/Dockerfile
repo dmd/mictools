@@ -41,8 +41,11 @@ ADD finish_pipe.py \
      run_pipeline_parts.py \
      sub_ses_matcher.py \
      receiver_eostudy.py \
+     preprocess.py \
      flirt \
      fslmaths \
+     fslroi \
      eye.mat \
      /miccpipe/
 
+ENV PATH="/miccpipe:${PATH}"
