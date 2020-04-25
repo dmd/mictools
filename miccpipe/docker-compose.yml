@@ -11,7 +11,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - 11060:8080
+      - ${LOGVIEW}:8080
 
   runner:
     build: .
