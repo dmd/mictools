@@ -16,7 +16,7 @@ while True:
     # - written in the last day
     # There is probably a race condition here if multiple copies of this
     # were run in parallel.
-    
+
     dirs = [
         f.path
         for f in os.scandir(DICOMIN)
