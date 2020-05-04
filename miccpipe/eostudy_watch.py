@@ -28,6 +28,11 @@ while True:
     ]
 
     for d in dirs:
-        prepare_study(d)
+        try:
+            prepare_study(d)
+        except IndexError:
+            # IndexError is raised if there are no MR* files
+            print(f"No MR* files in studydir {d}")
+            pass
 
     time.sleep(15)
