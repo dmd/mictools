@@ -22,8 +22,10 @@ def _chown(path, uid, gid):
         for root, dirs, files in os.walk(path):
             for _ in dirs:
                 os.chown(pjoin(root, _), uid, gid)
+                os.chmod(pjoin(root, _), 0o770)
             for _ in files:
                 os.chown(pjoin(root, _), uid, gid)
+                os.chmod(pjoin(root, _), 0o660)
 
 
 def registry_chown(studydir, reg_info):
