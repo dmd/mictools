@@ -14,7 +14,7 @@ services:
 
   runner:
     build: .
-    command: bash -c "while true; do /miccpipe/run_pipeline_parts.py; sleep 15; done"
+    command: bash -c "while true; do /miccpipe/run_pipeline_parts.py; sleep 60; done"
     volumes:
       - ${DICOMIN}:/data/pipeline
       - /home/pipeline/.ssh:/pipeline.ssh:ro
@@ -27,7 +27,7 @@ services:
 
   finisher:
     build: .
-    command: bash -c "while true; do /miccpipe/finish_pipe.py; sleep 15; done"
+    command: bash -c "while true; do /miccpipe/finish_pipe.py; sleep 60; done"
     volumes:
       - ${DICOMIN}:/data/pipeline
       - /etc/nsswitch.conf:/etc/nsswitch.conf:ro
