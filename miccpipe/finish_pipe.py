@@ -19,6 +19,7 @@ import receiver_eostudy
 def _chown(path, uid, gid):
     if os.path.exists(path):
         os.chown(path, uid, gid)
+        os.chmod(path, 0o770)
         for root, dirs, files in os.walk(path):
             for _ in dirs:
                 os.chown(pjoin(root, _), uid, gid)
