@@ -20,7 +20,7 @@ def make_runscript(args):
     pre = []
 
     s = []
-    s += ["/cm/shared/singularity/bin/singularity run"]
+    s += ["/usr/bin/singularity run"]
     s += ["--contain"]
     s += ["--cleanenv"]
     s += ["-B /tmp -B /data -B /data1 -B /data2 -B /data3 -B /cm/shared"]
