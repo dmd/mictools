@@ -25,7 +25,7 @@ def make_runscript(args):
     s += ["--cleanenv"]
     s += ["-B /tmp -B /data -B /data1 -B /data2 -B /data3 -B /cm/shared"]
 
-    s += [args.fmriprep_container]
+    s += [f"/cm/shared/singularity/images/fmriprep-{args.fmriprep_version}.simg"]
     s += [args.bidsdir]
     s += [args.outputdir]
     s += ["participant"]
@@ -215,13 +215,18 @@ if __name__ == "__main__":
     )
 
     versioning.add_argument(
-        "--fmriprep-container",
-        help="Path to the fMRIPrep container. "
-        'Default: "/cm/shared/singularity/images/fmriprep-20.0.6.simg"',
-        default="/cm/shared/singularity/images/fmriprep-20.0.6.simg",
+        "--fmriprep-version",
+        help="fmriprep version number. Default: 20.0.6",
+        default="20.0.6",
     )
 
     args = parser.parse_args()
+
+    if not os.path.exists(
+        f"/cm/shared/singularity/images/fmriprep-{args.fmriprep_version}.simg"
+    ):
+        print(f"MICC does not have fmriprep version {args.fmriprep_version} installed.")
+        sys.exit(1)
 
     # apparently fmriprep has trouble if you run this from inside BIDS dir
     if (

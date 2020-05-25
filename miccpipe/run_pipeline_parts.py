@@ -118,7 +118,7 @@ def submit_fmriprep(studydir, subject):
         "output-spaces",
         "ignore",
         "dummy-scans",
-        "fmriprep-container",
+        "fmriprep-version",
     ):
         if args[arg]:
             s += ["--" + arg, str(args[arg])]
