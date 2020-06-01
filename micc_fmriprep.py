@@ -18,7 +18,9 @@ def make_runscript(args):
         args.outputdir = pjoin(args.bidsdir, "derivatives")
 
     pre = []
-
+    pre += [
+        "export SINGULARITYENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"
+    ]
     s = []
     s += ["/usr/bin/singularity run"]
     s += ["--contain"]
