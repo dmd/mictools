@@ -39,19 +39,44 @@ def registry_chown(studydir, reg_info):
 
 
 def fmriprep_job_errorfree(job_id):
-    errorfile = glob("/home/pipeline/*e" + job_id)
-    if len(errorfile) != 1:
-        print(f"Could not find job error output for jobid {job_id}")
-        return False
-    else:
-        errorfile = errorfile[0]
+    errorfree = False
 
-    try:
-        with open(errorfile) as f:
-            return "fMRIPrep finished without errors" in f.read()
-    except:
-        print(f"something went wrong trying to look in the errorfile {errorfile}")
-        return False
+    # two possible places this can be.  we will set to True
+    # if we can find the text in one of the two places.
+
+    # it can be in the error file, with one phrasing
+    e_file = glob("/home/pipeline/*e" + job_id)
+    e_text = "fMRIPrep finished without errors"
+
+    # or it can be in the output file, with a different phrasing
+    o_file = glob("/home/pipeline/*o" + job_id)
+    o_text = "fMRIPrep finished successfully"
+
+    if len(e_file) != 1:
+        print(f"Could not find job error output for jobid {job_id}")
+    else:
+        e_file = e_file[0]
+
+        try:
+            with open(e_file) as f:
+                if e_text in f.read():
+                    errorfree = True
+        except:
+            print(f"something went wrong trying to look in the error file {e_file}")
+
+    if len(o_file) != 1:
+        print(f"Could not find job output for jobid {job_id}")
+    else:
+        o_file = o_file[0]
+
+        try:
+            with open(o_file) as f:
+                if o_text in f.read():
+                    errorfree = True
+        except:
+            print(f"something went wrong trying to look in the output file {o_file}")
+
+    return errorfree
 
 
 def sge_job_running(job_id):
