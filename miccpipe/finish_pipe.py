@@ -146,7 +146,10 @@ if __name__ == "__main__":
         eprint("This program must run as root in order to chown study directories.")
         sys.exit(1)
 
+    print("running finisher")
+    check = False
     for p in Path(DICOMIN).glob("*/" + ".pipe_complete"):
+        check = True
         studydir = str(p.parent)
 
         print(f"checking fmriprep_running for {studydir}")
@@ -160,3 +163,5 @@ if __name__ == "__main__":
         registry_chown(studydir, reg_info)
         if "email" in reg_info:
             email(studydir, reg_info["email"], fmriprep_was_errorfree)
+    if not check:
+        print("no work to do - no .pipe_complete files found")
