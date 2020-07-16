@@ -7,6 +7,9 @@ import csv
 from email.message import EmailMessage
 from registry import registry_info, task_select, DICOMIN
 from receiver_eostudy import metadata
+import logging
+
+logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 
 SHEET = "http://micc.mclean.harvard.edu:11051/?AccessionNumber="
 SHEETFILE = pjoin(DICOMIN, "registry", "accession.csv")
@@ -18,10 +21,10 @@ def sheet_lookup(AccessionNumber):
         mapping[row[0]] = row[1], row[2]
 
     if AccessionNumber in mapping:
-        print(f"Found {mapping[AccessionNumber]} for {AccessionNumber}")
+        logging.info(f"Found {mapping[AccessionNumber]} for {AccessionNumber}")
         return mapping[AccessionNumber]
     else:
-        print(f"Did not find {AccessionNumber} in sheet.")
+        logging.warning(f"Did not find {AccessionNumber} in sheet.")
         return (None, None)
 
 
@@ -32,11 +35,13 @@ def send_form_email(studydir):
     reg_info = registry_info(studydir)
     tasks = task_select(reg_info["run"])
     if not tasks["bids"]:
-        print("Not doing BIDS, so not sending email.")
+        logging.info("Not doing BIDS, so not sending email.")
         return
 
     if tasks["bids"] and "email" not in reg_info:
-        print("Error: I need to send email, but there isn't one in the registry.")
+        logging.warning(
+            "Error: I need to send email, but there isn't one in the registry."
+        )
         return
 
     address = reg_info["email"]
@@ -63,5 +68,5 @@ def send_form_email(studydir):
     s = smtplib.SMTP("phsmgout.partners.org")
     s.send_message(msg)
     s.quit()
-    print(f"Sent form request email for {AccessionNumber} to {address}")
+    logging.info(f"Sent form request email for {AccessionNumber} to {address}")
     open(pjoin(studydir, ".pipe_emailsent"), "a").write("")

@@ -5,17 +5,12 @@ import sys
 from glob import glob
 import re
 import receiver_eostudy
+import logging
+
+logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 
 DICOMIN = "/data/pipeline"
 EOSTUDY_TIMEOUT = 60
-
-
-class colors:
-    HEADER = "\033[95m"
-    OK = "\033[94m"
-    WARN = "\033[93m"
-    END = "\033[0m"
-    FAIL = "\033[91m"
 
 
 def condensed_name(s):
@@ -37,16 +32,6 @@ def task_select(choice):
     return tasks
 
 
-def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
-
-
-def cprint(color, *args, **kwargs):
-    print(color, end="")
-    print(*args, **kwargs, end="")
-    print(colors.END, flush=True)
-
-
 def registry_info(studydir):
     rawregistry = {}
     registry = {}
@@ -55,7 +40,7 @@ def registry_info(studydir):
         try:
             rawregistry.update(yaml.safe_load(open(_)))
         except:
-            eprint(f"Failed to load {_}, continuing without it.")
+            logging.warning(f"Failed to load {_}, continuing without it.")
             continue
 
     # condense to alphanumeric
@@ -70,7 +55,7 @@ def registry_info(studydir):
             registry[sd] = registry[target]
 
     if Path(DICOMIN) not in Path(studydir).resolve().parents:
-        eprint(f"STUDYDIR {studydir} needs to be within DICOMIN {DICOMIN}")
+        logging.critical(f"STUDYDIR {studydir} needs to be within DICOMIN {DICOMIN}")
         raise RuntimeError
 
     StudyDescription = receiver_eostudy.metadata(studydir)["StudyDescription"]
@@ -84,7 +69,7 @@ def registry_info(studydir):
     elif condensed_name(StudyDescription) in registry:
         config.update(registry[condensed_name(StudyDescription)])
     else:
-        eprint(
+        logging.warning(
             f"neither RPN{ReferringPhysicianName} nor {StudyDescription} found in registry"
         )
         raise KeyError

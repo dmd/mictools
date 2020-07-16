@@ -17,10 +17,13 @@ import numpy
 import hashlib
 import requests
 from tempfile import NamedTemporaryFile
-from registry import DICOMIN, registry_info, task_select, colors, cprint
+from registry import DICOMIN, registry_info, task_select
 from receiver_eostudy import SMDNAME, metadata
 from sub_ses_matcher import send_form_email, sheet_lookup
 from preprocess import preprocess
+import logging
+
+logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 
 SSH_COMMAND = "ssh -i /pipeline.ssh/id_ecdsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o LogLevel=ERROR pipeline@micc".split()
 
@@ -85,7 +88,7 @@ def deface_t2(infile, outfile, t1anatfile):
 
 
 def submit_fmriprep(studydir, subject):
-    cprint(colors.OK, f"│      running fmriprep")
+    logging.info(f"*** running fmriprep")
     args = defaultdict(bool, registry_info(studydir).get("fmriprep", {}))
 
     if os.environ.get("INSIDE_DOCKER", False) == "yes":
@@ -123,24 +126,23 @@ def submit_fmriprep(studydir, subject):
         if args[arg]:
             s += ["--" + arg, str(args[arg])]
 
-    cprint(colors.OK, "Running command: " + " ".join(s))
+    logging.info("Running command: " + " ".join(s))
 
     if os.environ.get("INSIDE_DOCKER", False) == "yes":
         # submit via ssh
-        cprint(colors.OK, "Submitting job via ssh")
+        logging.info("Submitting job via ssh")
         s = SSH_COMMAND + s
-        cprint(colors.OK, s)
+        logging.info(s)
 
     proc = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     stdout, stderr = proc.communicate()
     if b"has been submitted" in stdout:
         job_id = re.search(r"Your job (\d{6})", str(stdout)).group(1)
-        cprint(colors.OK, f"Submitted job {job_id} to SGE")
+        logging.info(f"Submitted job {job_id} to SGE")
         open(pjoin(studydir, ".pipe_sgejobid"), "w").write(job_id)
     else:
-        cprint(
-            colors.FAIL,
-            f"Something went wrong submitting to the queue:\nSTDOUT:\n{stdout}STDERR:\n{stderr}",
+        logging.warning(
+            f"Something went wrong submitting to the queue:\nSTDOUT:\n{stdout}STDERR:\n{stderr}"
         )
 
 
@@ -202,7 +204,7 @@ def convert_to_bids(studydir, subject, session=None):
                 for _ in glob(pjoin(niftidir, scanname + "*[0-9].nii.gz"))
             ]
             if not scans:
-                cprint(colors.WARN, f"No scans found named {scanname}.")
+                logging.warning(f"No scans found named {scanname}.")
                 continue
             source = final_scan(scans)
             basename = f"sub-{subject}_"
@@ -210,7 +212,7 @@ def convert_to_bids(studydir, subject, session=None):
                 basename += f"ses-{session}_"
             bidsbase = bidsnames[scantype][scanname]
             basename += bidsbase
-            cprint(colors.OK, f"Copying {source} to {basename}.")
+            logging.info(f"Copying {source} to {basename}.")
             for extension in EXTENSIONS:
                 try:
                     shutil.copyfile(
@@ -224,12 +226,12 @@ def convert_to_bids(studydir, subject, session=None):
             # deface if requested
             anatfile = pjoin(scantype_dir, basename) + ".nii.gz"
             if bidsnames[scantype][scanname] == "T1w" and deface:
-                cprint(colors.OK, f"Defacing {anatfile}")
+                logging.info(f"Defacing {anatfile}")
                 t1anatfile = anatfile
                 deface_t1(anatfile, anatfile)
 
             if bidsnames[scantype][scanname] == "T2w" and deface and t1anatfile:
-                cprint(colors.OK, f"Defacing {anatfile}")
+                logging.info(f"Defacing {anatfile}")
                 deface_t2(anatfile, anatfile, t1anatfile)
 
 
@@ -253,28 +255,28 @@ def main():
         if tasks["bids"]:
             if not os.path.exists(pjoin(studydir, ".pipe_emailsent")):
                 send_form_email(studydir)
-                cprint(colors.OK, "Sending AccessionNumber form email request.")
-                cprint(colors.WARN, "Can't do any more work without that, so skipping.")
+                logging.info("Sending AccessionNumber form email request.")
+                logging.warning("Can't do any more work without that, so skipping.")
                 continue
             if not subject:
-                cprint(colors.WARN, f"{AccessionNumber} not yet in sheet. Skipping.")
+                logging.warning(f"{AccessionNumber} not yet in sheet. Skipping.")
                 continue
 
         os.remove(pjoin(studydir, ".pipe_ready"))
-        cprint(colors.HEADER, f"START processing {studydir}")
+        logging.info(f"START processing {studydir}")
 
         if tasks["nifti"]:
-            cprint(colors.OK, "Converting to nifti")
+            logging.info("Converting to nifti")
             convert_to_nifti(studydir)
         if tasks["bids"]:
-            cprint(colors.OK, "Organizing in BIDS format")
+            logging.info("Organizing in BIDS format")
             convert_to_bids(studydir, subject, session)
         if tasks["fmriprep"]:
             submit_fmriprep(studydir, subject)
-        cprint(colors.HEADER, f"END {studydir}")
+        logging.info(f"END {studydir}")
         open(pjoin(studydir, ".pipe_complete"), "a").close()
     if not list(ready_dirs):
-        cprint(colors.OK, "Nothing left to do.")
+        logging.info("Nothing left to do.")
 
 
 if __name__ == "__main__":

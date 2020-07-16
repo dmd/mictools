@@ -5,6 +5,9 @@ import time
 from pathlib import Path
 from registry import DICOMIN, EOSTUDY_TIMEOUT
 from receiver_eostudy import prepare_study
+import logging
+
+logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 
 while True:
     now = time.time()
@@ -32,7 +35,7 @@ while True:
             prepare_study(d)
         except IndexError:
             # IndexError is raised if there are no MR* files
-            print(f"No MR* files in studydir {d}")
+            logging.warning(f"No MR* files in studydir {d}")
             pass
 
     time.sleep(15)

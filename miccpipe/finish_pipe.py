@@ -11,9 +11,12 @@ import subprocess
 import smtplib
 import requests
 from email.message import EmailMessage
-from registry import registry_info, DICOMIN, eprint
+from registry import registry_info, DICOMIN
 from run_pipeline_parts import SSH_COMMAND
 import receiver_eostudy
+import logging
+
+logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 
 
 def _chown(path, uid, gid):
@@ -34,7 +37,7 @@ def registry_chown(studydir, reg_info):
     group = reg_info["group"]
     for p in studydir, pjoin(DICOMIN, "fmriprep-working", basename(studydir)):
         _chown(p, getpwnam(user).pw_uid, getgrnam(group).gr_gid)
-        print(f"chowned {p} to {user}:{group}")
+        logging.info(f"chowned {p} to {user}:{group}")
     os.rename(pjoin(studydir, ".pipe_complete"), pjoin(studydir, ".pipe_chowned"))
 
 
@@ -53,7 +56,7 @@ def fmriprep_job_errorfree(job_id):
     o_text = "fMRIPrep finished successfully"
 
     if len(e_file) != 1:
-        print(f"Could not find job error output for jobid {job_id}")
+        logging.warning(f"Could not find job error output for jobid {job_id}")
     else:
         e_file = e_file[0]
 
@@ -62,10 +65,12 @@ def fmriprep_job_errorfree(job_id):
                 if e_text in f.read():
                     errorfree = True
         except:
-            print(f"something went wrong trying to look in the error file {e_file}")
+            logging.info(
+                f"something went wrong trying to look in the error file {e_file}"
+            )
 
     if len(o_file) != 1:
-        print(f"Could not find job output for jobid {job_id}")
+        logging.warning(f"Could not find job output for jobid {job_id}")
     else:
         o_file = o_file[0]
 
@@ -74,13 +79,15 @@ def fmriprep_job_errorfree(job_id):
                 if o_text in f.read():
                     errorfree = True
         except:
-            print(f"something went wrong trying to look in the output file {o_file}")
+            logging.warning(
+                f"something went wrong trying to look in the output file {o_file}"
+            )
 
     return errorfree
 
 
 def sge_job_running(job_id):
-    print(f"checking sge_job_running for {job_id}")
+    logging.info(f"checking sge_job_running for {job_id}")
     cmd = ["/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qstat", "-u", '"*"']
     if os.environ.get("INSIDE_DOCKER", False) == "yes":
         cmd = SSH_COMMAND + cmd
@@ -99,7 +106,7 @@ def sge_job_running(job_id):
 def fmriprep_running(studydir):
     job_id_file = pjoin(studydir, ".pipe_sgejobid")
     if not os.path.exists(job_id_file):
-        print(f"job_id_file {job_id_file} not found")
+        logging.warning(f"job_id_file {job_id_file} not found")
         return False, False
     job_id = open(job_id_file).read()
     return sge_job_running(job_id), fmriprep_job_errorfree(job_id)
@@ -138,30 +145,32 @@ def email(studydir, address, fmriprep_was_errorfree):
     s = smtplib.SMTP("phsmgout.partners.org")
     s.send_message(msg)
     s.quit()
-    print(f"sent completion email for {short} to {address}")
+    logging.info(f"sent completion email for {short} to {address}")
 
 
 if __name__ == "__main__":
     if os.geteuid() != 0:
-        eprint("This program must run as root in order to chown study directories.")
+        logging.critical(
+            "This program must run as root in order to chown study directories."
+        )
         sys.exit(1)
 
-    print("running finisher")
+    logging.info("running finisher")
     check = False
     for p in Path(DICOMIN).glob("*/" + ".pipe_complete"):
         check = True
         studydir = str(p.parent)
 
-        print(f"checking fmriprep_running for {studydir}")
+        logging.info(f"checking fmriprep_running for {studydir}")
         fmriprep_is_running, fmriprep_was_errorfree = fmriprep_running(studydir)
 
         if fmriprep_is_running:
-            print(f"not chowning {studydir} yet; fmriprep job incomplete")
+            logging.info(f"not chowning {studydir} yet; fmriprep job incomplete")
             continue
         reg_info = registry_info(studydir)
-        print(f"chowning {studydir}")
+        logging.info(f"chowning {studydir}")
         registry_chown(studydir, reg_info)
         if "email" in reg_info:
             email(studydir, reg_info["email"], fmriprep_was_errorfree)
     if not check:
-        print("no work to do - no .pipe_complete files found")
+        logging.info("no work to do - no .pipe_complete files found")
