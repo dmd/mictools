@@ -27,7 +27,7 @@ echo -n "Going to mount //durga/$SHARENAME on $(readlink -f $MOUNTPOINT) as $PAR
 read -r answer
 if [ "$answer" != "${answer#[Yy]}" ] ;then
     echo Please enter your PARTNERS password...
-    mount -t cifs -o vers=1.0,domain=PARTNERS,username="$PARTNERSID",uid="$SUDO_USER" //durga/"$SHARENAME" "$MOUNTPOINT"
+    mount -t cifs -o sec=ntlmv2,domain=PARTNERS,username="$PARTNERSID",uid="$SUDO_USER" //durga/"$SHARENAME" "$MOUNTPOINT"
 else
     echo Aborted.
 fi
