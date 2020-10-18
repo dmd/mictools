@@ -28,6 +28,7 @@ while True:
         and not os.path.exists(Path(f) / ".STUDY_METADATA")
         and (now - os.stat(f).st_mtime) > EOSTUDY_TIMEOUT
         and (now - os.stat(f).st_mtime) < 86400
+        and os.access(f, os.W_OK)
     ]
 
     for d in dirs:
