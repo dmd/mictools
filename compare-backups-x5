@@ -15,6 +15,7 @@ baculacheck () {
 
 baculacheck x5backup /durga durga*
 baculacheck x5backup /durga/data durga-data*
+baculacheck x5backup /durga/newcamdl durga-newcamdl*
 baculacheck x5backup /durga/CDASR/anl/exp3 durga-CDASR-anl-exp3*
 baculacheck x5backup /durga/CDASR/anl2/exp4 durga-CDASR-anl2-exp4*
 baculacheck micc /data micc-data*
