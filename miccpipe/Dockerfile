@@ -21,9 +21,8 @@ RUN conda install -y -c conda-forge \
 RUN mkdir /miccpipe
 
 # defacing tools
-RUN wget -N -qO- -O /miccpipe/mri_deface.gz \
-  ftp://surfer.nmr.mgh.harvard.edu/pub/dist/mri_deface/mri_deface-v1.22-Linux64.gz && \
-  gunzip /miccpipe/mri_deface.gz && \
+RUN wget -N -qO- -O /miccpipe/mri_deface \
+  ftp://surfer.nmr.mgh.harvard.edu/pub/dist/mri_deface/mri_deface_linux && \
   chmod +x /miccpipe/mri_deface
 
 RUN wget -N -qO- -O /miccpipe/face.gca.gz \
