@@ -147,9 +147,15 @@ def submit_fmriprep(studydir, subject):
 
 
 def convert_to_nifti(studydir):
-    niftidir = pjoin(studydir, "nifti")
+    # convert both to nifti and to separated dicom dirs
     dicomdir = pjoin(studydir, "dicom")
+    niftidir = pjoin(studydir, "nifti")
+    dicomdirsdir = pjoin(studydir, "dicomdirs")
     os.mkdir(niftidir)
+    os.mkdir(dicomdirsdir)
+    subprocess.call(
+        ["/usr/local/bin/dcm2niix", "-r", "y", "-o", dicomdirsdir, dicomdir]
+    )
     dcm = Dcm2niix()
     dcm.inputs.source_dir = dicomdir
     dcm.inputs.output_dir = niftidir
