@@ -47,4 +47,6 @@ ADD finish_pipe.py \
      eye.mat \
      /miccpipe/
 
+RUN pip install dicom-anonymizer
+
 ENV PATH="/miccpipe:${PATH}"

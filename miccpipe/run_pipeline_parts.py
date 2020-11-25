@@ -146,6 +146,15 @@ def submit_fmriprep(studydir, subject):
         )
 
 
+def anonymize_dicom(studydir):
+    dicomdir = pjoin(studydir, "dicom")
+    # remove Phoenix Zips
+    for SRfile in Path(dicomdir).glob("SR*"):
+        os.remove(SRfile)
+    # anonymize
+    subprocess.call(["/usr/local/bin/dicom-anonymizer", dicomdir, dicomdir])
+
+
 def convert_to_nifti(studydir):
     # convert both to nifti and to separated dicom dirs
     dicomdir = pjoin(studydir, "dicom")
@@ -249,6 +258,7 @@ def main():
             tasks = task_select(registry_info(studydir)["run"])
         except (RuntimeError, KeyError):
             continue
+        anonymize = registry_info(studydir).get("anonymize", True)
 
         if tasks["ignore"]:
             return
@@ -270,6 +280,10 @@ def main():
 
         os.remove(pjoin(studydir, ".pipe_ready"))
         logging.info(f"START processing {studydir}")
+
+        if anonymize:
+            logging.info("Anonymizing")
+            anonymize_dicom(studydir)
 
         if tasks["nifti"]:
             logging.info("Converting to nifti")
