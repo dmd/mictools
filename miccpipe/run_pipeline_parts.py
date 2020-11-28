@@ -258,7 +258,7 @@ def main():
             tasks = task_select(registry_info(studydir)["run"])
         except (RuntimeError, KeyError):
             continue
-        anonymize = registry_info(studydir).get("anonymize", True)
+        anonymize = registry_info(studydir).get("anonymize", False)
 
         if tasks["ignore"]:
             return
