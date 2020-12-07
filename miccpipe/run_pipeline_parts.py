@@ -200,7 +200,7 @@ def convert_to_bids(studydir, subject, session=None):
     open(pjoin(studydir, ".bidsignore"), "w").write(".STUDY_*\n.pipe_*\n")
 
     # move data into sourcedata
-    for _ in ("nifti", "dicom"):
+    for _ in ("nifti", "dicom", "dicomdirs"):
         shutil.move(pjoin(studydir, _), sourcedata_dir)
 
     niftidir = pjoin(sourcedata_dir, "nifti")
