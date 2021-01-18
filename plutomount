@@ -1,0 +1,34 @@
+#!/bin/bash
+
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run via sudo"
+   exit 1
+fi
+
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 PLUTOid sharename mountpoint"
+    exit 1
+fi
+
+PLUTOID=$1
+SHARENAME=$2
+MOUNTPOINT=$3
+if [ ! -d "$MOUNTPOINT" ]; then
+    echo "$MOUNTPOINT" must be an empty directory
+    exit 1
+fi
+if ls -1qA "$MOUNTPOINT" | grep -q . ; then
+    echo "$MOUNTPOINT" must be an empty directory
+    exit 1
+fi
+
+echo -e "\nIMPORTANT NOTE: Pluto mounts are NOT accessible from compute nodes (node1-5)!\n"
+echo -n "Going to mount //pluto/$SHARENAME on $(readlink -f $MOUNTPOINT) as $PLUTOID.  OK? (y/n): "
+read -r answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+    echo Please enter your PLUTO password...
+    mount -t cifs -o vers=3.0,domain=SAMBA,username="$PLUTOID",uid="$SUDO_USER" //pluto.mclean.harvard.edu/"$SHARENAME" "$MOUNTPOINT"
+else
+    echo Aborted.
+fi
+
