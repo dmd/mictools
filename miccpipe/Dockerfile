@@ -16,7 +16,7 @@ RUN conda install -y -c conda-forge \
              pyyaml \
              pydicom \
              nipype \
-             dcm2niix
+             dcm2niix=1.0.20201102
 
 RUN mkdir /miccpipe
 
