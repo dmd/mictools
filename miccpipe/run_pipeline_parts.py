@@ -206,7 +206,7 @@ def convert_to_bids(studydir, subject, session=None):
     niftidir = pjoin(sourcedata_dir, "nifti")
 
     bidsnames = registry_info(studydir)["bidsnames"]
-    deface = registry_info(studydir).get("deface", True)
+    deface = registry_info(studydir).get("deface", False)
 
     t1anatfile = ""
     for scantype in bidsnames:  # ('anat', 'func')
