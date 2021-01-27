@@ -26,7 +26,7 @@ echo -e "\nIMPORTANT NOTE: Durga mounts are NOT accessible from compute nodes (n
 echo -n "Going to mount //durga/$SHARENAME on $(readlink -f $MOUNTPOINT) as $PARTNERSID.  OK? (y/n): "
 read -r answer
 if [ "$answer" != "${answer#[Yy]}" ] ;then
-    echo Please enter your PARTNERS password...
+    echo Please enter your MGB/PARTNERS password...
     mount -t cifs -o vers=3.0,sec=ntlmv2,domain=PARTNERS,username="$PARTNERSID",uid="$SUDO_USER" //durga/"$SHARENAME" "$MOUNTPOINT"
 else
     echo Aborted.
