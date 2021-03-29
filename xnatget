@@ -11,7 +11,7 @@ if [ $# -lt 2 ]; then
     exit 1
 fi
 
-cleanup() { rm -f "$ACC"; }
+cleanup() { rm -f "${ACC}.zip"; }
 trap cleanup INT
 
 URL=https://image-test.mclean.harvard.edu
