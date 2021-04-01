@@ -67,6 +67,9 @@ def make_runscript(args):
     if args.longitudinal:
         s += ["--longitudinal"]
 
+    if args.return_all_components:
+        s += ["--return-all-components"]
+
     if args.verbose:
         s += ["-vvvv"]
     else:
@@ -163,6 +166,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--anat-only",
         help="Do only anatomical processing - no fMRI.",
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "--return-all-components",
+        help="Include all components estimated in CompCor decomposition in the confounds file. (Default: off)",
         action="store_true",
     )
 

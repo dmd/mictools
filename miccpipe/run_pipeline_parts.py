@@ -112,7 +112,7 @@ def submit_fmriprep(studydir, subject):
     ]
     s += ["--participant", subject]
 
-    for arg in ("aroma", "freesurfer", "anat-only", "longitudinal", "dry-run"):
+    for arg in ("aroma", "freesurfer", "anat-only", "longitudinal", "dry-run", "return-all-components"):
         if args[arg]:
             s += ["--" + arg]
     for arg in (
