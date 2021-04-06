@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ $# -eq 0 ]]; then
+if [[ $# -eq 0 || $1 == "-h" ]]; then
     echo "usage: iris-get ACCESSIONNUMBER
 e.g., iris-get E12345678"
 exit 1
