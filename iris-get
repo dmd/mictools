@@ -1,14 +1,14 @@
 #!/bin/bash
-#
-# 2021 ddrucker
 
-set -o errexit
+if [[ $# -eq 0 ]]; then
+    echo "usage: iris-get ACCESSIONNUMBER
+e.g., iris-get E12345678"
+exit 1
+fi
 
-if [[ $# -eq 0 ]]; then ArcGet.py; fi
-
-export XNAT_HOST=https://iris.mclean.harvard.edu
 read -p "Iris username [hit enter for $USER]: " XNAT_USER
 read -s -p "Iris password: " XNAT_PASS
 export XNAT_PASS
 export XNAT_USER=${XNAT_USER:-$USER}
-ArcGet.py "$@"
+export XNAT_HOST=https://iris.mclean.harvard.edu
+ArcGet.py -l "$1"
