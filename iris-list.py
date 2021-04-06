@@ -40,8 +40,6 @@ sessions = sorted(
     r.json()["ResultSet"]["Result"], key=itemgetter("date"), reverse=True
 )[: args.n]
 
-# i want:
-head = ["date", "project", "label", "subject"]
 fields = ["date", "project", "label", "xnat_subjectdata_subject_label"]
 
 print(tabulate.tabulate(map(itemgetter(*fields), sessions), tablefmt="plain"))
