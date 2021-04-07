@@ -1,12 +1,1 @@
-#!/bin/bash
-
-if [[ $# -eq 0 || $1 == "-h" ]]; then
-    echo "usage: iris-get ACCESSIONNUMBER
-e.g., iris-get E12345678"
-exit 1
-fi
-
-read -p "Iris username [hit enter for $USER]: " XNAT_USER
-export XNAT_USER=${XNAT_USER:-$USER}
-export XNAT_HOST=https://iris.mclean.harvard.edu
-ArcGet.py -l "$1"
+iris-get.py
