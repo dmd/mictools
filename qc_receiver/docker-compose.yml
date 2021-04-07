@@ -2,6 +2,7 @@ version: '3'
 services:
 
   receiver:
+    restart: always
     build: .
     ports:
         - 11112:11112
@@ -12,6 +13,7 @@ services:
     command: >
         storescp --output-directory /qc/dicom-in
             --verbose
+            --promiscuous
             --sort-on-patientname
             --eostudy-timeout 10
             --aetitle QC
