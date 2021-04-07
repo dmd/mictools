@@ -7,8 +7,6 @@ exit 1
 fi
 
 read -p "Iris username [hit enter for $USER]: " XNAT_USER
-read -s -p "Iris password: " XNAT_PASS
-export XNAT_PASS
 export XNAT_USER=${XNAT_USER:-$USER}
 export XNAT_HOST=https://iris.mclean.harvard.edu
 ArcGet.py -l "$1"
