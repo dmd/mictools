@@ -5,8 +5,8 @@ services:
     build: .
     ports:
         - 11112:11112
-    # run as pipeline user
-    user: pipeline
+    # run as qc user
+    user: qc
     volumes:
         - /qc:/qc
     command: >
