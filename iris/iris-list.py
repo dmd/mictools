@@ -25,7 +25,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-password = getpass.getpass("Enter XNAT passphrase: ")
+password = getpass.getpass(f"Iris password for {args.username}: ")
 
 r = requests.get(
     "https://iris.mclean.harvard.edu/data/search/saved/xs1617721281007/results?format=json",
