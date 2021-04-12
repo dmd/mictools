@@ -3,9 +3,10 @@
 import argparse
 import os
 import getpass
+import subprocess
 
 parser = argparse.ArgumentParser(
-    description="Get a study by accession number from Iris."
+    description="Get studies by accession number from Iris."
 )
 parser.add_argument(
     "-u",
@@ -14,9 +15,19 @@ parser.add_argument(
     required=False,
     default=getpass.getuser(),
 )
-parser.add_argument("accessionnumber")
+parser.add_argument("accessionnumber", nargs="+")
 args = parser.parse_args()
 
-os.system(
-    f"ArcGet.py --host https://iris.mclean.harvard.edu --username {args.username} -l {args.accessionnumber}"
-)
+password = getpass.getpass(f"Iris password for {args.username}: ")
+
+for accessionnumber in args.accessionnumber:
+    print(f"Fetching {accessionnumber}...")
+    subprocess.call(
+        ["ArcGet.py", "-l", accessionnumber],
+        env=dict(
+            os.environ,
+            XNAT_PASS=password,
+            XNAT_USER=args.username,
+            XNAT_HOST="https://iris.mclean.harvard.edu",
+        ),
+    )
