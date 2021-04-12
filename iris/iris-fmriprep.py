@@ -92,7 +92,7 @@ if __name__ == "__main__":
         "--config",
         "-c",
         required=True,
-        help="Path to YAML config file. The .yaml suffix is optional.",
+        help="Path to YAML config file.",
     )
     required.add_argument("--subject", "-s", required=True, help="Subject number.")
     parser.add_argument("--session", "-e", help="Session number.", default=None)
@@ -106,18 +106,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    if os.path.isfile(args.config):
-        configfile = args.config
-    elif os.path.isfile(args.config + ".yaml"):
-        configfile = args.config + ".yaml"
-    else:
-        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), args.config)
-    config = yaml.safe_load(open(configfile))
+    config = yaml.safe_load(open(args.config))
     tasks = task_select(config["run"])
-
-    if tasks["ignore"]:
-        logging.warning("Task was set to ignore; doing nothing.")
-        sys.exit(1)
 
     if tasks["nifti"]:
         convert_to_nifti(args.studydir, args.sort_dicomdirs)
