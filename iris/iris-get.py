@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/cm/shared/anaconda3/envs/iris/bin/python
 
 import argparse
 import os
