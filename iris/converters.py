@@ -19,7 +19,7 @@ def final_scan(sourcenames):
     )[-1]
 
 
-def convert_to_nifti(studydir,sort_dicomdirs):
+def convert_to_nifti(studydir, sort_dicomdirs):
     logging.info("Converting to nifti")
     # convert both to nifti and to separated dicom dirs
     dicomdir = pjoin(studydir, "RAW")
@@ -32,7 +32,7 @@ def convert_to_nifti(studydir,sort_dicomdirs):
         subprocess.call(
             ["/usr/local/bin/dcm2niix", "-r", "y", "-o", dicomdirsdir, dicomdir]
         )
-    
+
     dcm = Dcm2niix()
     dcm.inputs.source_dir = dicomdir
     dcm.inputs.output_dir = niftidir

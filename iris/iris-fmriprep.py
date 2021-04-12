@@ -95,11 +95,12 @@ if __name__ == "__main__":
         help="Path to YAML config file. The .yaml suffix is optional.",
     )
     required.add_argument("--subject", "-s", required=True, help="Subject number.")
+    parser.add_argument("--session", "-e", help="Session number.", default=None)
     parser.add_argument(
-        "--session", "-e", help="Session number.", default=None
+        "--sort-dicomdirs",
+        help="Copy raw dicoms into named folders.",
+        action="store_true",
     )
-    parser.add_argument(
-        "--sort-dicomdirs", help="Copy raw dicoms into named folders.", action="store_true")
     required.add_argument(
         "studydir", help="Path to study received from Iris (dicom dir)."
     )
@@ -121,6 +122,8 @@ if __name__ == "__main__":
     if tasks["nifti"]:
         convert_to_nifti(args.studydir, args.sort_dicomdirs)
     if tasks["bids"]:
-        convert_to_bids(config, args.studydir, args.subject, args.session, args.sort_dicomdirs)
+        convert_to_bids(
+            config, args.studydir, args.subject, args.session, args.sort_dicomdirs
+        )
     if tasks["fmriprep"]:
         submit_fmriprep(config, args.studydir, args.subject)
