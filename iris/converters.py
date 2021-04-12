@@ -1,3 +1,15 @@
+from glob import glob
+import shutil
+import logging
+import os
+import subprocess
+from os.path import join as pjoin
+from nipype.interfaces.dcm2nii import Dcm2niix
+
+from preprocess import preprocess
+from deface import deface_t1, deface_t2
+
+
 def final_scan(sourcenames):
     # given ['FOO_BAR_11.nii.gz', 'FOO_BAR_2.nii.gz', 'FOO_BAR_3.nii.gz']
     # return 'FOO_BAR_11.nii.gz', the highest numbered scan
@@ -7,16 +19,20 @@ def final_scan(sourcenames):
     )[-1]
 
 
-def convert_to_nifti(studydir):
+def convert_to_nifti(studydir,sort_dicomdirs):
+    logging.info("Converting to nifti")
     # convert both to nifti and to separated dicom dirs
     dicomdir = pjoin(studydir, "RAW")
     niftidir = pjoin(studydir, "nifti")
-    dicomdirsdir = pjoin(studydir, "dicomdirs")
     os.mkdir(niftidir)
-    os.mkdir(dicomdirsdir)
-    subprocess.call(
-        ["/usr/local/bin/dcm2niix", "-r", "y", "-o", dicomdirsdir, dicomdir]
-    )
+
+    if sort_dicomdirs:
+        dicomdirsdir = pjoin(studydir, "dicomdirs")
+        os.mkdir(dicomdirsdir)
+        subprocess.call(
+            ["/usr/local/bin/dcm2niix", "-r", "y", "-o", dicomdirsdir, dicomdir]
+        )
+    
     dcm = Dcm2niix()
     dcm.inputs.source_dir = dicomdir
     dcm.inputs.output_dir = niftidir
@@ -24,7 +40,8 @@ def convert_to_nifti(studydir):
     dcm.run()
 
 
-def convert_to_bids(config, studydir, subject, session=None):
+def convert_to_bids(config, studydir, subject, session, sort_dicomdirs):
+    logging.info("Organizing in BIDS format")
     EXTENSIONS = (".json", ".bval", ".bvec", ".tsv", ".nii.gz")
     sourcedata_dir = pjoin(studydir, "sourcedata", "sub-" + subject)
     subject_dir = pjoin(studydir, "sub-" + subject)
@@ -52,8 +69,11 @@ def convert_to_bids(config, studydir, subject, session=None):
     open(pjoin(studydir, ".bidsignore"), "w").write(".STUDY_*\n.pipe_*\n")
 
     # move data into sourcedata
-    for _ in ("nifti", "RAW", "dicomdirs"):
+    for _ in ("nifti", "RAW"):
         shutil.move(pjoin(studydir, _), sourcedata_dir)
+
+    if sort_dicomdirs:
+        shutil.move(pjoin(studydir, "dicomdirs"), sourcedata_dir)
 
     niftidir = pjoin(sourcedata_dir, "nifti")
 

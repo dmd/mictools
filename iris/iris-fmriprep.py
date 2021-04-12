@@ -1,18 +1,15 @@
 #!/cm/shared/anaconda3/envs/iris/bin/python
 
+import errno
 import re
 import os
 from collections import defaultdict
-from preprocess import preprocess
 import subprocess
-import shutil
-from glob import glob
 import yaml
 import logging
 import argparse
 from os.path import join as pjoin
-from nipype.interfaces.dcm2nii import Dcm2niix
-from deface import deface_t1, deface_t2
+
 from converters import convert_to_bids, convert_to_nifti
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
@@ -34,7 +31,7 @@ def task_select(choice):
 
 
 def submit_fmriprep(config, studydir, subject):
-    logging.info("running fmriprep")
+    logging.info("Submitting fmriprep job to the cluster.")
     args = defaultdict(bool, config.get("fmriprep", {}))
     workdir = config["workdir"]
 
@@ -88,21 +85,33 @@ def submit_fmriprep(config, studydir, subject):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Submit an iris-got study to fmriprep."
+        description="Submit an iris-got study to fmriprep. iris-fmriprep is expecting a directory with a single directory inside named RAW, inside which are the DICOM files."
+    )
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "--config",
+        "-c",
+        required=True,
+        help="Path to YAML config file. The .yaml suffix is optional.",
+    )
+    required.add_argument("--subject", "-s", required=True, help="Subject number.")
+    parser.add_argument(
+        "--session", "-e", help="Session number.", default=None
     )
     parser.add_argument(
-        "--config", "-c", required=True, help="Path to YAML config file."
-    )
-    parser.add_argument("--subject", "-s", required=True, help="Subject number.")
-    parser.add_argument(
-        "--session", "-e", help="Session number (optional).", default=None
-    )
-    parser.add_argument(
+        "--sort-dicomdirs", help="Copy raw dicoms into named folders.", action="store_true")
+    required.add_argument(
         "studydir", help="Path to study received from Iris (dicom dir)."
     )
     args = parser.parse_args()
 
-    config = yaml.safe_load(open(args.config))
+    if os.path.isfile(args.config):
+        configfile = args.config
+    elif os.path.isfile(args.config + ".yaml"):
+        configfile = args.config + ".yaml"
+    else:
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), args.config)
+    config = yaml.safe_load(open(configfile))
     tasks = task_select(config["run"])
 
     if tasks["ignore"]:
@@ -110,10 +119,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if tasks["nifti"]:
-        logging.info("Converting to nifti")
-        convert_to_nifti(args.studydir)
+        convert_to_nifti(args.studydir, args.sort_dicomdirs)
     if tasks["bids"]:
-        logging.info("Organizing in BIDS format")
-        convert_to_bids(config, args.studydir, args.subject, args.session)
+        convert_to_bids(config, args.studydir, args.subject, args.session, args.sort_dicomdirs)
     if tasks["fmriprep"]:
         submit_fmriprep(config, args.studydir, args.subject)
