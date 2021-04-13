@@ -7,7 +7,6 @@ from os.path import join as pjoin
 from nipype.interfaces.dcm2nii import Dcm2niix
 
 from preprocess import preprocess
-from deface import deface_t1, deface_t2
 
 
 def final_scan(sourcenames):
@@ -78,7 +77,6 @@ def convert_to_bids(config, studydir, subject, session, sort_dicomdirs):
     niftidir = pjoin(sourcedata_dir, "nifti")
 
     bidsnames = config["bidsnames"]
-    deface = config.get("deface", False)
 
     t1anatfile = ""
     for scantype in bidsnames:  # ('anat', 'func')
@@ -111,14 +109,3 @@ def convert_to_bids(config, studydir, subject, session, sort_dicomdirs):
                     )
                 except FileNotFoundError:
                     pass
-
-            # deface if requested
-            anatfile = pjoin(scantype_dir, basename) + ".nii.gz"
-            if bidsnames[scantype][scanname] == "T1w" and deface:
-                logging.info(f"Defacing {anatfile}")
-                t1anatfile = anatfile
-                deface_t1(anatfile, anatfile)
-
-            if bidsnames[scantype][scanname] == "T2w" and deface and t1anatfile:
-                logging.info(f"Defacing {anatfile}")
-                deface_t2(anatfile, anatfile, t1anatfile)
