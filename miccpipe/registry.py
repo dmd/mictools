@@ -1,11 +1,13 @@
+import logging
+import re
+import sys
 import yaml
+
+from glob import glob
 from os.path import join as pjoin
 from pathlib import Path
-import sys
-from glob import glob
-import re
+
 import receiver_eostudy
-import logging
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 

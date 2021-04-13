@@ -1,11 +1,11 @@
 #!/cm/shared/anaconda3/envs/iris/bin/python
 
-import sys
-import requests
-from operator import itemgetter
-import getpass
 import argparse
+import getpass
+import requests
+import sys
 import tabulate
+from operator import itemgetter
 
 
 parser = argparse.ArgumentParser(description="List your latest studies from Iris.")

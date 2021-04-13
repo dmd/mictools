@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-from glob import glob
-import sys
-import os
-from datetime import datetime
-from os.path import join as pjoin
 import configparser
+import os
 import pydicom
+import sys
+from datetime import datetime
+from glob import glob
+from os.path import join as pjoin
 
 SMDNAME = ".STUDY_METADATA"
 

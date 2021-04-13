@@ -1,13 +1,15 @@
+import csv
+import logging
+import random
 import requests
 import smtplib
-from io import StringIO
-import random
+
 from os.path import join as pjoin
-import csv
 from email.message import EmailMessage
+from io import StringIO
+
 from registry import registry_info, task_select, DICOMIN
 from receiver_eostudy import metadata
-import logging
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 

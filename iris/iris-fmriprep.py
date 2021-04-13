@@ -1,13 +1,14 @@
 #!/cm/shared/anaconda3/envs/iris/bin/python
 
+import argparse
 import errno
-import re
+import logging
 import os
-from collections import defaultdict
+import re
 import subprocess
 import yaml
-import logging
-import argparse
+
+from collections import defaultdict
 from os.path import join as pjoin
 
 from converters import convert_to_bids, convert_to_nifti

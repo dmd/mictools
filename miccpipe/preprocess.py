@@ -1,8 +1,8 @@
+import logging
+import nibabel as nb
 from os.path import join as pjoin
 from nipype.interfaces.fsl import ExtractROI
-import nibabel as nb
 from registry import DICOMIN, registry_info, task_select
-import logging
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 

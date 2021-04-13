@@ -1,20 +1,22 @@
 #!/usr/bin/env python
 
+import logging
 import os
+import requests
+import smtplib
+import subprocess
 import sys
-from pathlib import Path
-from pwd import getpwnam
+
+from email.message import EmailMessage
+from glob import glob
 from grp import getgrnam
 from os.path import basename, join as pjoin
-from glob import glob
-import subprocess
-import smtplib
-import requests
-from email.message import EmailMessage
+from pathlib import Path
+from pwd import getpwnam
+
+import receiver_eostudy
 from registry import registry_info, DICOMIN
 from run_pipeline_parts import SSH_COMMAND
-import receiver_eostudy
-import logging
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 

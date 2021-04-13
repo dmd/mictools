@@ -1,27 +1,29 @@
 #!/usr/bin/env python
 
+import hashlib
+import logging
+import numpy
 import os
+import random
+import re
+import requests
+import shutil
+import string
+import subprocess
 import sys
+
+from collections import defaultdict
+from glob import glob
 from os.path import join as pjoin
 from pathlib import Path
-from glob import glob
-import string
-import random
-from collections import defaultdict
-import re
-from time import sleep
-import subprocess
-import shutil
-from nipype.interfaces.dcm2nii import Dcm2niix
-import numpy
-import hashlib
-import requests
 from tempfile import NamedTemporaryFile
-from registry import DICOMIN, registry_info, task_select
-from receiver_eostudy import SMDNAME, metadata
-from sub_ses_matcher import send_form_email, sheet_lookup
+from time import sleep
+
+from nipype.interfaces.dcm2nii import Dcm2niix
 from preprocess import preprocess
-import logging
+from receiver_eostudy import SMDNAME, metadata
+from registry import DICOMIN, registry_info, task_select
+from sub_ses_matcher import send_form_email, sheet_lookup
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 
@@ -112,7 +114,14 @@ def submit_fmriprep(studydir, subject):
     ]
     s += ["--participant", subject]
 
-    for arg in ("aroma", "freesurfer", "anat-only", "longitudinal", "dry-run", "return-all-components"):
+    for arg in (
+        "aroma",
+        "freesurfer",
+        "anat-only",
+        "longitudinal",
+        "dry-run",
+        "return-all-components",
+    ):
         if args[arg]:
             s += ["--" + arg]
     for arg in (

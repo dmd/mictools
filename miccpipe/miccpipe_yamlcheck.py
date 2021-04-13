@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-import yaml
 import os.path
-from os.path import join as pjoin
-import sys
 import re
+import sys
+import yaml
+from os.path import join as pjoin
+
 from registry import DICOMIN, condensed_name
 
 

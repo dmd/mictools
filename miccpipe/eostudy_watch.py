@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
+import logging
 import os
 import time
+
 from pathlib import Path
+
 from registry import DICOMIN, EOSTUDY_TIMEOUT
 from receiver_eostudy import prepare_study
-import logging
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 

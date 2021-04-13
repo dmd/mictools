@@ -1,8 +1,8 @@
 #!/cm/shared/anaconda3/envs/iris/bin/python
 
 import argparse
-import os
 import getpass
+import os
 import subprocess
 
 parser = argparse.ArgumentParser(
