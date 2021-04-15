@@ -18,14 +18,14 @@ for d in ${SOURCE} ${DEST}; do
   fi
 done
 
-echo mkdir -p "${DEST}"/sourcedata/ \
+mkdir -p "${DEST}"/sourcedata/ \
          "${DEST}"/derivatives/freesurfer/fsaverage/ \
          "${DEST}"/derivatives/fmriprep/logs/
 
-/bin/mv -v "${SOURCE}"/sub-* "${DEST}"/
-/bin/mv -v "${SOURCE}"/sourcedata/sub-* "${DEST}"/sourcedata/
-/bin/mv -v "${SOURCE}"/derivatives/freesurfer/sub-* "${DEST}"/derivatives/freesurfer/
-/bin/mv -v "${SOURCE}"/derivatives/fmriprep/sub-* "${DEST}"/derivatives/fmriprep/
+/bin/mv -v "${SOURCE}"/sub-*                         "${DEST}"/
+/bin/mv -v "${SOURCE}"/sourcedata/sub-*              "${DEST}"/sourcedata/
+/bin/mv -v "${SOURCE}"/derivatives/freesurfer/sub-*  "${DEST}"/derivatives/freesurfer/
+/bin/mv -v "${SOURCE}"/derivatives/fmriprep/sub-*    "${DEST}"/derivatives/fmriprep/
 
-# /bin/rsync -a --delete "${SOURCE}"/derivatives/fmriprep/logs/ "${DEST}"/derivatives/fmriprep/logs/
-# /bin/rsync -a --delete "${SOURCE}"/derivatives/freesurfer/fsaverage/ "${DEST}"/derivatives/freesurfer/fsaverage/
+/bin/rsync -a "${SOURCE}"/derivatives/fmriprep/logs/        "${DEST}"/derivatives/fmriprep/logs/
+/bin/rsync -a "${SOURCE}"/derivatives/freesurfer/fsaverage/ "${DEST}"/derivatives/freesurfer/fsaverage/
