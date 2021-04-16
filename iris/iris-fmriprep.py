@@ -25,13 +25,13 @@ def task_run(task, studydir, write=False):
 
 
 def task_select(choice):
-    tasks = {"ignore": False, "nifti": False, "bids": False, "fmriprep": False}
-    if choice in ("ignore",):
-        tasks["ignore"] = True
-        return tasks
-
+    tasks = {"nifti": False, "bids": False, "fmriprep": False}
     if choice in ("nifti", "bids", "fmriprep"):
         tasks["nifti"] = True
+    elif choice == "none":
+        logging.error(f"no run directive found in config")
+    else:
+        logging.error(f"invalid task '{choice}'")
     if choice in ("bids", "fmriprep"):
         tasks["bids"] = True
     if choice in ("fmriprep",):
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = yaml.safe_load(open(args.config))
-    tasks = task_select(config["run"])
+    tasks = task_select(config.get("run", "none"))
 
     if tasks["nifti"] and not task_run("nifti", args.studydir):
         convert_to_nifti(args.studydir, args.sort_dicomdirs)
