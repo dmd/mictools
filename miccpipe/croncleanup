@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 DAYS=${1:-30}
 DIRS=$(find /data/pipeline/PI* /data/pipeline/fmriprep-working/PI* -maxdepth 0 -ctime +${DAYS})
@@ -8,4 +9,4 @@ if [ -z "$DIRS" ]; then
 fi
 RMDIRS=$(find /data/pipeline/PI* /data/pipeline/fmriprep-working/PI* -maxdepth 0 -ctime +${DAYS} -exec echo rm -rf {} \& \;)
 
-echo -e "Ready for cleanup: \n\n$(ls -ld ${DIRS})\n\nRun:\n\n${RMDIRS}" | Mail -s "pipeline cleanup" ddrucker@mclean.harvard.edu 
+echo -e "Ready for cleanup: \n\n${RMDIRS}" | Mail -s "pipeline cleanup" ddrucker@mclean.harvard.edu 
