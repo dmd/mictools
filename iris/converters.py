@@ -65,7 +65,7 @@ def convert_to_bids(config, studydir, subject, session, sort_dicomdirs):
     )
     open(pjoin(studydir, "README"), "w").write("\n")
     open(pjoin(studydir, "CHANGES"), "w").write("\n")
-    open(pjoin(studydir, ".bidsignore"), "w").write(".STUDY_*\n.pipe_*\n")
+    open(pjoin(studydir, ".bidsignore"), "w").write(".STUDY_*\n.pipe_*\n.sge*\n.taskrun_*\n")
 
     # move data into sourcedata
     for _ in ("nifti", "RAW"):

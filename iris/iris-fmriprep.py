@@ -4,6 +4,7 @@ import argparse
 import errno
 import logging
 import os
+from os.path import join as pjoin
 import re
 import subprocess
 import yaml
@@ -14,6 +15,13 @@ from os.path import join as pjoin
 from converters import convert_to_bids, convert_to_nifti
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
+
+
+def task_run(task, studydir, write=False):
+    taskfile = pjoin(studydir, ".taskrun_" + task)
+    if write:
+        open(taskfile, "w").write("")
+    return os.path.exists(taskfile)
 
 
 def task_select(choice):
@@ -110,11 +118,13 @@ if __name__ == "__main__":
     config = yaml.safe_load(open(args.config))
     tasks = task_select(config["run"])
 
-    if tasks["nifti"]:
+    if tasks["nifti"] and not task_run("nifti", args.studydir):
         convert_to_nifti(args.studydir, args.sort_dicomdirs)
-    if tasks["bids"]:
+        task_run("nifti", args.studydir, write=True)
+    if tasks["bids"] and not task_run("bids", args.studydir):
         convert_to_bids(
             config, args.studydir, args.subject, args.session, args.sort_dicomdirs
         )
+        task_run("bids", args.studydir, write=True)
     if tasks["fmriprep"]:
         submit_fmriprep(config, args.studydir, args.subject)
