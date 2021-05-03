@@ -3,6 +3,7 @@
 version: '3'
 services:
   logview:
+    restart: always
     image: amir20/dozzle:latest
     environment:
       - DOZZLE_TAILSIZE=100
@@ -13,6 +14,7 @@ services:
       - ${LOGVIEW}:8080
 
   runner:
+    restart: always
     build: .
     command: bash -c "while true; do /miccpipe/run_pipeline_parts.py; sleep 60; done"
     volumes:
@@ -26,6 +28,7 @@ services:
       - REAL_DICOMIN=${DICOMIN}
 
   finisher:
+    restart: always
     build: .
     command: bash -c "while true; do /miccpipe/finish_pipe.py; sleep 60; done"
     volumes:
@@ -36,6 +39,7 @@ services:
       - /home/pipeline:/home/pipeline:ro
 
   receiver:
+    restart: always
     build:
       dockerfile: Dockerfile-receiver
       context: .
@@ -56,6 +60,7 @@ services:
             /miccpipe/eostudy_watch.py"
 
   web:
+    restart: always
     build:
       dockerfile: Dockerfile-web
       context: .
