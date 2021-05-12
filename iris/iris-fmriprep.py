@@ -42,7 +42,7 @@ def task_select(choice):
 def submit_fmriprep(config, studydir, subject):
     logging.info("Submitting fmriprep job to the cluster.")
     args = defaultdict(bool, config.get("fmriprep", {}))
-    workdir = config["workdir"]
+    force_workdir = config.get("force-workdir", False)
 
     # build the command line rather than call, because it does
     # a bunch of work in main I don't want to re-implement.
@@ -51,10 +51,10 @@ def submit_fmriprep(config, studydir, subject):
     s += ["/cm/shared/anaconda3/envs/iris/bin/python3"]
     s += ["/home/ddrucker/mictools/micc_fmriprep.py"]
     s += ["--bidsdir", studydir]
-    s += [
-        "--workdir",
-        pjoin(workdir, os.path.basename(studydir)),
-    ]
+
+    if force_workdir:
+        s += ["--force-workdir", force_workdir]
+
     s += ["--participant", subject]
 
     for arg in (
