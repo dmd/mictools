@@ -109,7 +109,7 @@ def submit_fmriprep(studydir, subject):
     s += ["--jobname", registry_info(studydir).get("user")]
     s += ["--bidsdir", real_studydir]
     s += [
-        "--workdir",
+        "--force-workdir",
         pjoin(real_DICOMIN, "fmriprep-working", os.path.basename(studydir)),
     ]
     s += ["--participant", subject]

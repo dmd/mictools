@@ -2,12 +2,13 @@
 from os.path import expanduser, join as pjoin
 import os
 import sys
+import getpass
 from pathlib import Path
 
 QSUB = "/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qsub"
 
 
-def make_runscript(args):
+def make_runscript(args, workdir):
     """
     Create a temporary script file we can submit to qsub.
     """
@@ -75,8 +76,8 @@ def make_runscript(args):
     else:
         s += ["-vv"]
 
-    if args.workdir != "__EMPTY__":
-        s += [f"-w  {args.workdir}"]
+    if workdir != "__EMPTY__":
+        s += [f"-w  {workdir}"]
 
     script = "#!/bin/bash\n\n" + "\n".join(pre) + "\n" + " \\\n    ".join(s) + "\n"
 
@@ -114,6 +115,7 @@ if __name__ == "__main__":
     )
 
     required = parser.add_argument_group("required arguments")
+    workdir_group = parser.add_mutually_exclusive_group()
     versioning = parser.add_argument_group("Version")
 
     parser.add_argument(
@@ -214,15 +216,26 @@ if __name__ == "__main__":
     )
 
     required.add_argument(
-        "--workdir",
-        help='Work directory. Set to "" (empty string) to disable. '
+        "--participant", help="Participant label.", required=True, type=str
+    )
+
+    workdir_group.add_argument(
+        "--force-workdir",
+        help="FORCE the work directory instead of using the MICC default of /data/fmriprep-workdir/USERNAME"
+        "Please do not use this unless you must."
         "This directory must not be inside your BIDS dir.",
-        required=True,
         action=FullPaths,
     )
 
-    required.add_argument(
-        "--participant", help="Participant label.", required=True, type=str
+    workdir_group.add_argument(
+        "--workdir",
+        help=argparse.SUPPRESS,
+    )
+
+    workdir_group.add_argument(
+        "--no-workdir",
+        help="Do not use a workdir at all.",
+        action="store_true",
     )
 
     versioning.add_argument(
@@ -249,11 +262,26 @@ if __name__ == "__main__":
         print("Run this script from somewhere else instead, like your $HOME directory.")
         sys.exit(1)
 
-    if Path(args.bidsdir) in Path(args.workdir).parents or args.bidsdir == args.workdir:
+    if args.workdir:
+        print(
+            "The --workdir argument is no longer valid.\nBy default, micc_fmriprep will "
+            "use /data/fmriprep-workdir/USERNAME.\nIf you need to force a different "
+            "location, use --force-workdir."
+        )
+        sys.exit(1)
+
+    if args.force_workdir:
+        workdir = args.force_workdir
+    elif args.no_workdir:
+        workdir = "__EMPTY__"
+    else:
+        workdir = pjoin("/data/fmriprep-workdir", getpass.getuser())
+
+    if Path(args.bidsdir) in Path(workdir).parents or args.bidsdir == workdir:
         print("Your workdir cannot be in your BIDS dir.")
         sys.exit(1)
 
-    filename, script = make_runscript(args)
+    filename, script = make_runscript(args, workdir)
     action = "NOT submitting" if args.dry_run else "Submitting"
     print(f"{action} {filename} to qsub, the contents of which are:")
     print("================")
