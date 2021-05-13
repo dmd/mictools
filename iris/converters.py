@@ -18,20 +18,11 @@ def final_scan(sourcenames):
     )[-1]
 
 
-def convert_to_nifti(studydir, sort_dicomdirs):
+def convert_to_nifti(studydir):
     logging.info("Converting to nifti")
-    # convert both to nifti and to separated dicom dirs
-    dicomdir = pjoin(studydir, "RAW")
+    dicomdir = pjoin(studydir, "scans")
     niftidir = pjoin(studydir, "nifti")
     os.mkdir(niftidir)
-
-    if sort_dicomdirs:
-        dicomdirsdir = pjoin(studydir, "dicomdirs")
-        os.mkdir(dicomdirsdir)
-        subprocess.call(
-            ["/usr/local/bin/dcm2niix", "-r", "y", "-o", dicomdirsdir, dicomdir]
-        )
-
     dcm = Dcm2niix()
     dcm.inputs.source_dir = dicomdir
     dcm.inputs.output_dir = niftidir
@@ -39,7 +30,7 @@ def convert_to_nifti(studydir, sort_dicomdirs):
     dcm.run()
 
 
-def convert_to_bids(config, studydir, subject, session, sort_dicomdirs):
+def convert_to_bids(config, studydir, subject, session):
     logging.info("Organizing in BIDS format")
     EXTENSIONS = (".json", ".bval", ".bvec", ".tsv", ".nii.gz")
     sourcedata_dir = pjoin(studydir, "sourcedata", "sub-" + subject)
@@ -68,11 +59,8 @@ def convert_to_bids(config, studydir, subject, session, sort_dicomdirs):
     open(pjoin(studydir, ".bidsignore"), "w").write(".sge*\n.task*\n")
 
     # move data into sourcedata
-    for _ in ("nifti", "RAW"):
+    for _ in ("nifti", "scans"):
         shutil.move(pjoin(studydir, _), sourcedata_dir)
-
-    if sort_dicomdirs:
-        shutil.move(pjoin(studydir, "dicomdirs"), sourcedata_dir)
 
     niftidir = pjoin(sourcedata_dir, "nifti")
 

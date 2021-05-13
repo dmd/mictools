@@ -23,7 +23,7 @@ password = getpass.getpass(f"Iris password for {args.username}: ")
 for accessionnumber in args.accessionnumber:
     print(f"Fetching {accessionnumber}...")
     subprocess.call(
-        ["ArcGet.py", "-l", accessionnumber],
+        ["ArcGet.py", "-f", "native", "-l", accessionnumber],
         env=dict(
             os.environ,
             XNAT_PASS=password,

@@ -94,7 +94,7 @@ def submit_fmriprep(config, studydir, subject):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Submit an iris-got study to fmriprep. iris-fmriprep is expecting a directory with a single directory inside named RAW, inside which are the DICOM files."
+        description="Submit an iris-got study to fmriprep. iris-fmriprep is expecting a directory with a single directory inside named scans, inside which are the DICOM files."
     )
     required = parser.add_argument_group("required arguments")
     required.add_argument(
@@ -105,11 +105,6 @@ if __name__ == "__main__":
     )
     required.add_argument("--subject", "-s", required=True, help="Subject number.")
     parser.add_argument("--session", "-e", help="Session number.", default=None)
-    parser.add_argument(
-        "--sort-dicomdirs",
-        help="Copy raw dicoms into named folders.",
-        action="store_true",
-    )
     required.add_argument(
         "studydir", help="Path to study received from Iris (dicom dir)."
     )
@@ -119,12 +114,11 @@ if __name__ == "__main__":
     tasks = task_select(config.get("run", "none"))
 
     if tasks["nifti"] and not task_run("nifti", args.studydir):
-        convert_to_nifti(args.studydir, args.sort_dicomdirs)
+        convert_to_nifti(args.studydir)
         task_run("nifti", args.studydir, write=True)
     if tasks["bids"] and not task_run("bids", args.studydir):
         convert_to_bids(
-            config, args.studydir, args.subject, args.session, args.sort_dicomdirs
-        )
+            config, args.studydir, args.subject, args.session)
         task_run("bids", args.studydir, write=True)
     if tasks["fmriprep"]:
         submit_fmriprep(config, args.studydir, args.subject)
