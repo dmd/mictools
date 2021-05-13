@@ -117,8 +117,7 @@ if __name__ == "__main__":
         convert_to_nifti(args.studydir)
         task_run("nifti", args.studydir, write=True)
     if tasks["bids"] and not task_run("bids", args.studydir):
-        convert_to_bids(
-            config, args.studydir, args.subject, args.session)
+        convert_to_bids(config, args.studydir, args.subject, args.session)
         task_run("bids", args.studydir, write=True)
     if tasks["fmriprep"]:
         submit_fmriprep(config, args.studydir, args.subject)
