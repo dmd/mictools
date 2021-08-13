@@ -24,6 +24,7 @@ def convert_to_nifti(studydir):
     niftidir = pjoin(studydir, "nifti")
     os.mkdir(niftidir)
     dcm = Dcm2niix()
+    dcm.ignore_exception = True
     dcm.inputs.source_dir = dicomdir
     dcm.inputs.output_dir = niftidir
     dcm.inputs.out_filename = "%d_%s"
