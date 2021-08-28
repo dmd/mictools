@@ -22,7 +22,6 @@ def make_runscript(args, workdir):
     pre += [
         "export SINGULARITYENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"
     ]
-    pre += ["/usr/bin/umask 002"]
     s = []
     s += ["/usr/bin/singularity run"]
     s += ["--contain"]
