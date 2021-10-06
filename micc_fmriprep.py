@@ -289,7 +289,7 @@ if __name__ == "__main__":
     print("================")
 
     qsub_cmd = f"{QSUB} -cwd -q fmriprep.q -N {args.jobname} -pe fmriprep {args.ncpus} -w e -R y {filename}".split()
-    print(qsub_cmd)
+    print(" ".join(qsub_cmd))
     if args.dry_run:
         print("NOT running; dry run only.")
     else:
