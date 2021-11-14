@@ -26,7 +26,7 @@ def make_runscript(args, workdir):
     s += ["/usr/bin/singularity run"]
     s += ["--contain"]
     s += ["--cleanenv"]
-    s += ["-B /tmp -B /data -B /data1 -B /data2 -B /data3 -B /cm/shared"]
+    s += ["-B /tmp -B /data -B /data1 -B /data2 -B /data3 -B /n -B /cm/shared"]
 
     s += [f"/cm/shared/singularity/images/fmriprep-{args.fmriprep_version}.simg"]
     s += [args.bidsdir]
