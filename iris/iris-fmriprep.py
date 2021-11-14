@@ -83,7 +83,7 @@ def submit_fmriprep(config, studydir, subject):
     proc = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     stdout, stderr = proc.communicate()
     if b"has been submitted" in stdout:
-        job_id = re.search(r"Your job (\d{6})", str(stdout)).group(1)
+        job_id = re.search(r"Your job (\d{1,7})", str(stdout)).group(1)
         logging.info(f"Submitted job {job_id} to SGE")
         open(pjoin(studydir, ".sgejobid"), "w").write(job_id)
     else:
