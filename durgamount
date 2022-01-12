@@ -13,6 +13,20 @@ fi
 PARTNERSID=$1
 SHARENAME=$2
 MOUNTPOINT=$3
+
+case $(basename $0) in
+    sfamount )
+	SERVER=cifs2.partners.org
+	if [[ $SHARENAME != *$ ]]; then
+	    SHARENAME="${SHARENAME}\$"
+	fi
+	;;
+    * )
+	SERVER=durga.mclean.harvard.edu
+	;;
+esac
+
+
 if [ ! -d "$MOUNTPOINT" ]; then
     echo "$MOUNTPOINT" must be an empty directory
     exit 1
@@ -22,12 +36,12 @@ if ls -1qA "$MOUNTPOINT" | grep -q . ; then
     exit 1
 fi
 
-echo -e "\nIMPORTANT NOTE: Durga mounts are NOT accessible from compute nodes (node1-5)!\n"
-echo -n "Going to mount //durga/$SHARENAME on $(readlink -f $MOUNTPOINT) as $PARTNERSID.  OK? (y/n): "
+echo -e "\nIMPORTANT NOTE: ${SERVER} mounts are NOT accessible from compute nodes!\n"
+echo -n "Going to mount //${SERVER}/${SHARENAME} on $(readlink -f $MOUNTPOINT) as $PARTNERSID.  OK? (y/n): "
 read -r answer
 if [ "$answer" != "${answer#[Yy]}" ] ;then
     echo Please enter your MGB/PARTNERS password...
-    mount -t cifs -o vers=3.0,sec=ntlmv2i,domain=PARTNERS,username="$PARTNERSID",uid="$SUDO_USER" //durga/"$SHARENAME" "$MOUNTPOINT"
+    mount -t cifs -o vers=3.0,sec=ntlmv2i,domain=PARTNERS,username="$PARTNERSID",uid="$SUDO_USER" //${SERVER}/"$SHARENAME" "$MOUNTPOINT"
 else
     echo Aborted.
 fi
