@@ -240,8 +240,8 @@ if __name__ == "__main__":
 
     versioning.add_argument(
         "--fmriprep-version",
-        help="fmriprep version number. Default: 21.0.0",
-        default="21.0.0",
+        help="fmriprep version number. Default: 21.0.1",
+        default="21.0.1",
     )
 
     args = parser.parse_args()
