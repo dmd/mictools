@@ -4,10 +4,13 @@ import argparse
 import errno
 import logging
 import os
+import sys
+import getpass
 from os.path import join as pjoin
 import re
 import subprocess
 import yaml
+import pprint
 
 from collections import defaultdict
 from os.path import join as pjoin
@@ -80,16 +83,43 @@ def submit_fmriprep(config, studydir, subject):
 
     logging.info("Running command: " + " ".join(s))
 
+    dump = {}
+
     proc = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     stdout, stderr = proc.communicate()
     if b"has been submitted" in stdout:
         job_id = re.search(r"Your job (\d{1,7})", str(stdout)).group(1)
         logging.info(f"Submitted job {job_id} to SGE")
         open(pjoin(studydir, ".sgejobid"), "w").write(job_id)
+        submitted = True
     else:
+        submitted = False
         logging.warning(
             f"Something went wrong submitting to the queue:\nSTDOUT:\n{stdout}STDERR:\n{stderr}"
         )
+
+    # write out our debug data
+    dump["arguments"] = sys.argv
+    dump["pwd"] = os.getcwd()
+    dump["user"] = getpass.getuser()
+    dump["config"] = config
+    dump["studydir"] = studydir
+    dump["subject"] = subject
+    dump["command"] = " ".join(s)
+    dump["submitted"] = submitted
+    if submitted:
+        dump["sgejobid"] = job_id
+        proc = subprocess.Popen(
+            ["/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qstat", "-j", job_id],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        stdout, stderr = proc.communicate()
+        dump["qstat"] = stdout.decode("ascii")
+
+    fp = open(f"/data/fmriprep-workdir/logs/{getpass.getuser()}.{job_id}", "w")
+    pp = pprint.PrettyPrinter(stream=fp)
+    pp.pprint(dump)
 
 
 if __name__ == "__main__":
