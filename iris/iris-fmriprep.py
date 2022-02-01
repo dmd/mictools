@@ -100,7 +100,7 @@ def submit_fmriprep(config, studydir, subject):
 
     # write out our debug data
     dump["arguments"] = sys.argv
-    dump["pwd"] = os.getcwd()
+    dump["cwd"] = os.getcwd()
     dump["user"] = getpass.getuser()
     dump["config"] = config
     dump["studydir"] = studydir
