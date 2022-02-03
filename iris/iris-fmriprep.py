@@ -99,6 +99,9 @@ def submit_fmriprep(config, studydir, subject):
         )
 
     # write out our debug data
+    def list_to_dict(rlist):
+        return dict(map(lambda s: re.split(": *", s, 1), rlist))
+
     dump["arguments"] = sys.argv
     dump["cwd"] = os.getcwd()
     dump["user"] = getpass.getuser()
@@ -115,7 +118,10 @@ def submit_fmriprep(config, studydir, subject):
             stderr=subprocess.STDOUT,
         )
         stdout, stderr = proc.communicate()
-        dump["qstat"] = stdout.decode("ascii")
+        dump["qstat"] = list_to_dict(
+            [l for l in stdout.decode("ascii").split("\n") if ":" in l]
+        )
+        dump["submitted_command"] = open(dump["qstat"]["script_file"]).read()
 
     fp = open(f"/data/fmriprep-workdir/logs/{getpass.getuser()}.{job_id}", "w")
     pp = pprint.PrettyPrinter(stream=fp)
