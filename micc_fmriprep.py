@@ -77,6 +77,9 @@ def make_runscript(args, workdir):
     if args.topup_max_vols:
         s += [f"--topup-max-vols {args.topup_max_vols}"]
 
+    if args.anat_derivatives:
+        s += [f"--anat-derivatives {args.anat_derivatives}"]
+
     if args.verbose:
         s += ["-vvvv"]
     else:
@@ -153,6 +156,13 @@ if __name__ == "__main__":
         "--topup-max-vols",
         help="Adjust processing of TOPUP scans.",
         type=int,
+        metavar="TOPUP_MAX_VOLS",
+    )
+
+    parser.add_argument(
+        "--anat-derivatives",
+        help="Reuse a preexisting anatomic analysis.",
+        metavar="PATH",
     )
 
     parser.add_argument(

@@ -72,6 +72,7 @@ def submit_fmriprep(config, studydir, subject):
         if args[arg]:
             s += ["--" + arg]
     for arg in (
+        "anat-derivatives",
         "dummy-scans",
         "fmriprep-version",
         "ignore",
