@@ -66,6 +66,7 @@ def submit_fmriprep(config, studydir, subject):
         "dry-run",
         "freesurfer",
         "longitudinal",
+        "me-output-echos",
         "return-all-components",
     ):
         if args[arg]:
@@ -77,6 +78,7 @@ def submit_fmriprep(config, studydir, subject):
         "ncpus",
         "output-spaces",
         "ramsize",
+        "topup-max-vols",
     ):
         if args[arg]:
             s += ["--" + arg, str(args[arg])]

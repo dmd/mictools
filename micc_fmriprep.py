@@ -71,6 +71,12 @@ def make_runscript(args, workdir):
     if args.return_all_components:
         s += ["--return-all-components"]
 
+    if args.me_output_echos:
+        s += ["--me-output-echos"]
+
+    if args.topup_max_vols:
+        s += [f"--topup-max-vols {args.topup_max_vols}"]
+
     if args.verbose:
         s += ["-vvvv"]
     else:
@@ -135,6 +141,18 @@ if __name__ == "__main__":
         choices=["fieldmaps", "slicetiming", "sbref"],
         help="ignore selected aspects of the input dataset to disable corresponding "
         "parts of the workflow (a space delimited list)",
+    )
+
+    parser.add_argument(
+        "--me-output-echos",
+        help="Enable additional outputs during multiecho processing.",
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "--topup-max-vols",
+        help="Adjust processing of TOPUP scans.",
+        type=int,
     )
 
     parser.add_argument(
