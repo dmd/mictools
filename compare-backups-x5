@@ -6,6 +6,11 @@ baculacheck () {
     FILESET=$3
     echo === The following ${RPATH} dirs have no backup job in ${FILESET} ===
     ssh ${HOST} "find ${RPATH} -not -name '.*' -maxdepth 1 -mindepth 1 -type d " | sort  > /tmp/actually-have
+
+    if [[ ${HOST} == "micc" ]]; then
+	sed s,/data/,/net/nisaba.mclean.harvard.edu/mnt/chlorine/cluster-n/, /tmp/actually-have | sponge /tmp/actually-have
+    fi
+
     ssh x5backup cat /opt/bacula/etc/conf.d/Director/x5backup-dir/Fileset/${FILESET} \
         | grep " File =" \
         | cut -d\" -f2 \
