@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run via sudo"
+   exit 1
+fi
+
+if [ $# -ne 2 ]
+  then
+    echo "Usage: $0 group user"
+    exit 1
+fi
+
+cmsh -c "group ; append $1 groupmembers $2 ; commit"
+
