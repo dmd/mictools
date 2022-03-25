@@ -60,7 +60,7 @@ def make_runscript(args, workdir):
         s += ["--anat-only"]
 
     if args.skip_bids_validation:
-        s += ["--skip_bids_validation"]
+        s += ["--skip-bids-validation"]
 
     if not args.freesurfer:
         s += ["--fs-no-reconall"]
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--skip_bids_validation", help="Skip BIDS validation.", action="store_true"
+        "--skip-bids-validation", help="Skip BIDS validation.", action="store_true"
     )
 
     parser.add_argument(
