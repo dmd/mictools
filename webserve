@@ -1,13 +1,13 @@
-#!/usr/bin/env python2 
+#!/usr/bin/env python3
 
 import os
 import sys
-import SimpleHTTPServer
-import SocketServer
+import http.server
+import socketserver
 import signal
 
 def handler(signum, frame):
-    print 'Exiting after 24 hours...'
+    print('Exiting after 24 hours...')
     sys.exit(1)
 signal.signal(signal.SIGALRM, handler)
 signal.alarm(24*60*60)
@@ -22,9 +22,9 @@ except IndexError:
 
 os.chdir('/')
 
-httpd = SocketServer.TCPServer(('', 0), SimpleHTTPServer.SimpleHTTPRequestHandler)
+httpd = socketserver.TCPServer(('', 0), http.server.SimpleHTTPRequestHandler)
 
-print 'Go to:      http://micc.mclean.harvard.edu:' + str(httpd.socket.getsockname()[1]) + filepath
-print '(In Terminal, you can right-click the above and select Open URL.)'
-print 'Please type Control-c when you are done.'
+print('Go to:      http://micc.mclean.harvard.edu:' + str(httpd.socket.getsockname()[1]) + filepath)
+print('(In Terminal, you can right-click the above and select Open URL.)')
+print('Please type Control-c when you are done.')
 httpd.serve_forever()
