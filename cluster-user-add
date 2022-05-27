@@ -6,15 +6,16 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-if [ $# -eq 0 ]
+if [ $# -ne 2 ]
   then
-    echo "Usage: $0 newusername"
+    echo "Usage: $0 newusername emailaddress"
     exit 1
 fi
 
 U=$1
+E=$2
 
-/cm/local/apps/cmd/bin/cmsh -c "user; add ${U}; set loginshell /bin/tcsh; set password; commit;"
+/cm/local/apps/cmd/bin/cmsh -c "user; add ${U}; set loginshell /bin/tcsh; set email $E ; set password; commit;"
 mkdir /data/$U
 cp /home/proto/.cshrc /home/proto/.cshrc.local /home/$U
 chown -R $U:$U /home/$U /data/$U
