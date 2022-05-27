@@ -4,3 +4,4 @@ micc_fmriprep
 __pycache__
 .ipynb_checkpoints
 *.ipynb
+everything.pem

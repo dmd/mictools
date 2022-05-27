@@ -3,6 +3,7 @@
 import os
 import sys
 import http.server
+import ssl
 import socketserver
 import signal
 
@@ -23,8 +24,12 @@ except IndexError:
 os.chdir('/')
 
 httpd = socketserver.TCPServer(('', 0), http.server.SimpleHTTPRequestHandler)
+httpd.socket = ssl.wrap_socket(httpd.socket,
+                               server_side=True,
+                               certfile='/home/ddrucker/mictools/everything.pem',
+                               ssl_version=ssl.PROTOCOL_TLS)
 
-print('Go to:      http://micc.mclean.harvard.edu:' + str(httpd.socket.getsockname()[1]) + filepath)
+print('Go to:      https://micc.mclean.harvard.edu:' + str(httpd.socket.getsockname()[1]) + filepath)
 print('(In Terminal, you can right-click the above and select Open URL.)')
 print('Please type Control-c when you are done.')
 httpd.serve_forever()
