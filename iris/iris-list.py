@@ -23,7 +23,9 @@ parser.add_argument(
     required=False,
     type=int,
 )
+parser.add_argument('-v', action='store_true', help=argparse.SUPPRESS)
 args = parser.parse_args()
+
 
 password = getpass.getpass(f"Iris password for {args.username}: ")
 
@@ -34,6 +36,8 @@ r = requests.get(
 
 if not r.ok:
     print("Something went wrong.")
+    if args.v:
+        print(r.text)
     sys.exit(1)
 
 sessions = sorted(
