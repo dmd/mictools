@@ -1,0 +1,102 @@
+{
+  "name": "spectrorename",
+  "label": "spectrorename",
+  "description": "Runs spectrorename",
+  "version": "1.0",
+  "schema-version": "1.0",
+  "image": "dmd3eorg/xnat-dicom-tools:latest",
+  "type": "docker",
+  "command-line": "python /spectrorename",
+  "mounts": [
+    {
+      "name": "dicom-in",
+      "writable": false,
+      "path": "/input"
+    },
+    {
+      "name": "ima-out",
+      "writable": true,
+      "path": "/output"
+    }
+  ],
+  "environment-variables": {},
+  "ports": {},
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "IMA",
+      "description": "The IMA files",
+      "required": true,
+      "mount": "ima-out",
+      "path": null,
+      "glob": null
+    }
+  ],
+  "xnat": [
+    {
+      "name": "spectrorename-scan",
+      "label": "spectrorename",
+      "description": "Run spectrorename on a Scan",
+      "contexts": [
+        "xnat:imageScanData"
+      ],
+      "external-inputs": [
+        {
+          "name": "scan",
+          "label": null,
+          "description": "Input scan",
+          "type": "Scan",
+          "matcher": "'secondary' in @.resources[*].label",
+          "default-value": null,
+          "required": true,
+          "replacement-key": null,
+          "sensitive": null,
+          "provides-value-for-command-input": null,
+          "provides-files-for-command-mount": null,
+          "via-setup-command": null,
+          "user-settable": null,
+          "load-children": true
+        }
+      ],
+      "derived-inputs": [
+        {
+          "name": "scan-dicoms",
+          "label": null,
+          "description": "The dicom resource on the scan",
+          "type": "Resource",
+          "matcher": "@.label == 'secondary'",
+          "default-value": null,
+          "required": true,
+          "replacement-key": null,
+          "sensitive": null,
+          "provides-value-for-command-input": null,
+          "provides-files-for-command-mount": "dicom-in",
+          "user-settable": null,
+          "load-children": true,
+          "derived-from-wrapper-input": "scan",
+          "derived-from-xnat-object-property": null,
+          "via-setup-command": null,
+          "multiple": false,
+          "parser": null
+        }
+      ],
+      "output-handlers": [
+        {
+          "name": "ima-resource",
+          "accepts-command-output": "IMA",
+          "via-wrapup-command": null,
+          "as-a-child-of": "scan",
+          "type": "Resource",
+          "label": "IMA",
+          "format": null,
+          "description": null,
+          "content": null,
+          "tags": []
+        }
+      ]
+    }
+  ],
+  "container-labels": {},
+  "generic-resources": {},
+  "ulimits": {}
+}

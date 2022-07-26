@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+
+import pydicom
+import glob
+import os
+import shutil
+
+thedicomfiles = glob.glob(os.path.join('/input', '*.dcm'))
+
+for thisfilename in thedicomfiles:
+    plan=pydicom.read_file(thisfilename)
+
+    outputname = []
+    outputname.append(str(plan.PatientName))
+    outputname.append('MR')
+    outputname.append(str(plan.SeriesNumber).zfill(4))
+    outputname.append(str(plan.AcquisitionNumber).zfill(4))
+
+    try:
+        acqdate = str(plan.AcquisitionDate)
+    except AttributeError:
+        acqdate = str(plan.SeriesDate)
+
+    try:
+        acqtime = str(plan.AcquisitionTime)
+    except AttributeError:
+        acqtime = str(plan.SeriesTime)
+
+    outputname += [acqdate[0:4], acqdate[4:6], acqdate[6:8]]
+    outputname += [acqtime[0:2], acqtime[2:4], acqtime[4:]]
+
+    instancenum = str(plan.InstanceNumber)
+    outputname.append(str(plan.InstanceNumber).zfill(9))
+    outputname += ['IMA']
+
+    imaname = os.path.join('/output', '.'.join(outputname))
+    shutil.copyfile(thisfilename, imaname)

@@ -1,0 +1,81 @@
+{
+    "name": "study-duration",
+    "description": "Computes the duration of the MR Session",
+    "label": "study-duration",
+    "version": "1.0",
+    "schema-version": "1.0",
+    "image": "dmd3eorg/xnat-dicom-tools:latest",
+    "type": "docker",
+    "command-line": "python /studylen.py",
+    "reserve-memory": "128",
+    "limit-memory": "128",
+    "override-entrypoint": true,
+    "mounts": [
+        {
+            "name": "in",
+            "writable": "false",
+            "path": "/input"
+        },
+        {
+            "name": "out",
+            "writable": "true",
+            "path": "/output"
+        }
+    ],
+    "inputs": [],
+    "outputs": [
+        {
+            "name": "output",
+            "description": "The output file.",
+            "mount": "out",
+            "required": true
+        }
+    ],
+    "xnat": [
+        {
+            "name": "study-duration-session",
+            "description": "Run the study-duration container with a session mounted",
+            "label": "Compute the MR Session Duration",
+            "contexts": ["xnat:imageSessionData"],
+            "external-inputs": [
+                {
+                    "name": "session",
+                    "description": "Input session",
+                    "type": "Session",
+                    "required": true,
+                    "provides-files-for-command-mount": "in",
+                    "load-children": false
+                }
+            ],
+            "derived-inputs": [
+                {
+                    "name": "subject",
+                    "description": "Load parent subject.",
+                    "type": "Subject",
+                    "required": true,
+                    "user-settable": false,
+                    "load-children": true,
+                    "derived-from-wrapper-input": "session"
+                },
+                {
+                    "name": "project",
+                    "type": "Project",
+                    "description": "Load parent project.",
+                    "required": true,
+                    "user-settable": false,
+                    "load-children": true,
+                    "derived-from-wrapper-input": "session"
+                }
+            ],
+            "output-handlers": [
+                {
+                    "name": "output-resource",
+                    "accepts-command-output": "output",
+                    "as-a-child-of-wrapper-input": "session",
+                    "type": "Resource",
+                    "label": "DEBUG_OUTPUT"
+                }
+            ]
+        }
+    ]
+}

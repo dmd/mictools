@@ -1,0 +1,125 @@
+{
+  "name": "session-missing-scans",
+  "label": "session-missing-scans",
+  "description": "report whether a session has any gaps in scan numbering",
+  "version": "1.0",
+  "schema-version": "1.0",
+  "image": "dmd3eorg/xnat-dicom-tools:latest",
+  "type": "docker",
+  "command-line": "python /gapfinder.py",
+  "override-entrypoint": true,
+  "mounts": [
+    {
+      "name": "in",
+      "writable": false,
+      "path": "/input"
+    },
+    {
+      "name": "out",
+      "writable": true,
+      "path": "/output"
+    }
+  ],
+  "environment-variables": {},
+  "ports": {},
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "output",
+      "description": "The output file.",
+      "required": true,
+      "mount": "out",
+      "path": null,
+      "glob": null
+    }
+  ],
+  "xnat": [
+    {
+      "name": "session-missing-scans",
+      "label": "report whether a session has any gaps in scan numbering",
+      "description": "Run the session-missing-scans container with a session mounted",
+      "contexts": [
+        "xnat:imageSessionData"
+      ],
+      "external-inputs": [
+        {
+          "name": "session",
+          "label": null,
+          "description": "Input session",
+          "type": "Session",
+          "matcher": null,
+          "default-value": null,
+          "required": true,
+          "replacement-key": null,
+          "sensitive": null,
+          "provides-value-for-command-input": null,
+          "provides-files-for-command-mount": "in",
+          "via-setup-command": null,
+          "user-settable": null,
+          "load-children": false
+        }
+      ],
+      "derived-inputs": [
+        {
+          "name": "subject",
+          "label": null,
+          "description": "Load parent subject.",
+          "type": "Subject",
+          "matcher": null,
+          "default-value": null,
+          "required": true,
+          "replacement-key": null,
+          "sensitive": null,
+          "provides-value-for-command-input": null,
+          "provides-files-for-command-mount": null,
+          "user-settable": false,
+          "load-children": true,
+          "derived-from-wrapper-input": "session",
+          "derived-from-xnat-object-property": null,
+          "via-setup-command": null,
+          "multiple": false,
+          "parser": null
+        },
+        {
+          "name": "project",
+          "label": null,
+          "description": "Load parent project.",
+          "type": "Project",
+          "matcher": null,
+          "default-value": null,
+          "required": true,
+          "replacement-key": null,
+          "sensitive": null,
+          "provides-value-for-command-input": null,
+          "provides-files-for-command-mount": null,
+          "user-settable": false,
+          "load-children": true,
+          "derived-from-wrapper-input": "session",
+          "derived-from-xnat-object-property": null,
+          "via-setup-command": null,
+          "multiple": false,
+          "parser": null
+        }
+      ],
+      "output-handlers": [
+        {
+          "name": "output-resource",
+          "accepts-command-output": "output",
+          "via-wrapup-command": null,
+          "as-a-child-of": "session",
+          "type": "Resource",
+          "label": "DEBUG_OUTPUT",
+          "format": null,
+          "description": null,
+          "content": null,
+          "tags": []
+        }
+      ]
+    }
+  ],
+  "reserve-memory": 128,
+  "limit-memory": 128,
+  "container-labels": {},
+  "generic-resources": {},
+  "ulimits": {}
+}

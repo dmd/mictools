@@ -1,0 +1,5 @@
+curl -n -X GET https://iris.mclean.harvard.edu/data/projects | jq -r '.ResultSet.Result[].ID' |grep jaymin>all
+for i in $(cat all)
+do
+  curl -n -X PUT https://iris.mclean.harvard.edu/xapi/projects/${i}/commands/7/wrappers/9/enabled
+done
