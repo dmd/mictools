@@ -22,10 +22,10 @@ mkdir -p "${DEST}"/sourcedata/ \
          "${DEST}"/derivatives/freesurfer/fsaverage/ \
          "${DEST}"/derivatives/fmriprep/logs/
 
-/bin/mv -v "${SOURCE}"/sub-*                         "${DEST}"/
-/bin/mv -v "${SOURCE}"/sourcedata/sub-*              "${DEST}"/sourcedata/
-/bin/mv -v "${SOURCE}"/derivatives/freesurfer/sub-*  "${DEST}"/derivatives/freesurfer/ 2>/dev/null
-/bin/mv -v "${SOURCE}"/derivatives/fmriprep/sub-*    "${DEST}"/derivatives/fmriprep/ 2>/dev/null
+mv -v "${SOURCE}"/sub-*                         "${DEST}"/
+mv -v "${SOURCE}"/sourcedata/sub-*              "${DEST}"/sourcedata/
+mv -v "${SOURCE}"/derivatives/freesurfer/sub-*  "${DEST}"/derivatives/freesurfer/ 2>/dev/null
+mv -v "${SOURCE}"/derivatives/fmriprep/sub-*    "${DEST}"/derivatives/fmriprep/ 2>/dev/null
 
-/bin/rsync -a --remove-source-files "${SOURCE}"/derivatives/fmriprep/logs/        "${DEST}"/derivatives/fmriprep/logs/
-/bin/rsync -a --remove-source-files "${SOURCE}"/derivatives/freesurfer/fsaverage/ "${DEST}"/derivatives/freesurfer/fsaverage/
+rsync -a --remove-source-files "${SOURCE}"/derivatives/fmriprep/logs/        "${DEST}"/derivatives/fmriprep/logs/
+rsync -a --remove-source-files "${SOURCE}"/derivatives/freesurfer/fsaverage/ "${DEST}"/derivatives/freesurfer/fsaverage/

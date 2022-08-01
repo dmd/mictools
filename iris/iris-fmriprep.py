@@ -1,7 +1,6 @@
 #!/cm/shared/anaconda3/envs/iris/bin/python
 
 import argparse
-import errno
 import logging
 import os
 import sys
@@ -11,9 +10,7 @@ import re
 import subprocess
 import yaml
 import pprint
-
 from collections import defaultdict
-from os.path import join as pjoin
 
 from converters import convert_to_bids, convert_to_nifti
 
@@ -32,7 +29,7 @@ def task_select(choice):
     if choice in ("nifti", "bids", "fmriprep"):
         tasks["nifti"] = True
     elif choice == "none":
-        logging.error(f"no run directive found in config")
+        logging.error("no run directive found in config")
     else:
         logging.error(f"invalid task '{choice}'")
     if choice in ("bids", "fmriprep"):
@@ -122,7 +119,7 @@ def submit_fmriprep(config, studydir, subject):
         )
         stdout, stderr = proc.communicate()
         dump["qstat"] = list_to_dict(
-            [l for l in stdout.decode("ascii").split("\n") if ":" in l]
+            [x for x in stdout.decode("ascii").split("\n") if ":" in x]
         )
         dump["submitted_command"] = open(dump["qstat"]["script_file"]).read()
 
@@ -133,7 +130,8 @@ def submit_fmriprep(config, studydir, subject):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Submit an iris-got study to fmriprep. iris-fmriprep is expecting a directory with a single directory inside named scans, inside which are the DICOM files."
+        description="""Submit an iris-got study to fmriprep.
+iris-fmriprep is expecting a directory with a single directory inside named scans, inside which are the DICOM files."""
     )
     required = parser.add_argument_group("required arguments")
     required.add_argument(

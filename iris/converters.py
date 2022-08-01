@@ -2,7 +2,6 @@ from glob import glob
 import shutil
 import logging
 import os
-import subprocess
 from os.path import join as pjoin
 from nipype.interfaces.dcm2nii import Dcm2niix
 
@@ -67,7 +66,6 @@ def convert_to_bids(config, studydir, subject, session):
 
     bidsnames = config["bidsnames"]
 
-    t1anatfile = ""
     for scantype in bidsnames:  # ('anat', 'func')
         scantype_dir = pjoin(subject_dir, scantype)
         os.mkdir(scantype_dir)

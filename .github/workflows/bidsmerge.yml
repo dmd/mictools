@@ -1,0 +1,21 @@
+name: bidsmerge test
+on: [push]
+jobs:
+  bidsmerge-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: List files in the repository
+        run: ls ${{ github.workspace }}
+      - name: run bidsmerge
+        working-directory: ${{ github.workspace }}/tests/bidsmerge/data
+        run: |
+          mkdir dest
+          touch dest/dataset_description.json
+          ../../../bidsmerge source1 dest
+          ../../../bidsmerge source2 dest
+      - name: diff directories
+        working-directory: ${{ github.workspace }}/tests/bidsmerge/data
+        run: diff -r dest dest.correct
+

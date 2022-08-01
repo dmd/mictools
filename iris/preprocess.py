@@ -41,4 +41,4 @@ def preprocess(config, studydir, scantype_dir, basename, extension, bidsbase):
         t_min = risp["trimstart"].get(bidsbase, default_t_min)
         logging.info(f"Starting to trimT {t_min} {is_default}off {fname}")
         trimT(fname, fname, t_min)
-        logging.info(f"Finished trimT")
+        logging.info("Finished trimT")

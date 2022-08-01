@@ -34,7 +34,7 @@ def movedcmdir(sourcename, suffix):
     if suffix is None:
         destname = sourcename[0:dashloc]
     else:
-        destname = sourcename[0 : dashloc + 1] + suffix
+        destname = sourcename[0:dashloc + 1] + suffix
     if os.path.isdir(destname):
         print("destination directory already exists - skipping")
     else:
@@ -169,7 +169,7 @@ if __name__ == "__main__":
             """
 The file should have two sections, prefixed by [anat] and [func]. Within
 each section, specify SCAN_NAME_FROM_SCANNER = scan_name_you_want
-Do NOT include the last _NN suffix. The last one will be chosen, 
+Do NOT include the last _NN suffix. The last one will be chosen,
 and others ignored.
 
 It is your responsibility to use names that are BIDS-compliant!
@@ -209,7 +209,7 @@ cue_mb6_gr2_3 = task-cue3_bold
         sys.exit(1)
 
     if args.subject is None:
-        print(f"must specify a subject number")
+        print("must specify a subject number")
         sys.exit(1)
 
     if not os.path.exists(args.config):

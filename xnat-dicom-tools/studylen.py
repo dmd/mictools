@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 files = glob.glob("/input/**/*.dcm", recursive=True)
 
+
 def series(x):
     return int(x.split("-")[1])
 

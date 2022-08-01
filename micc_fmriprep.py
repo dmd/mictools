@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from os.path import expanduser, join as pjoin
+from os.path import join as pjoin
 import os
 import sys
 import getpass

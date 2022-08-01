@@ -26,11 +26,14 @@ def convert_to_nifti(studydir, newdir):
         os.rename(newdir, newold)
     os.rename(niftidir, newdir)
 
+
 if __name__ == "__main__":
     studydir = sys.argv[1]
     studydir_parent = Path(studydir).parent
     ds = pydicom.dcmread(glob(pjoin(studydir, "MR*"))[0])
-    dt = datetime.strptime(ds.StudyDate + ds.StudyTime, "%Y%m%d%H%M%S.%f").strftime("%Y%m%d_%H%M")
-    newdir = Path(studydir).parent.joinpath(dt + '_' + ds.ManufacturerModelName)
+    dt = datetime.strptime(ds.StudyDate + ds.StudyTime, "%Y%m%d%H%M%S.%f").strftime(
+        "%Y%m%d_%H%M"
+    )
+    newdir = Path(studydir).parent.joinpath(dt + "_" + ds.ManufacturerModelName)
     convert_to_nifti(studydir, newdir)
     open(pjoin(newdir, ".pipe_ready"), "w").write("")
