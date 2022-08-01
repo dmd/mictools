@@ -1,4 +1,0 @@
-FROM php:7.2-apache
-
-RUN groupmod -g 48 www-data
-ADD web /var/www/html 
