@@ -6,14 +6,27 @@ from pathlib import Path
 irisfmriprep = importlib.import_module("iris-fmriprep")
 testdir = "tests/iris/convert_to_bids/"
 
-config = yaml.safe_load(open(f"{testdir}/EXAMPLE.yaml"))
 
+def test_final_scan():
+    assert final_scan(
+        ["FOO_BAR_11.nii.gz", "FOO_BAR_2.nii.gz", "FOO_BAR_3.nii.gz"], False
+    ) == ["FOO_BAR_11.nii.gz"]
 
-def test_final_scan_simple():
-    assert (
-        final_scan(["FOO_BAR_11.nii.gz", "FOO_BAR_2.nii.gz", "FOO_BAR_3.nii.gz"])
-        == "FOO_BAR_11.nii.gz"
-    )
+    assert final_scan(
+        [
+            "checkerboard_AP_SBRef_37_e1.nii.gz",
+            "checkerboard_AP_SBRef_37_e2.nii.gz",
+            "checkerboard_AP_SBRef_37_e3.nii.gz",
+            "checkerboard_AP_SBRef_38_e1.nii.gz",
+            "checkerboard_AP_SBRef_38_e2.nii.gz",
+            "checkerboard_AP_SBRef_38_e3.nii.gz",
+        ],
+        True,
+    ) == [
+        "checkerboard_AP_SBRef_38_e1.nii.gz",
+        "checkerboard_AP_SBRef_38_e2.nii.gz",
+        "checkerboard_AP_SBRef_38_e3.nii.gz",
+    ]
 
 
 def test_convert_to_bids():
@@ -50,7 +63,45 @@ def test_convert_to_bids():
     for f in should_exist_nifti:
         assert Path(f"{testdir}/EXAMPLE/nifti/{f}").exists()
 
+    config = yaml.safe_load(open(f"{testdir}/EXAMPLE.yaml"))
     convert_to_bids(config, f"{testdir}/EXAMPLE", "test", "1")
+
+    for f in should_exist_bids:
+        assert Path(f"{testdir}/EXAMPLE/{f}").exists()
+
+
+def test_convert_to_bids_multiecho():
+    convert_to_nifti(f"{testdir}/EXAMPLE.multiecho")
+
+    should_exist_nifti = [
+        "checkerboard_AP_SBRef_37_e1.json",
+        "checkerboard_AP_SBRef_37_e1.nii",
+        "checkerboard_AP_SBRef_37_e2.json",
+        "checkerboard_AP_SBRef_37_e2.nii",
+        "checkerboard_AP_SBRef_37_e3.json",
+        "checkerboard_AP_SBRef_37_e3.nii",
+        "checkerboard_AP_SBRef_38_e1.json",
+        "checkerboard_AP_SBRef_38_e1.nii",
+        "checkerboard_AP_SBRef_38_e2.json",
+        "checkerboard_AP_SBRef_38_e2.nii",
+        "checkerboard_AP_SBRef_38_e3.json",
+        "checkerboard_AP_SBRef_38_e3.nii",
+    ]
+
+    should_exist_bids = [
+        "CHANGES",
+        "README",
+        ".bidsignore",
+        "dataset_description.json",
+        "sub-test/ses-1/func/sub-test_ses-1_echo-1_task-checkerboard_bold.nii.gz",
+        "sub-test/ses-1/func/sub-test_ses-1_echo-1_task-checkerboard_bold.json",
+    ]
+
+    for f in should_exist_nifti:
+        assert Path(f"{testdir}/EXAMPLE.multiecho/nifti/{f}").exists()
+
+    config = yaml.safe_load(open(f"{testdir}/EXAMPLE.multiecho.yaml"))
+    convert_to_bids(config, f"{testdir}/EXAMPLE.multiecho", "test", "1")
 
     for f in should_exist_bids:
         assert Path(f"{testdir}/EXAMPLE/{f}").exists()

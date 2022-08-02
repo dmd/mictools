@@ -4,17 +4,50 @@ import logging
 import os
 from os.path import join as pjoin
 from nipype.interfaces.dcm2nii import Dcm2niix
-
+import re
 from preprocess import preprocess
 
+niigz = ".nii.gz"
 
-def final_scan(sourcenames):
-    # given ['FOO_BAR_11.nii.gz', 'FOO_BAR_2.nii.gz', 'FOO_BAR_3.nii.gz']
-    # return 'FOO_BAR_11.nii.gz', the highest numbered scan
 
-    return sorted(
-        sourcenames, key=lambda x: int(x.replace(".nii.gz", "").rsplit("_", 1)[-1])
-    )[-1]
+def final_scan(sourcenames, multiecho=False):
+    # if single-echo:
+    #  given ['FOO_BAR_11.nii.gz', 'FOO_BAR_2.nii.gz', 'FOO_BAR_3.nii.gz']
+    #  return 'FOO_BAR_11.nii.gz', the highest numbered scan
+    # if multi-echo
+    #  given:
+    #   ['checkerboard_AP_SBRef_37_e1.nii.gz',
+    #   'checkerboard_AP_SBRef_37_e2.nii.gz',
+    #   'checkerboard_AP_SBRef_37_e3.nii.gz',
+    #   'checkerboard_AP_SBRef_38_e1.nii.gz',
+    #   'checkerboard_AP_SBRef_38_e2.nii.gz',
+    #   'checkerboard_AP_SBRef_38_e3.nii.gz']
+    #
+    #  return:
+    #   ['checkerboard_AP_SBRef_38_e1.nii.gz',
+    #   'checkerboard_AP_SBRef_38_e2.nii.gz',
+    #   'checkerboard_AP_SBRef_38_e3.nii.gz']
+
+    if not sourcenames:
+        return []
+
+    files = {}
+    for file in sourcenames:
+
+        if multiecho:
+            m = re.search(rf"_(\d+)_e\d{niigz}$", file)
+            fid = int(m.group(1))
+        else:
+            m = re.search(rf"_(\d+){niigz}$", file)
+            fid = int(m.group(1))
+
+        if fid not in files:
+            files[fid] = []
+        files[fid].append(file)
+
+    ids = sorted(list(files.keys()))
+
+    return sorted(files[ids[-1]])
 
 
 def convert_to_nifti(studydir):
@@ -32,7 +65,7 @@ def convert_to_nifti(studydir):
 
 def convert_to_bids(config, studydir, subject, session):
     logging.info("Organizing in BIDS format")
-    EXTENSIONS = (".json", ".bval", ".bvec", ".tsv", ".nii.gz")
+    EXTENSIONS = (".json", ".bval", ".bvec", ".tsv", niigz)
     sourcedata_dir = pjoin(studydir, "sourcedata", "sub-" + subject)
     subject_dir = pjoin(studydir, "sub-" + subject)
 
@@ -73,26 +106,43 @@ def convert_to_bids(config, studydir, subject, session):
             # take only the latest; exclude _ph.nii.gz phase component
             scans = [
                 os.path.basename(_)
-                for _ in glob(pjoin(niftidir, scanname + "*[0-9].nii.gz"))
+                for _ in glob(pjoin(niftidir, scanname + f"*[0-9]{niigz}"))
             ]
             if not scans:
                 logging.warning(f"No scans found named {scanname}.")
                 continue
-            source = final_scan(scans)
-            basename = f"sub-{subject}_"
-            if session:
-                basename += f"ses-{session}_"
-            bidsbase = bidsnames[scantype][scanname]
-            basename += bidsbase
-            logging.info(f"Copying {source} to {basename}.")
-            for extension in EXTENSIONS:
-                try:
-                    shutil.copyfile(
-                        pjoin(niftidir, source.replace(".nii.gz", extension)),
-                        pjoin(scantype_dir, basename + extension),
-                    )
-                    preprocess(
-                        config, studydir, scantype_dir, basename, extension, bidsbase
-                    )
-                except FileNotFoundError:
-                    pass
+
+            # is this a multi-echo scan?
+            multiecho = scans[0].split("_")[-1][0] == "e"
+
+            sources = final_scan(scans, multiecho)
+
+            for source in sources:
+                basename = f"sub-{subject}_"
+                if session:
+                    basename += f"ses-{session}_"
+                if multiecho:
+                    m = re.search(rf"_\d+_e(\d){niigz}$", source)
+                    echonum = m.group(1)
+                    basename += f"echo-{echonum}_"
+
+                bidsbase = bidsnames[scantype][scanname]
+                basename += bidsbase
+
+                logging.info(f"Copying {source} to {basename}.")
+                for extension in EXTENSIONS:
+                    try:
+                        shutil.copyfile(
+                            pjoin(niftidir, source.replace(niigz, extension)),
+                            pjoin(scantype_dir, basename + extension),
+                        )
+                        preprocess(
+                            config,
+                            studydir,
+                            scantype_dir,
+                            basename,
+                            extension,
+                            bidsbase,
+                        )
+                    except FileNotFoundError:
+                        pass

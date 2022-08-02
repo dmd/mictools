@@ -1,0 +1,6 @@
+run: bids
+
+bidsnames:
+    func:
+        checkerboard_AP_SBRef: task-checkerboard_dir-AP_bold
+        
