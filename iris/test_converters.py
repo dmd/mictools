@@ -75,17 +75,17 @@ def test_convert_to_bids_multiecho():
 
     should_exist_nifti = [
         "checkerboard_AP_SBRef_37_e1.json",
-        "checkerboard_AP_SBRef_37_e1.nii",
+        "checkerboard_AP_SBRef_37_e1.nii.gz",
         "checkerboard_AP_SBRef_37_e2.json",
-        "checkerboard_AP_SBRef_37_e2.nii",
+        "checkerboard_AP_SBRef_37_e2.nii.gz",
         "checkerboard_AP_SBRef_37_e3.json",
-        "checkerboard_AP_SBRef_37_e3.nii",
+        "checkerboard_AP_SBRef_37_e3.nii.gz",
         "checkerboard_AP_SBRef_38_e1.json",
-        "checkerboard_AP_SBRef_38_e1.nii",
+        "checkerboard_AP_SBRef_38_e1.nii.gz",
         "checkerboard_AP_SBRef_38_e2.json",
-        "checkerboard_AP_SBRef_38_e2.nii",
+        "checkerboard_AP_SBRef_38_e2.nii.gz",
         "checkerboard_AP_SBRef_38_e3.json",
-        "checkerboard_AP_SBRef_38_e3.nii",
+        "checkerboard_AP_SBRef_38_e3.nii.gz",
     ]
 
     should_exist_bids = [
