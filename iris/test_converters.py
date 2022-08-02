@@ -70,12 +70,12 @@ def test_convert_to_bids():
         "sub-test/ses-1/anat/sub-test_ses-1_T1w.nii.gz",
         "sub-test/ses-1/func/sub-test_ses-1_task-resting_bold.nii.gz",
         "sub-test/ses-1/func/sub-test_ses-1_task-resting_bold.json",
-        "sub-test/ses-1/func/sub-test_ses-1_echo-1_task-checkerboard_dir-AP_bold.nii.gz",
-        "sub-test/ses-1/func/sub-test_ses-1_echo-1_task-checkerboard_dir-AP_bold.json",
-        "sub-test/ses-1/func/sub-test_ses-1_echo-2_task-checkerboard_dir-AP_bold.nii.gz",
-        "sub-test/ses-1/func/sub-test_ses-1_echo-2_task-checkerboard_dir-AP_bold.json",
-        "sub-test/ses-1/func/sub-test_ses-1_echo-3_task-checkerboard_dir-AP_bold.nii.gz",
-        "sub-test/ses-1/func/sub-test_ses-1_echo-3_task-checkerboard_dir-AP_bold.json",
+        "sub-test/ses-1/func/sub-test_ses-1_task-checkerboard_dir-AP_echo-1_bold.nii.gz",
+        "sub-test/ses-1/func/sub-test_ses-1_task-checkerboard_dir-AP_echo-1_bold.json",
+        "sub-test/ses-1/func/sub-test_ses-1_task-checkerboard_dir-AP_echo-2_bold.nii.gz",
+        "sub-test/ses-1/func/sub-test_ses-1_task-checkerboard_dir-AP_echo-2_bold.json",
+        "sub-test/ses-1/func/sub-test_ses-1_task-checkerboard_dir-AP_echo-3_bold.nii.gz",
+        "sub-test/ses-1/func/sub-test_ses-1_task-checkerboard_dir-AP_echo-3_bold.json",
     ]
 
     for f in should_exist_nifti:

@@ -83,7 +83,7 @@ def convert_to_bids(config, studydir, subject, session):
             "Name": "none",
             "BIDSVersion": "1.2.0",
             "Authors": ["name1", "name1"],
-            "Funding": "mom"
+            "Funding": ["NIH"]
         }
         """
     )
@@ -121,13 +121,16 @@ def convert_to_bids(config, studydir, subject, session):
                 basename = f"sub-{subject}_"
                 if session:
                     basename += f"ses-{session}_"
-                if multiecho:
-                    m = re.search(rf"_\d+_e(\d){niigz}$", source)
-                    echonum = m.group(1)
-                    basename += f"echo-{echonum}_"
 
                 bidsbase = bidsnames[scantype][scanname]
                 basename += bidsbase
+
+                if multiecho:
+                    m = re.search(rf"_\d+_e(\d){niigz}$", source)
+                    echobids = f"echo-{m.group(1)}"
+                    pieces = basename.split("_")
+                    pieces.insert(-1, echobids)
+                    basename = "_".join(pieces)
 
                 logging.info(f"Copying {source} to {basename}.")
                 for extension in EXTENSIONS:
