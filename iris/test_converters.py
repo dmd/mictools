@@ -108,4 +108,4 @@ def test_convert_to_bids_multiecho():
     convert_to_bids(config, f"{testdir}/EXAMPLE.multiecho", "test", "1")
 
     for f in should_exist_bids:
-        assert Path(f"{testdir}/EXAMPLE/{f}").exists()
+        assert Path(f"{testdir}/EXAMPLE.multiecho/{f}").exists()
