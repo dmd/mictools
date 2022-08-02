@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 [94t|4t] s_YYYYMMDD_NN"
+    exit 1
+fi
+
+IN=/qc/mriqc/in/${1}/${2}
+OUT=/qc/mriqc/out/${1}/${2}
+
+if [[ ! -d "$IN" ]]; then
+    echo "$IN does not exist."
+    exit 1
+fi
+
+mkdir -p $OUT
+time docker run -it --user 1001:1001 -v $IN:/data:ro -v $OUT:/out nipreps/mriqc:latest /data /out participant --no-sub
