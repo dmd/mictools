@@ -93,8 +93,12 @@ def test_convert_to_bids_multiecho():
         "README",
         ".bidsignore",
         "dataset_description.json",
-        "sub-test/ses-1/func/sub-test_ses-1_echo-1_task-checkerboard_bold.nii.gz",
-        "sub-test/ses-1/func/sub-test_ses-1_echo-1_task-checkerboard_bold.json",
+        "sub-test/ses-1/func/sub-test_ses-1_echo-1_task-checkerboard_dir-AP_bold.nii.gz",
+        "sub-test/ses-1/func/sub-test_ses-1_echo-1_task-checkerboard_dir-AP_bold.json",
+        "sub-test/ses-1/func/sub-test_ses-1_echo-2_task-checkerboard_dir-AP_bold.nii.gz",
+        "sub-test/ses-1/func/sub-test_ses-1_echo-2_task-checkerboard_dir-AP_bold.json",
+        "sub-test/ses-1/func/sub-test_ses-1_echo-3_task-checkerboard_dir-AP_bold.nii.gz",
+        "sub-test/ses-1/func/sub-test_ses-1_echo-3_task-checkerboard_dir-AP_bold.json",
     ]
 
     for f in should_exist_nifti:
