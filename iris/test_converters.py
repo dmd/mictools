@@ -2,10 +2,11 @@ from converters import final_scan, convert_to_bids, convert_to_nifti
 import yaml
 import importlib
 from pathlib import Path
+import shutil
 
 irisfmriprep = importlib.import_module("iris-fmriprep")
-testdir = "tests/iris/convert_to_bids/"
-
+testdir = "tests/iris/convert_to_bids"
+testdir_orig = testdir + '.orig'
 
 def test_final_scan():
     assert final_scan(
@@ -30,6 +31,8 @@ def test_final_scan():
 
 
 def test_convert_to_bids():
+    shutil.copytree(testdir, testdir_orig)
+
     convert_to_nifti(f"{testdir}/EXAMPLE")
 
     should_exist_nifti = [
@@ -78,6 +81,7 @@ def test_convert_to_bids():
         "sub-test/ses-1/func/sub-test_ses-1_task-checkerboard_dir-AP_echo-3_bold.json",
     ]
 
+
     for f in should_exist_nifti:
         assert Path(f"{testdir}/EXAMPLE/nifti/{f}").exists()
 
@@ -86,3 +90,7 @@ def test_convert_to_bids():
 
     for f in should_exist_bids:
         assert Path(f"{testdir}/EXAMPLE/{f}").exists()
+
+    # clean up
+    shutil.rmtree(testdir)
+    shutil.move(testdir_orig, testdir)
