@@ -6,7 +6,8 @@ import shutil
 
 irisfmriprep = importlib.import_module("iris-fmriprep")
 testdir = "tests/iris/convert_to_bids"
-testdir_orig = testdir + '.orig'
+testdir_orig = testdir + ".orig"
+
 
 def test_final_scan():
     assert final_scan(
@@ -80,7 +81,6 @@ def test_convert_to_bids():
         "sub-test/ses-1/func/sub-test_ses-1_task-checkerboard_dir-AP_echo-3_bold.nii.gz",
         "sub-test/ses-1/func/sub-test_ses-1_task-checkerboard_dir-AP_echo-3_bold.json",
     ]
-
 
     for f in should_exist_nifti:
         assert Path(f"{testdir}/EXAMPLE/nifti/{f}").exists()
