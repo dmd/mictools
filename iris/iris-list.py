@@ -23,7 +23,7 @@ parser.add_argument(
     required=False,
     type=int,
 )
-parser.add_argument('-v', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument("-v", action="store_true", help=argparse.SUPPRESS)
 args = parser.parse_args()
 
 
