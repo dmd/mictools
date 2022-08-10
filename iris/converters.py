@@ -135,7 +135,7 @@ def convert_to_bids(config, studydir, subject, session):
                 logging.info(f"Copying {source} to {basename}.")
                 for extension in EXTENSIONS:
                     try:
-                        shutil.copyfile(
+                        os.link(
                             pjoin(niftidir, source.replace(niigz, extension)),
                             pjoin(scantype_dir, basename + extension),
                         )

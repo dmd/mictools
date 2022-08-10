@@ -1,3 +1,4 @@
+import os
 from converters import final_scan, convert_to_bids, convert_to_nifti
 import yaml
 import importlib
@@ -32,7 +33,7 @@ def test_final_scan():
 
 
 def test_convert_to_bids():
-    shutil.copytree(testdir, testdir_orig)
+    shutil.copytree(testdir, testdir_orig, copy_function=os.link)
 
     convert_to_nifti(f"{testdir}/EXAMPLE")
 
