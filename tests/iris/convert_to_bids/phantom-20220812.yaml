@@ -1,0 +1,10 @@
+run: bids
+
+bidsnames:
+  anat:
+    T1w_MEMPRAGE_RMS: T1w
+  func:
+    rfMRI_REST_SINGLEECHO_AP: task-rest_acq-singleecho_dir-AP_bold
+    rfMRI_REST_SINGLEECHO_PA: task-rest_acq-singleecho_dir-PA_bold
+    rfMRI_REST_MULTIECHO_AP: task-rest_acq-multiecho_dir-AP_run-1_bold
+    rfMRI_REST_MULTIECHO_PA: task-rest_acq-multiecho_dir-PA_run-1_bold
