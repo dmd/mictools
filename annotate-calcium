@@ -40,6 +40,3 @@ def annotate_calcium(logs):
 if __name__ == "__main__":
     logs = load_logs()
     annotate_calcium(logs)
-
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
