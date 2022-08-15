@@ -1,0 +1,6 @@
+#!/bin/bash
+
+FIELD=$1
+FILE=$2
+
+awk "f{print \$2;f=0} /^${FIELD}/{f=1}" ${FILE} | tr -d \"
