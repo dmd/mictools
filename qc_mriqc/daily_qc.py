@@ -96,18 +96,17 @@ if __name__ == "__main__":
         # copy all the niftis requested in the config
         for nii_fileext, bids_name in info["niftis"].items():
             nifti_name = f"{topdir}/mclean_niftis/{topdir.name + nii_fileext}"
-            copy_to_in_folder(bids, nifti_name, info["ident"], bids_name)
+            if not args.dry_run:
+                copy_to_in_folder(bids, nifti_name, info["ident"], bids_name)
 
         cmd = (
             f"docker run -it --user 1001:1001 -v {bids}:/data:ro -v {outfolder}:/out nipreps/mriqc:latest "
             f"/data /out participant --no-sub "
         )
 
-        if args.dry_run:
-            print(f"Would run {cmd}")
-        else:
+        if not args.dry_run:
             print(f"Running {cmd}")
-            # subprocess.run(cmd.split())
+            subprocess.run(cmd.split())
 
             print("Done running MRIQC. Copying json files to longitudinal.")
             Path(f"{root_out}/longitudinal/{info['folder']}").mkdir(
@@ -117,3 +116,5 @@ if __name__ == "__main__":
                 dst = f"{root_out}/longitudinal/{info['folder']}/{topdir.name}_{Path(src).name}"
                 print(f"copy {src} to {dst}")
                 copyfile(src, dst)
+        else:
+            print(f"Would run {cmd}")
