@@ -1,22 +1,28 @@
 #!/usr/bin/env python3
 
-import os
 from pathlib import Path
-import sys
 import arrow
 from glob import glob
 from shutil import copyfile
 import subprocess
 import argparse
+from studypar import Studypar
+
+root_in = "/qc/mriqc/in/94t"
+root_out = "/qc/mriqc/out/94t"
 
 
-def copy_to_in_folder(s_id, nii, ident):
-    bids = f"/qc/mriqc/in/94t/{s_id}"
-    Path(f"{bids}/sub-qc/func").mkdir(parents=True, exist_ok=True)
+def copy_to_in_folder(bids, nifti_name, ident, bids_name):
+    Path(f"{bids}/sub-{ident}/func").mkdir(parents=True, exist_ok=True)
     open(f"{bids}/dataset_description.json", "w").write(
         """{"Name": "none","BIDSVersion": "1.2.0","Authors": ["x"]}"""
     )
-    copyfile(nii, f"{bids}/sub-{ident}/func/sub-{ident}_task-rest_bold.nii")
+    bids_filename = f"{bids}/sub-{ident}/func/sub-{ident}_{bids_name}_bold.nii"
+    try:
+        copyfile(nifti_name, bids_filename)
+    except FileNotFoundError:
+        print(f"skipping {nifti_name}, file not found")
+
     return bids
 
 
@@ -29,74 +35,85 @@ def days_list(n_days_to_check):
     return to_check
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run check if study directories need QC processing."
     )
-    parser.add_argument("--days",
-                        help="Number of days ago to start looking for studies.",
-                        type=int)
-    parser.add_argument("--folder",
-                        help="Exact folder name to process.",
-                        )
+    parser.add_argument(
+        "--dry-run",
+        help="Don't actually run the MRIQC. Still does the copying though!",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--force",
+        help="Run even if HTML files exist.",
+        action="store_true",
+    )
+    how_to_look = parser.add_mutually_exclusive_group(required=True)
+    how_to_look.add_argument(
+        "--days", help="Number of days ago to start looking for studies.", type=int
+    )
+    how_to_look.add_argument(
+        "--folder",
+        nargs="+",
+        help="Exact folder name to process.",
+    )
+
     args = parser.parse_args()
 
+    studypars = []
     if args.days:
-        studypars = []
         for date in days_list(args.days):
             year = date[:4]
             for studypar in glob(f"/94t/studies_{year}/s_{date}_??/studypar"):
                 studypars.append(studypar)
-    print
 
+    if args.folder:
+        for folder in args.folder:
+            for studypar in glob(f"{folder}/studypar"):
+                studypars.append(studypar)
 
-matching = {}
-for date in to_check:
-    year = date[:4]
-    for studypar in glob(f"/94t/studies_{year}/s_{date}_??/studypar"):
-        with open(studypar, "r") as f:
-            content = f.readlines()
-            if "SiteQA" in content[1]:
-                topdir = Path(studypar).parent
-                name = topdir.name
-                nii = os.path.join(
-                    topdir, "mclean_niftis", name + "_epip_qa_middle_01.nii"
-                )
-                matching[name] = nii
+    for studypar_file in studypars:
+        s = Studypar(studypar_file)
+        info = s.info()
+        if not info or info["folder"] != "QA":
+            continue
+        print(info)
 
-# {'s_20220726_03': '/94t/studies_2022/s_20220726_03/mclean_niftis/s_20220726_03_epip_qa_middle_01.nii'}
+        topdir = Path(studypar_file).parent
 
-for study, nii in matching.items():
-    htmlfile = f"/qc/mriqc/out/94t/{study}/sub-qc_task-rest_bold.html"
-    if Path(htmlfile).exists():
-        print(f"{htmlfile} exists, skipping {study}")
-    else:
-        print(f"copying {study} to input folder")
-        bids = copy_to_in_folder(study, nii)
-        outfolder = f"/qc/mriqc/out/94t/{study}"
+        outfolder = f"{root_out}/{info['folder']}/{topdir.name}"
+        print(f"output folder: {outfolder}")
         Path(outfolder).mkdir(parents=True, exist_ok=True)
-        print(f"Starting MRIQC in {bids}, outputting to {outfolder}...")
-        subprocess.run(
-            [
-                "docker",
-                "run",
-                "-it",
-                "--user",
-                "1001:1001",
-                "-v",
-                f"{bids}:/data:ro",
-                "-v",
-                f"{outfolder}:/out",
-                "nipreps/mriqc:latest",
-                "/data",
-                "/out",
-                "participant",
-                "--no-sub",
-            ]
+
+        if glob(f"{outfolder}/*html") and not args.force:
+            print(f"HTML files already in {outfolder}, skipping {topdir}")
+            continue
+
+        bids = f"{root_in}/{info['folder']}/{topdir.name}"
+        print(f"copying {topdir.name} to input folder")
+
+        # copy all the niftis requested in the config
+        for nii_fileext, bids_name in info["niftis"].items():
+            nifti_name = f"{topdir}/mclean_niftis/{topdir.name + nii_fileext}"
+            copy_to_in_folder(bids, nifti_name, info["ident"], bids_name)
+
+        cmd = (
+            f"docker run -it --user 1001:1001 -v {bids}:/data:ro -v {outfolder}:/out nipreps/mriqc:latest "
+            f"/data /out participant --no-sub "
         )
-        print("Done running MRIQC.")
-        copyfile(
-            f"{outfolder}/sub-qc/func/sub-qc_task-rest_bold.json",
-            f"/qc/mriqc/out/94t/longitudinal/{study}.json",
-        )
+
+        if args.dry_run:
+            print(f"Would run {cmd}")
+        else:
+            print(f"Running {cmd}")
+            # subprocess.run(cmd.split())
+
+            print("Done running MRIQC. Copying json files to longitudinal.")
+            Path(f"{root_out}/longitudinal/{info['folder']}").mkdir(
+                parents=True, exist_ok=True
+            )
+            for src in glob(f"{outfolder}/sub-{info['ident']}/func/*json"):
+                dst = f"{root_out}/longitudinal/{info['folder']}/{topdir.name}_{Path(src).name}"
+                print(f"copy {src} to {dst}")
+                copyfile(src, dst)

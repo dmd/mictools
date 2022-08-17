@@ -5,6 +5,8 @@ QA:
   samplename:
     - QA
     - SiteQA
+  niftis:
+    _epip_qa_middle_01.nii: task-rest
   emails:
     - ddrucker@mclean.harvard.edu
 

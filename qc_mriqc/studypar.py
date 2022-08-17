@@ -26,7 +26,7 @@ class Studypar:
                     line = next(f)
                     return line.split(" ", 1)[1].replace('"', "").strip()
 
-    def matches(self):
+    def info(self):
         for qctype, qcdict in self.qctypes.items():
             if match_from_list(qcdict["name"], self["name"]) and match_from_list(
                 qcdict["samplename"], self["samplename"]
@@ -34,11 +34,12 @@ class Studypar:
                 return {
                     "folder": qctype,
                     "ident": self["ident"],
-                    "emails": qcdict["emails"],
+                    "emails": qcdict.get("emails", []),
+                    "niftis": qcdict.get("niftis", []),
                 }
 
 
 if __name__ == "__main__":
     studypar_file = "../tests/qc_mriqc/studypar.Bergman.ss25m.THC-fMRI"
     f = Studypar(studypar_file)
-    pprint(f.matches())
+    pprint(f.info())
