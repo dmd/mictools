@@ -1,0 +1,68 @@
+name 2 2 8 0 0 2 1 0 1 64
+1 "Bergman"
+0 
+ident 2 2 8 0 0 2 1 0 1 64
+1 "ss25m"
+0 
+weight 1 1 9.9e+17 0 0.001 3 1 0 1 64
+1 0 
+0 
+height 1 1 9.9e+17 0 0.001 3 1 0 1 64
+1 0 
+0 
+birthday 2 2 8 0 0 3 1 0 1 64
+4 ""
+""
+""
+""
+0 
+age 1 1 9.9e+17 0 0.001 3 1 0 1 64
+1 0 
+0 
+gender 2 2 8 0 0 3 1 0 1 64
+1 ""
+0 
+position1 2 2 8 0 0 3 1 0 1 64
+1 ""
+0 
+position2 2 2 8 0 0 3 1 0 1 64
+1 ""
+0 
+protocols 2 2 8 0 0 3 1 0 1 64
+1 ""
+0 
+studyid_ 2 2 8 0 0 2 1 0 1 64
+1 "s_20220803_02"
+0 
+operator_ 2 2 128 0 0 2 1 32772 1 64
+1 "vnmr2"
+0 
+investigator 2 2 8 0 0 2 1 0 1 64
+1 ""
+0 
+rfcoil 2 2 0 0 0 2 1 1 1 64
+1 "krc_sqloop1"
+0 
+gcoil 2 2 0 0 0 2 1 9 1 64
+1 "200_116_RRI"
+0 
+scans 2 2 8 0 0 3 1 0 1 64
+1 ""
+0 
+samplename 2 2 8 0 0 2 1 0 1 64
+1 "THC-fMRI"
+0 
+prescan 2 2 8 0 0 3 1 0 1 64
+9 ""
+"Not Done"
+"Complete"
+"Not done"
+"null"
+"init"
+""
+""
+""
+0 
+anatomy 2 2 8 0 0 2 1 0 1 64
+1 "squirrel"
+0 

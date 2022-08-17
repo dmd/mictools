@@ -7,32 +7,54 @@ import arrow
 from glob import glob
 from shutil import copyfile
 import subprocess
+import argparse
 
 
-def copy_qc_to_in(s_id, nii):
+def copy_to_in_folder(s_id, nii, ident):
     bids = f"/qc/mriqc/in/94t/{s_id}"
     Path(f"{bids}/sub-qc/func").mkdir(parents=True, exist_ok=True)
     open(f"{bids}/dataset_description.json", "w").write(
         """{"Name": "none","BIDSVersion": "1.2.0","Authors": ["x"]}"""
     )
-    copyfile(nii, f"{bids}/sub-qc/func/sub-qc_task-rest_bold.nii")
+    copyfile(nii, f"{bids}/sub-{ident}/func/sub-{ident}_task-rest_bold.nii")
     return bids
 
 
-if len(sys.argv) != 2:
-    print("Usage: daily-check.py NUMBER_OF_DAYS_BEFORE_TODAY")
-    sys.exit(1)
+def days_list(n_days_to_check):
+    now = arrow.now()
+    to_check = []
+    for days_ago in range(n_days_to_check):
+        d = now.shift(days=-days_ago).format("YYYYMMDD")
+        to_check.append(d)
+    return to_check
 
-n_days_to_check = int(sys.argv[1])
-now = arrow.now()
-to_check = []
-for days_ago in range(n_days_to_check):
-    d = now.shift(days=-days_ago).format("YYYYMMDD")
-    to_check.append(d)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Run check if study directories need QC processing."
+    )
+    parser.add_argument("--days",
+                        help="Number of days ago to start looking for studies.",
+                        type=int)
+    parser.add_argument("--folder",
+                        help="Exact folder name to process.",
+                        )
+    args = parser.parse_args()
+
+    if args.days:
+        studypars = []
+        for date in days_list(args.days):
+            year = date[:4]
+            for studypar in glob(f"/94t/studies_{year}/s_{date}_??/studypar"):
+                studypars.append(studypar)
+    print
+
 
 matching = {}
-for t in to_check:
-    for studypar in glob(f"/94t/studies_{t[:4]}/s_{t}_??/studypar"):
+for date in to_check:
+    year = date[:4]
+    for studypar in glob(f"/94t/studies_{year}/s_{date}_??/studypar"):
         with open(studypar, "r") as f:
             content = f.readlines()
             if "SiteQA" in content[1]:
@@ -51,7 +73,7 @@ for study, nii in matching.items():
         print(f"{htmlfile} exists, skipping {study}")
     else:
         print(f"copying {study} to input folder")
-        bids = copy_qc_to_in(study, nii)
+        bids = copy_to_in_folder(study, nii)
         outfolder = f"/qc/mriqc/out/94t/{study}"
         Path(outfolder).mkdir(parents=True, exist_ok=True)
         print(f"Starting MRIQC in {bids}, outputting to {outfolder}...")

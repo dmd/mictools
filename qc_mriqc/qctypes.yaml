@@ -1,0 +1,34 @@
+QA:
+  name:
+    - Site
+    - SiteQA
+  samplename:
+    - QA
+    - SiteQA
+  emails:
+    - ddrucker@mclean.harvard.edu
+
+cathinone:
+  name:
+    - Kohut
+  samplename:
+    - Cathinone
+  emails:
+    - ddrucker@mclean.harvard.edu
+
+THC:
+  name:
+    - Bergman
+  samplename:
+    - THC-fMRI
+  emails:
+    - ddrucker@mclean.harvard.edu
+
+fentanyl:
+  name:
+    - Withey
+  samplename:
+    - Fentanyl
+    - ERN
+  emails:
+    - ddrucker@mclean.harvard.edu
