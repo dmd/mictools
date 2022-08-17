@@ -37,9 +37,3 @@ class Studypar:
                     "emails": qcdict.get("emails", []),
                     "niftis": qcdict.get("niftis", []),
                 }
-
-
-if __name__ == "__main__":
-    studypar_file = "../tests/qc_mriqc/studypar.Bergman.ss25m.THC-fMRI"
-    f = Studypar(studypar_file)
-    pprint(f.info())
