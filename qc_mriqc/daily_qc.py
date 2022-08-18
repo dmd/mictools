@@ -7,6 +7,14 @@ from shutil import copyfile
 import subprocess
 import argparse
 from studypar import Studypar
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    style="{",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    format="{asctime} {levelname} {filename}:{lineno}: {message}",
+)
 
 root_in = "/qc/mriqc/in/94t"
 root_out = "/qc/mriqc/out/94t"
@@ -21,8 +29,7 @@ def copy_to_in_folder(bids, nifti_name, ident, bids_name):
     try:
         copyfile(nifti_name, bids_filename)
     except FileNotFoundError:
-        print(f"skipping {nifti_name}, file not found")
-
+        logging.warning(f"skipping {nifti_name}, file not found")
     return bids
 
 
@@ -61,6 +68,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    logging.info("Starting daily_qc")
+
     studypars = []
     if args.days:
         for date in days_list(args.days):
@@ -78,20 +87,20 @@ if __name__ == "__main__":
         info = s.info()
         if not info or info["folder"] != "QA":
             continue
-        print(info)
+        logging.debug(info)
 
         topdir = Path(studypar_file).parent
 
         outfolder = f"{root_out}/{info['folder']}/{topdir.name}"
-        print(f"output folder: {outfolder}")
+        logging.info(f"output folder: {outfolder}")
         Path(outfolder).mkdir(parents=True, exist_ok=True)
 
         if glob(f"{outfolder}/*html") and not args.force:
-            print(f"HTML files already in {outfolder}, skipping {topdir}")
+            logging.info(f"HTML files already in {outfolder}, skipping {topdir}")
             continue
 
         bids = f"{root_in}/{info['folder']}/{topdir.name}"
-        print(f"copying {topdir.name} to input folder")
+        logging.info(f"copying {topdir.name} to input folder")
 
         # copy all the niftis requested in the config
         for nii_fileext, bids_name in info["niftis"].items():
@@ -105,16 +114,18 @@ if __name__ == "__main__":
         )
 
         if not args.dry_run:
-            print(f"Running {cmd}")
+            logging.info(f"Running {cmd}")
             subprocess.run(cmd.split())
 
-            print("Done running MRIQC. Copying json files to longitudinal.")
+            logging.info("Done running MRIQC. Copying json files to longitudinal.")
             Path(f"{root_out}/longitudinal/{info['folder']}").mkdir(
                 parents=True, exist_ok=True
             )
             for src in glob(f"{outfolder}/sub-{info['ident']}/func/*json"):
                 dst = f"{root_out}/longitudinal/{info['folder']}/{topdir.name}_{Path(src).name}"
-                print(f"copy {src} to {dst}")
+                logging.info(f"copy {src} to {dst}")
                 copyfile(src, dst)
         else:
-            print(f"Would run {cmd}")
+            logging.info(f"Would run {cmd}")
+
+    logging.info("Ending daily_qc")
