@@ -1,6 +1,9 @@
 import yaml
-from pprint import pprint
+from pathlib import Path
 import re
+
+
+qctypes_file = Path(__file__).parent / "qctypes.yaml"
 
 
 def match_from_list(possibles, match):
@@ -11,7 +14,7 @@ def match_from_list(possibles, match):
 
 
 class Studypar:
-    def __init__(self, studypar_file, qctypes_file="qctypes.yaml"):
+    def __init__(self, studypar_file, qctypes_file=qctypes_file):
         self.studypar_file = studypar_file
         self.qctypes = yaml.safe_load(open(qctypes_file))
 
