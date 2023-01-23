@@ -6,24 +6,31 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 partnersid sharename mountpoint"
+    echo "Usage: $0 MGBid sharename mountpoint"
     exit 1
 fi
 
-PARTNERSID=$1
+MGBID=$1
 SHARENAME=$2
 MOUNTPOINT=$3
 
 case $(basename $0) in
     sfamount )
-	SERVER=cifs2.partners.org
-	if [[ $SHARENAME != *$ ]]; then
-	    SHARENAME="${SHARENAME}\$"
-	fi
-	;;
+        SERVER=cifs2.partners.org
+        if [[ $SHARENAME != *$ ]]; then
+            SHARENAME="${SHARENAME}\$"
+        fi
+        ;;
+    nisabamount )
+        SERVER=nisaba
+        ;;
+    durgamount )
+        SERVER=durga.mclean.harvard.edu
+        ;;
     * )
-	SERVER=durga.mclean.harvard.edu
-	;;
+        echo "Call me as sfamount, nisabamount, or durgamount, please."
+        exit 1
+        ;;
 esac
 
 
@@ -35,13 +42,15 @@ if ls -1qA "$MOUNTPOINT" | grep -q . ; then
     echo "$MOUNTPOINT" must be an empty directory
     exit 1
 fi
+if [[ $SERVER != nisaba ]]; then
+    echo -e "\nIMPORTANT NOTE: ${SERVER} mounts are NOT accessible from compute nodes!\n"
+fi
 
-echo -e "\nIMPORTANT NOTE: ${SERVER} mounts are NOT accessible from compute nodes!\n"
-echo -n "Going to mount //${SERVER}/${SHARENAME} on $(readlink -f $MOUNTPOINT) as $PARTNERSID.  OK? (y/n): "
+echo -n "Going to mount //${SERVER}/${SHARENAME} on $(readlink -f $MOUNTPOINT) as $MGBID.  OK? (y/n): "
 read -r answer
 if [ "$answer" != "${answer#[Yy]}" ] ;then
-    echo Please enter your MGB/PARTNERS password...
-    mount -t cifs -o vers=3.0,sec=ntlmv2i,domain=PARTNERS,username="$PARTNERSID",uid="$SUDO_USER" //${SERVER}/"$SHARENAME" "$MOUNTPOINT"
+    echo Please enter your MGB password...
+    mount -t cifs -o vers=3.0,sec=ntlmv2i,domain=PARTNERS,username="$MGBID",uid="$SUDO_USER" //${SERVER}/"$SHARENAME" "$MOUNTPOINT"
 else
     echo Aborted.
 fi
