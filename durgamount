@@ -21,14 +21,11 @@ case $(basename $0) in
             SHARENAME="${SHARENAME}\$"
         fi
         ;;
-    nisabamount )
-        SERVER=nisaba
-        ;;
     durgamount )
         SERVER=durga.mclean.harvard.edu
         ;;
     * )
-        echo "Call me as sfamount, nisabamount, or durgamount, please."
+        echo "Call me as sfamount or durgamount, please."
         exit 1
         ;;
 esac
@@ -42,9 +39,7 @@ if ls -1qA "$MOUNTPOINT" | grep -q . ; then
     echo "$MOUNTPOINT" must be an empty directory
     exit 1
 fi
-if [[ $SERVER != nisaba ]]; then
-    echo -e "\nIMPORTANT NOTE: ${SERVER} mounts are NOT accessible from compute nodes!\n"
-fi
+echo -e "\nIMPORTANT NOTE: ${SERVER} mounts are NOT accessible from compute nodes!\n"
 
 echo -n "Going to mount //${SERVER}/${SHARENAME} on $(readlink -f $MOUNTPOINT) as $MGBID.  OK? (y/n): "
 read -r answer
