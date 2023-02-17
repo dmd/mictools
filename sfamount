@@ -21,9 +21,6 @@ case $(basename $0) in
             SHARENAME="${SHARENAME}\$"
         fi
         ;;
-    durgamount )
-        SERVER=durga.mclean.harvard.edu
-        ;;
     rfamount )
         SERVER=rfawin.partners.org
         ;;
