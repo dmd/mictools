@@ -24,8 +24,11 @@ case $(basename $0) in
     durgamount )
         SERVER=durga.mclean.harvard.edu
         ;;
+    rfamount )
+        SERVER=rfawin.partners.org
+        ;;
     * )
-        echo "Call me as sfamount or durgamount, please."
+        echo "Call me as sfamount or rfamount, please."
         exit 1
         ;;
 esac
