@@ -7,6 +7,7 @@ from shutil import copyfile
 import subprocess
 import argparse
 from studypar import Studypar
+import json
 import logging
 
 logging.basicConfig(
@@ -90,6 +91,17 @@ if __name__ == "__main__":
         logging.debug(info)
 
         topdir = Path(studypar_file).parent
+        try:
+            procpar_file = glob(f"{topdir}/*scout*01.fid/procpar")[0]
+            procpar = Studypar(procpar_file)
+            H1reffrq = float(procpar['H1reffrq'])
+            tof = float(procpar['tof'])
+            Obs = H1reffrq + tof / 1e6
+        except:
+            H1reffrq = -1
+            tof = -1
+            Obs = -1
+        procpar_d = {"H1reffrq": H1reffrq, "tof": tof, "Obs": Obs}
 
         outfolder = f"{root_out}/{info['folder']}/{topdir.name}"
         logging.info(f"output folder: {outfolder}")
@@ -121,6 +133,9 @@ if __name__ == "__main__":
             Path(f"{root_out}/longitudinal/{info['folder']}").mkdir(
                 parents=True, exist_ok=True
             )
+            logging.info(f"write procpar json")
+            with open(f"{root_out}/longitudinal/{info['folder']}/{topdir.name}_procpar.json", "w") as f:
+                json.dump(procpar_d, f)
             for src in glob(f"{outfolder}/sub-{info['ident']}/func/*json"):
                 dst = f"{root_out}/longitudinal/{info['folder']}/{topdir.name}_{Path(src).name}"
                 logging.info(f"copy {src} to {dst}")
