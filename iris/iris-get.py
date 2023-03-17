@@ -41,6 +41,7 @@ for accessionnumber in args.accessionnumber:
     subprocess.call(
         [
             "/cm/shared/anaconda3/envs/iris/bin/ArcGet.py",
+            "--in-mem",
             "-f",
             dlformat,
             "-l",
