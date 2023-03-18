@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>94t2</title>
+    <script src="https://cdn.jsdelivr.net/npm/moment"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
+
+    <style>
+      canvas { width: 100%; height: 100% }
+    </style>
+  </head>
+  <body>
+    <canvas id="myChart"></canvas>
+    <canvas id="mySecondChart"></canvas>
+    <script>
+      async function getFilesList(baseUrl, filePattern) {
+          const response = await fetch(baseUrl);
+          const html = await response.text();
+
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const files = [...doc.querySelectorAll('body a')]
+                .map(a => a.href)
+                .filter(href => href.match(filePattern));
+
+          return files;
+      }
+
+      async function fetchData(baseUrl, filePattern, parserFunc) {
+          const files = await getFilesList(baseUrl, filePattern);
+          return await parserFunc(files);
+      }
+
+      async function parseBoldData(files) {
+          const data = {
+              labels: [],
+              tsnr: [],
+              snr: [],
+          };
+
+          for (const file of files) {
+              try {
+                  const response = await fetch(file);
+                  const fileText = await response.text();
+                  const cleanFileText = fileText.replace(/\bNaN\b/g, "null");
+
+                  const fileData = JSON.parse(cleanFileText);
+
+                  const date = parseDate(file);
+                  if (!date) continue;
+
+                  data.labels.push(date);
+                  data.tsnr.push(fileData.tsnr);
+                  data.snr.push(fileData.snr);
+              } catch (e) {
+                  console.error(`Error processing file '${file}':`, e);
+              }
+          }
+
+          return data;
+      }
+
+      async function parseProcparData(files) {
+          const data = {
+              labels: [],
+              obs: [],
+          };
+
+          for (const file of files) {
+              try {
+                  const response = await fetch(file);
+                  const fileData = await response.json();
+                  const date = parseDate(file);
+                  if (!date) continue;
+
+                  data.labels.push(date);
+                  data.obs.push(fileData.Obs);
+              } catch (e) {
+                  console.error(`Error processing file '${file}':`, e);
+              }
+          }
+
+          return data;
+      }
+      
+      function parseDate(fileName) {
+          const dateMatch = fileName.match(/s_(\d{8})_.*\.json/);
+          if (!dateMatch) return null;
+          const date = moment(dateMatch[1], 'YYYYMMDD').toDate();
+          return date;
+      }
+
+      async function createChart(chartId, chartData, chartConfig) {
+          const ctx = document.getElementById(chartId).getContext('2d');
+          const chart = new Chart(ctx, chartConfig);
+
+          return chart;
+      }
+
+      function chartConfig(data, datasetConfigs, yAxisBeginAtZero) {
+          return {
+              type: 'line',
+              data: {
+                  labels: data.labels,
+                  datasets: datasetConfigs
+              },
+              options: {
+                  scales: {
+                      x: {
+                          type: 'time',
+                          time: {
+                              displayFormats: {
+                                  day: 'YYYY-MM-DD'
+                              }
+                          }
+                      },
+                      y: {
+                          beginAtZero: yAxisBeginAtZero
+                      }
+                  }
+              }
+          };
+      }
+      
+      async function main() {
+          const baseUrl = '.';
+          const boldPattern = /s_\d{8}_.+bold\.json$/;
+          const procparPattern = /s_\d{8}_.+procpar\.json$/;
+
+          const boldData = await fetchData(baseUrl, boldPattern, parseBoldData);
+          const procparData = await fetchData(baseUrl, procparPattern, parseProcparData);
+
+          const boldDatasetConfig = [
+              {
+                  label: 'TSNR',
+                  data: boldData.tsnr,
+                  borderColor: 'rgb(75, 192, 192)',
+                  backgroundColor: 'rgba(75, 192, 192, 0.3)',
+                  tension: 0.1
+              },
+              {
+                  label: 'SNR',
+                  data: boldData.snr,
+                  borderColor: 'rgb(255, 99, 132)',
+                  backgroundColor: 'rgba(255, 99, 132, 0.3)',
+                  tension: 0.1
+              }
+          ];
+
+          const procparDatasetConfig = [
+              {
+                  label: 'Obs',
+                  data: procparData.obs,
+                  borderColor: 'rgb(153, 102, 255)',
+                  backgroundColor: 'rgba(153, 102, 255, 0.3)',
+                  tension: 0.1
+              }
+          ];
+
+          await createChart('myChart', boldData, chartConfig(boldData, boldDatasetConfig, true));
+          await createChart('mySecondChart', procparData, chartConfig(procparData, procparDatasetConfig, false));
+      }
+
+      main();
+    </script>
+
+  </body>
+</html>
