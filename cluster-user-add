@@ -16,8 +16,38 @@ U=$1
 E=$2
 
 /cm/local/apps/cmd/bin/cmsh -c "user; add ${U}; set loginshell /bin/tcsh; set email $E ; set password; commit;"
-mkdir /data/$U
+chown -R $U:$U /home/$U
 cp /home/proto/.cshrc /home/proto/.cshrc.local /home/$U
-chown -R $U:$U /home/$U /data/$U
+
+## create nisaba dataset
+API_KEY=$(cat ~ddrucker/truenas/apikey.txt)
+API_URL="https://nisaba.mclean.harvard.edu/api/v2.0"
+POOL_DATASET_PATH="chlorine/cluster-n/$U"
+
+curl --insecure -H "Authorization: Bearer $API_KEY" -X POST "${API_URL}/pool/dataset" -d '{"name":"'${POOL_DATASET_PATH}'"}'
+curl --insecure -H "Authorization: Bearer $API_KEY" -X POST "${API_URL}/sharing/nfs" \
+     -d '{
+  "paths": [   "/mnt/'${POOL_DATASET_PATH}'"  ],
+  "hosts": [   "x5backup.mclean.harvard.edu"  ],
+  "maproot_user": "root",
+  "networks": [   "172.16.4.0/24", "172.16.8.0/24"  ]
+ }'
+
+
+## mount nisaba dataset
+MOUNT_POINT="/data/$U"
+cmsh -c "device; use micc; fsmounts; add ${MOUNT_POINT} ; set device nisaba.tengbenet.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit"
+
+while !  mount | grep "${POOL_DATASET_PATH} on"
+do
+    echo waiting for mount of $U
+    sleep 5
+done
+
+chmod 775 ${MOUNT_POINT}
+chown $U:$U ${MOUNT_POINT}
+
+cmsh -c "category ; use universal; fsmounts; add ${MOUNT_POINT} ; set device nisaba.tengbenet.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit; commit;"
+
 echo Now please run "su - $U" and make sure that worked.
-echo Important: tell Daniel to add /data/$U to backups.
+
