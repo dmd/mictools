@@ -142,7 +142,7 @@ if __name__ == "__main__":
                 parents=True, exist_ok=True
             )
             for src in glob(f"{outfolder}/sub-phantom/func/*json"):
-                dst = f"{root_out}/longitudinal/QA/{folder_name}_{Path(src).name}"
+                dst = f"{root_out}/longitudinal/QA/{foldername}_{Path(src).name}"
                 logging.info(f"copy {src} to {dst}")
                 copyfile(src, dst)
         else:
