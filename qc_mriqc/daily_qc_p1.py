@@ -6,9 +6,9 @@ from glob import glob
 from shutil import copyfile
 import subprocess
 import argparse
-from studypar import Studypar
 import json
 import logging
+import re
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -17,16 +17,38 @@ logging.basicConfig(
     format="{asctime} {levelname} {filename}:{lineno}: {message}",
 )
 
-root_in = "/qc/mriqc/in/94t"
-root_out = "/qc/mriqc/out/94t"
+root_in = "/qc/mriqc/in/p1"
+root_out = "/qc/mriqc/out/p1"
 
+niigz = ".nii.gz"
+
+
+def final_scan(sourcenames):
+    #  given ['FOO_BAR_11.nii.gz', 'FOO_BAR_2.nii.gz', 'FOO_BAR_3.nii.gz']
+    #  return 'FOO_BAR_11.nii.gz', the highest numbered scan
+
+    if not sourcenames:
+        return []
+
+    files = {}
+    for file in sourcenames:
+
+        m = re.search(rf"_(\d+){niigz}$", file)
+        fid = int(m.group(1))
+
+        if fid not in files:
+            files[fid] = []
+        files[fid].append(file)
+
+    ids = sorted(list(files.keys()))
+    return files[max(ids)][0]
 
 def copy_to_in_folder(bids, nifti_name, ident, bids_name):
     Path(f"{bids}/sub-{ident}/func").mkdir(parents=True, exist_ok=True)
     open(f"{bids}/dataset_description.json", "w").write(
         """{"Name": "none","BIDSVersion": "1.2.0","Authors": ["x"]}"""
     )
-    bids_filename = f"{bids}/sub-{ident}/func/sub-{ident}_{bids_name}_bold.nii"
+    bids_filename = f"{bids}/sub-{ident}/func/sub-{ident}_{bids_name}_bold.nii.gz"
     try:
         copyfile(nifti_name, bids_filename)
     except FileNotFoundError:
@@ -69,56 +91,42 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    logging.info("Starting daily_qc_94t")
+    logging.info("Starting daily_qc_p1")
 
-    studypars = []
+    runs = []
     if args.days:
-        for date in days_list(args.days):
-            year = date[:4]
-            for studypar in glob(f"/94t/studies_{year}/s_{date}_??/studypar"):
-                studypars.append(studypar)
+        runs = [match[0] for match in (glob(f"/qc/dicom-in/{d}_????_Prisma") for d in days_list(args.days)) if match]
 
     if args.folder:
-        for folder in args.folder:
-            for studypar in glob(f"{folder}/studypar"):
-                studypars.append(studypar)
+        runs = args.folder
 
-    for studypar_file in studypars:
-        s = Studypar(studypar_file)
-        info = s.info()
-        if not info or info["folder"] != "QA":
-            continue
-        logging.debug(info)
 
-        topdir = Path(studypar_file).parent
-        try:
-            procpar_file = glob(f"{topdir}/*scout*01.fid/procpar")[0]
-            procpar = Studypar(procpar_file)
-            H1reffrq = float(procpar['H1reffrq'])
-            tof = float(procpar['tof'])
-            Obs = H1reffrq + tof / 1e6
-        except:
-            H1reffrq = -1
-            tof = -1
-            Obs = -1
-        procpar_d = {"H1reffrq": H1reffrq, "tof": tof, "Obs": Obs}
-
-        outfolder = f"{root_out}/{info['folder']}/{topdir.name}"
+    for run in runs:
+        # run is a FOLDER now
+        foldername = Path(run).name
+        outfolder = f"{root_out}/{foldername}"
         logging.info(f"output folder: {outfolder}")
         Path(outfolder).mkdir(parents=True, exist_ok=True)
 
         if glob(f"{outfolder}/*html") and not args.force:
-            logging.info(f"HTML files already in {outfolder}, skipping {topdir}")
+            logging.info(f"HTML files already in {outfolder}, skipping {foldername}")
             continue
 
-        bids = f"{root_in}/{info['folder']}/{topdir.name}"
-        logging.info(f"copying {topdir.name} to input folder")
+        bids = f"{root_in}/{foldername}"
+        logging.info(f"copying {foldername} to input folder")
 
-        # copy all the niftis requested in the config
-        for nii_fileext, bids_name in info["niftis"].items():
-            nifti_name = f"{topdir}/mclean_niftis/{topdir.name + nii_fileext}"
+        Path(f"{bids}/sub-phantom/func").mkdir(parents=True, exist_ok=True)
+
+        # copy all the niftis
+        # we want ep2d_bold_N.nii.gz
+        #         epi_mb_N.nii.gz
+
+        to_process = {"ep2d_bold_": "ep2d", "epi_mb_": "mb"}
+        for scanname, bids_name in to_process.items():
+            niftis = glob(f"{run}/{scanname}*{niigz}")
+            nifti_name = final_scan(niftis)
             if not args.dry_run:
-                copy_to_in_folder(bids, nifti_name, info["ident"], bids_name)
+                copy_to_in_folder(bids, nifti_name, "phantom", bids_name)
 
         cmd = (
             f"docker run --user 1001:1001 -v {bids}:/data:ro -v {outfolder}:/out nipreps/mriqc:latest "
@@ -130,17 +138,14 @@ if __name__ == "__main__":
             subprocess.run(cmd.split())
 
             logging.info("Done running MRIQC. Copying json files to longitudinal.")
-            Path(f"{root_out}/longitudinal/{info['folder']}").mkdir(
+            Path(f"{root_out}/longitudinal/QA").mkdir(
                 parents=True, exist_ok=True
             )
-            logging.info(f"write procpar json")
-            with open(f"{root_out}/longitudinal/{info['folder']}/{topdir.name}_procpar.json", "w") as f:
-                json.dump(procpar_d, f)
-            for src in glob(f"{outfolder}/sub-{info['ident']}/func/*json"):
-                dst = f"{root_out}/longitudinal/{info['folder']}/{topdir.name}_{Path(src).name}"
+            for src in glob(f"{outfolder}/sub-phantom/func/*json"):
+                dst = f"{root_out}/longitudinal/QA/{folder_name}_{Path(src).name}"
                 logging.info(f"copy {src} to {dst}")
                 copyfile(src, dst)
         else:
             logging.info(f"Would run {cmd}")
 
-    logging.info("Ending daily_qc")
+    logging.info("Ending daily_qc_p1")
