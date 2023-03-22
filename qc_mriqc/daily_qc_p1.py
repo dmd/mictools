@@ -20,9 +20,6 @@ logging.basicConfig(
 root_in = "/qc/mriqc/in/p1"
 root_out = "/qc/mriqc/out/p1"
 
-niigz = ".nii.gz"
-
-
 def final_scan(sourcenames):
     #  given ['FOO_BAR_11.nii.gz', 'FOO_BAR_2.nii.gz', 'FOO_BAR_3.nii.gz']
     #  return 'FOO_BAR_11.nii.gz', the highest numbered scan
@@ -33,7 +30,7 @@ def final_scan(sourcenames):
     files = {}
     for file in sourcenames:
 
-        m = re.search(rf"_(\d+){niigz}$", file)
+        m = re.search(rf"_(\d+).nii.gz$", file)
         fid = int(m.group(1))
 
         if fid not in files:
@@ -43,14 +40,19 @@ def final_scan(sourcenames):
     ids = sorted(list(files.keys()))
     return files[max(ids)][0]
 
-def copy_to_in_folder(bids, nifti_name, ident, bids_name):
-    Path(f"{bids}/sub-{ident}/func").mkdir(parents=True, exist_ok=True)
+def copy_to_in_folder(bids, nifti_name, bids_name):
+    Path(f"{bids}/sub-phantom/func").mkdir(parents=True, exist_ok=True)
     open(f"{bids}/dataset_description.json", "w").write(
         """{"Name": "none","BIDSVersion": "1.2.0","Authors": ["x"]}"""
     )
-    bids_filename = f"{bids}/sub-{ident}/func/sub-{ident}_{bids_name}_bold.nii.gz"
+    nii_bids_filename = f"{bids}/sub-phantom/func/sub-phantom_{bids_name}_bold.nii.gz"
+    json_name = nifti_name.replace(".nii.gz", ".json")
+    json_bids_filename = nii_bids_filename.replace(".nii.gz", ".json")
     try:
-        copyfile(nifti_name, bids_filename)
+        logging.info(f"copying {nifti_name} to {nii_bids_filename}")
+        copyfile(nifti_name, nii_bids_filename)
+        logging.info(f"copying {json_name} to {json_bids_filename}")
+        copyfile(json_name, json_bids_filename)
     except FileNotFoundError:
         logging.warning(f"skipping {nifti_name}, file not found")
     return bids
@@ -117,16 +119,15 @@ if __name__ == "__main__":
 
         Path(f"{bids}/sub-phantom/func").mkdir(parents=True, exist_ok=True)
 
-        # copy all the niftis
         # we want ep2d_bold_N.nii.gz
         #         epi_mb_N.nii.gz
 
         to_process = {"ep2d_bold_": "ep2d", "epi_mb_": "mb"}
         for scanname, bids_name in to_process.items():
-            niftis = glob(f"{run}/{scanname}*{niigz}")
+            niftis = glob(f"{run}/{scanname}*.nii.gz")
             nifti_name = final_scan(niftis)
             if not args.dry_run:
-                copy_to_in_folder(bids, nifti_name, "phantom", bids_name)
+                copy_to_in_folder(bids, nifti_name, bids_name)
 
         cmd = (
             f"docker run --user 1001:1001 -v {bids}:/data:ro -v {outfolder}:/out nipreps/mriqc:latest "
@@ -141,7 +142,7 @@ if __name__ == "__main__":
             Path(f"{root_out}/longitudinal/QA").mkdir(
                 parents=True, exist_ok=True
             )
-            for src in glob(f"{outfolder}/sub-phantom/func/*json"):
+            for src in glob(f"{outfolder}/sub-phantom/func/*json") + glob(f"{bids}/sub-phantom/func/*json"):
                 dst = f"{root_out}/longitudinal/QA/{foldername}_{Path(src).name}"
                 logging.info(f"copy {src} to {dst}")
                 copyfile(src, dst)
