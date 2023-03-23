@@ -17,8 +17,9 @@ logging.basicConfig(
     format="{asctime} {levelname} {filename}:{lineno}: {message}",
 )
 
-root_in = "/qc/mriqc/in/p1"
-root_out = "/qc/mriqc/out/p1"
+root_in = "/qc/mriqc/in/"
+root_out = "/qc/mriqc/out/"
+
 
 def final_scan(sourcenames):
     #  given ['FOO_BAR_11.nii.gz', 'FOO_BAR_2.nii.gz', 'FOO_BAR_3.nii.gz']
@@ -39,6 +40,7 @@ def final_scan(sourcenames):
 
     ids = sorted(list(files.keys()))
     return files[max(ids)][0]
+
 
 def copy_to_in_folder(bids, nifti_name, bids_name):
     Path(f"{bids}/sub-phantom/func").mkdir(parents=True, exist_ok=True)
@@ -81,6 +83,12 @@ if __name__ == "__main__":
         help="Run even if HTML files exist.",
         action="store_true",
     )
+    parser.add_argument(
+        "--scanner",
+        choices=["p1", "p2"],
+        required=True,
+        help="Select a scanner: p1 or p2",
+    )
     how_to_look = parser.add_mutually_exclusive_group(required=True)
     how_to_look.add_argument(
         "--days", help="Number of days ago to start looking for studies.", type=int
@@ -93,15 +101,28 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    logging.info("Starting daily_qc_p1")
+    logging.info(f"Starting daily_qc for {args.scanner}")
+
+    root_in += args.scanner
+    root_out += args.scanner
 
     runs = []
     if args.days:
-        runs = [match[0] for match in (glob(f"/qc/dicom-in/{d}_????_Prisma") for d in days_list(args.days)) if match]
+        if args.scanner == "p1":
+            suffix = "Prisma"
+        if args.scanner == "p2":
+            suffix = "MAGNETOM_Prisma_Fit"
+
+        runs = [
+            match[0]
+            for match in (
+                glob(f"/qc/dicom-in/{d}_????_{suffix}") for d in days_list(args.days)
+            )
+            if match
+        ]
 
     if args.folder:
         runs = args.folder
-
 
     for run in runs:
         # run is a FOLDER now
@@ -139,14 +160,14 @@ if __name__ == "__main__":
             subprocess.run(cmd.split())
 
             logging.info("Done running MRIQC. Copying json files to longitudinal.")
-            Path(f"{root_out}/longitudinal/QA").mkdir(
-                parents=True, exist_ok=True
-            )
-            for src in glob(f"{outfolder}/sub-phantom/func/*json") + glob(f"{bids}/sub-phantom/func/*json"):
+            Path(f"{root_out}/longitudinal/QA").mkdir(parents=True, exist_ok=True)
+            for src in glob(f"{outfolder}/sub-phantom/func/*json") + glob(
+                f"{bids}/sub-phantom/func/*json"
+            ):
                 dst = f"{root_out}/longitudinal/QA/{foldername}_{Path(src).name}"
                 logging.info(f"copy {src} to {dst}")
                 copyfile(src, dst)
         else:
             logging.info(f"Would run {cmd}")
 
-    logging.info("Ending daily_qc_p1")
+    logging.info(f"Ending daily_qc for {args.scanner}")

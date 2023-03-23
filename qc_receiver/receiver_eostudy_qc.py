@@ -34,6 +34,6 @@ if __name__ == "__main__":
     dt = datetime.strptime(ds.StudyDate + ds.StudyTime, "%Y%m%d%H%M%S.%f").strftime(
         "%Y%m%d_%H%M"
     )
-    newdir = Path(studydir).parent.joinpath(dt + "_" + ds.ManufacturerModelName)
+    newdir = Path(studydir).parent.joinpath(dt + "_" + ds.ManufacturerModelName.replace(' ', '_'))
     convert_to_nifti(studydir, newdir)
     open(pjoin(newdir, ".pipe_ready"), "w").write("")
