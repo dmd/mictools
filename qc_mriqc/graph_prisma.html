@@ -3,12 +3,27 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>P1 QC data</title>
+    <title>P2 QC data</title>
     <script src="https://cdn.jsdelivr.net/npm/moment"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
 
     <style>
+  .chart-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .chart-wrapper {
+      flex: 0 1 calc(33% - 30px);
+      margin: 8px;
+      padding: 8px;
+      background-color: #f5f5f5;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+      border-radius: 4px;
+  }
+      
       canvas { width: 100%; height: 100% }
       .chart-link--active {
           font-weight: bold;
@@ -25,28 +40,39 @@
       <a href="#" id="epi_mb_link" class="chart-link" onclick="main('mb_bold'); updateActiveLink('epi_mb_link')">epi_mb</a>
     </div>
     
-    <h1>Imaging Frequency</h1>
-    <canvas id="ImagingFrequency_chart"></canvas>
+  <div class="chart-container">
+      <div class="chart-wrapper">
+          <canvas id="ImagingFrequency_chart"></canvas>
+      </div>
+      
+      <div class="chart-wrapper">
+          <canvas id="TxRefAmp_chart"></canvas>
+      </div>
+      
+      <div class="chart-wrapper">
+          <canvas id="shimSettingSS_chart"></canvas>
+      </div>
+      
+      <div class="chart-wrapper">
+          <canvas id="snr_chart"></canvas>
+      </div>
+      
+      <div class="chart-wrapper">
+          <canvas id="gsr_chart"></canvas>
+      </div>
+      
+      <div class="chart-wrapper">
+          <canvas id="dvars_chart"></canvas>
+      </div>
+      
+      <div class="chart-wrapper">
+          <canvas id="dvarsn_chart"></canvas>
+      </div>
 
-    <h1>TxRefAmp</h1>
-    <canvas id="TxRefAmp_chart"></canvas>
-
-    <h1>ShimSetting sqrt sum sqs</h1>
-    <canvas id="shimSettingSS_chart"></canvas>
-
-    <h1>SNR</h1>
-    <canvas id="snr_chart"></canvas>
-
-    <h1>GSR</h1>
-    <canvas id="gsr_chart"></canvas>
-
-    <h1>dvars</h1>
-    <canvas id="dvars_chart"></canvas>
-    <canvas id="dvarsn_chart"></canvas>
-
-    <h1>fd_mean</h1>
-    <canvas id="fd_mean_chart"></canvas>
-
+      <div class="chart-wrapper">
+          <canvas id="fd_mean_chart"></canvas>
+      </div>
+  </div>
     <script>
       function updateActiveLink(activeLinkId) {
           const chartLinks = document.querySelectorAll('.chart-link');
