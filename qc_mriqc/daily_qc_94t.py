@@ -121,7 +121,7 @@ if __name__ == "__main__":
                 copy_to_in_folder(bids, nifti_name, info["ident"], bids_name)
 
         cmd = (
-            f"docker run --user 1001:1001 -v {bids}:/data:ro -v {outfolder}:/out nipreps/mriqc:latest "
+            f"docker run --rm --user 1001:1001 -v {bids}:/data:ro -v {outfolder}:/out nipreps/mriqc:latest "
             f"/data /out participant --no-sub "
         )
 
