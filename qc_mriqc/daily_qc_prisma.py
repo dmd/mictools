@@ -147,7 +147,7 @@ if __name__ == "__main__":
         for scanname, bids_name in to_process.items():
             niftis = glob(f"{run}/{scanname}*.nii.gz")
             nifti_name = final_scan(niftis)
-            if not args.dry_run:
+            if nifti_name and not args.dry_run:
                 copy_to_in_folder(bids, nifti_name, bids_name)
 
         cmd = (
