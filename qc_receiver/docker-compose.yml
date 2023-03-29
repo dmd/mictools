@@ -16,5 +16,5 @@ services:
             --promiscuous
             --sort-on-patientname
             --eostudy-timeout 60
-            --aetitle QC
+            --aetitle QCDESTINATION
             --exec-on-eostudy '/pipebin/receiver_eostudy_qc.py #p' 11112
