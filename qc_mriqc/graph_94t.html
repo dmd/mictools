@@ -9,323 +9,322 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
 
     <style>
-      .chart-container {
+        .chart-container {
           display: flex;
           flex-wrap: wrap;
           justify-content: center;
-      }
+        }
       
-      .chart-wrapper {
-          flex: 0 1 calc(45% - 30px);
-          margin: 8px;
-          padding: 8px;
-          background-color: #f5f5f5;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-          border-radius: 4px;
-      }
+        .chart-wrapper {
+            flex: 0 1 calc(45% - 30px);
+            margin: 8px;
+            padding: 8px;
+            background-color: #f5f5f5;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+            border-radius: 4px;
+        }
+            
+            canvas { width: 100%; height: 100% }
+            .chart-link--active {
+                font-weight: bold;
+                border: 1px solid #333;
+                padding: 5px;
+                border-radius: 3px;
+            }
       
-      canvas { width: 100%; height: 100% }
-      .chart-link--active {
-          font-weight: bold;
-          border: 1px solid #333;
-          padding: 5px;
-          border-radius: 3px;
-      }
-      
-    </style>
+          </style>
   </head>
   <body>
 
     <div class="chart-container">
-      <div class="chart-wrapper">
-        <canvas id="obs_chart"></canvas>
+        <div class="chart-wrapper">
+            <canvas id="obs_chart"></canvas>
 
-      </div>
-      <div class="chart-wrapper">
-        <canvas id="snr_chart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="snr_chart"></canvas>
 
-      </div>
-      <div class="chart-wrapper">
-        <canvas id="gsr_chart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="gsr_chart"></canvas>
 
-      </div>
-      <div class="chart-wrapper">
-        <canvas id="dvars_chart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="dvars_chart"></canvas>
 
-      </div>
-      <div class="chart-wrapper">
-        <canvas id="dvarsn_chart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="dvarsn_chart"></canvas>
 
-      </div>
-      <div class="chart-wrapper">
-        <canvas id="fd_mean_chart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="fd_mean_chart"></canvas>
 
-      </div>
-    </div>
+            </div>
+</div>
 
 
 
-    <script>
-      async function getFilesList(baseUrl, filePattern) {
-          const response = await fetch(baseUrl);
-          const html = await response.text();
+            <script>
+              async function getFilesList(baseUrl, filePattern) {
+                  const response = await fetch(baseUrl);
+                  const html = await response.text();
 
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-          const files = [...doc.querySelectorAll('body a')]
-                .map(a => a.href)
-                .filter(href => href.match(filePattern));
+                  const parser = new DOMParser();
+                  const doc = parser.parseFromString(html, 'text/html');
+                  const files = [...doc.querySelectorAll('body a')]
+                        .map(a => a.href)
+                        .filter(href => href.match(filePattern));
 
-          return files;
-      }
-
-      async function fetchData(baseUrl, filePattern, parserFunc) {
-          const files = await getFilesList(baseUrl, filePattern);
-          return await parserFunc(files);
-      }
-
-      async function parseBoldData(files) {
-          const data = {
-              labels: [],
-              tsnr: [],
-              snr: [],
-              gsr_x: [],
-              gsr_y: [],
-              dvars_std: [],
-              dvars_vstd: [],
-              dvars_nstd: [],
-              fd_mean: []
-          };
-
-          for (const file of files) {
-              try {
-                  const response = await fetch(file);
-                  const fileText = await response.text();
-                  const cleanFileText = fileText.replace(/\bNaN\b/g, "null");
-
-                  const fileData = JSON.parse(cleanFileText);
-
-                  const date = parseDate(file);
-                  if (!date) continue;
-
-                  data.labels.push(date);
-                  data.tsnr.push(fileData.tsnr);
-                  data.snr.push(fileData.snr);
-                  data.gsr_x.push(fileData.gsr_x);
-                  data.gsr_y.push(fileData.gsr_y);
-                  data.dvars_std.push(fileData.dvars_std);
-                  data.dvars_vstd.push(fileData.dvars_vstd);
-                  data.dvars_nstd.push(fileData.dvars_nstd);
-                  data.fd_mean.push(fileData.fd_mean);
-              } catch (e) {
-                  console.error(`Error processing file '${file}':`, e);
+                  return files;
               }
-          }
 
-          return data;
-      }
+              async function fetchData(baseUrl, filePattern, parserFunc) {
+                  const files = await getFilesList(baseUrl, filePattern);
+                  return await parserFunc(files);
+              }
 
-      async function parseProcparData(files) {
-          const data = {
-              labels: [],
-              obs: [],
-              obs_delta: [0], // Add obs_delta array for the changes
-              obs_delta_labels: [], // Add obs_delta_labels array for the change labels
-          };
+              async function parseBoldData(files) {
+                  const data = {
+                      labels: [],
+                      tsnr: [],
+                      snr: [],
+                      gsr_x: [],
+                      gsr_y: [],
+                      dvars_std: [],
+                      dvars_vstd: [],
+                      dvars_nstd: [],
+                      fd_mean: []
+                  };
 
-          let previousObs = null;
-          for (const file of files) {
-              try {
-                  const response = await fetch(file);
-                  const fileData = await response.json();
-                  const date = parseDate(file);
-                  if (!date) continue;
+                  for (const file of files) {
+                      try {
+                          const response = await fetch(file);
+                          const fileText = await response.text();
+                          const cleanFileText = fileText.replace(/\bNaN\b/g, "null");
 
-                  const currentObs = fileData.Obs;
+                          const fileData = JSON.parse(cleanFileText);
 
-                  if (previousObs !== null) {
-                      data.obs_delta.push(currentObs - previousObs); // Calculate the delta and add it to the obs_delta array
-                      data.obs_delta_labels.push(date); // Add the date to the obs_delta_labels array
+                          const date = parseDate(file);
+                          if (!date) continue;
+
+                          data.labels.push(date);
+                          data.tsnr.push(fileData.tsnr);
+                          data.snr.push(fileData.snr);
+                          data.gsr_x.push(fileData.gsr_x);
+                          data.gsr_y.push(fileData.gsr_y);
+                          data.dvars_std.push(fileData.dvars_std);
+                          data.dvars_vstd.push(fileData.dvars_vstd);
+                          data.dvars_nstd.push(fileData.dvars_nstd);
+                          data.fd_mean.push(fileData.fd_mean);
+                      } catch (e) {
+                          console.error(`Error processing file '${file}':`, e);
+                      }
                   }
 
-                  data.labels.push(date);
-                  data.obs.push(currentObs);
-
-                  previousObs = currentObs;
-              } catch (e) {
-                  console.error(`Error processing file '${file}':`, e);
+                  return data;
               }
-          }
 
-          return data;
-      }
+              async function parseProcparData(files) {
+                  const data = {
+                      labels: [],
+                      obs: [],
+                      obs_delta: [0], // Add obs_delta array for the changes
+                      obs_delta_labels: [], // Add obs_delta_labels array for the change labels
+                  };
 
-      
-      function parseDate(fileName) {
-          const dateMatch = fileName.match(/s_(\d{8})_.*\.json/);
-          if (!dateMatch) return null;
-          const date = moment(dateMatch[1], 'YYYYMMDD').toDate();
-          return date;
-      }
+                  let previousObs = null;
+                  for (const file of files) {
+                      try {
+                          const response = await fetch(file);
+                          const fileData = await response.json();
+                          const date = parseDate(file);
+                          if (!date) continue;
 
-      async function createChart(chartId, chartData, chartConfig) {
-          const ctx = document.getElementById(chartId).getContext('2d');
-          const chart = new Chart(ctx, chartConfig);
+                          const currentObs = fileData.Obs;
 
-          return chart;
-      }
+                          if (previousObs !== null) {
+                              data.obs_delta.push(currentObs - previousObs); // Calculate the delta and add it to the obs_delta array
+                              data.obs_delta_labels.push(date); // Add the date to the obs_delta_labels array
+                          }
 
-      function chartConfig(data, datasetConfig, yAxisBeginAtZero, deltaConfig = false, multiAxis = false) {
-          const options = {
-              scales: {
-                  x: {
-                      type: 'time',
-                      time: {
-                          displayFormats: {
-                              day: 'YYYY-MM-DD'
+                          data.labels.push(date);
+                          data.obs.push(currentObs);
+
+                          previousObs = currentObs;
+                      } catch (e) {
+                          console.error(`Error processing file '${file}':`, e);
+                      }
+                  }
+
+                  return data;
+              }
+
+              
+              function parseDate(fileName) {
+                  const dateMatch = fileName.match(/s_(\d{8})_.*\.json/);
+                  if (!dateMatch) return null;
+                  const date = moment(dateMatch[1], 'YYYYMMDD').toDate();
+                  return date;
+              }
+
+              async function createChart(chartId, chartData, chartConfig) {
+                  const ctx = document.getElementById(chartId).getContext('2d');
+                  const chart = new Chart(ctx, chartConfig);
+
+                  return chart;
+              }
+
+              function chartConfig(data, datasetConfig, yAxisBeginAtZero, deltaConfig = false, multiAxis = false) {
+                  const options = {
+                      scales: {
+                          x: {
+                              type: 'time',
+                              time: {
+                                  displayFormats: {
+                                      day: 'YYYY-MM-DD'
+                                  }
+                              }
+                          },
+                          y: {
+                              beginAtZero: yAxisBeginAtZero
                           }
                       }
-                  },
-                  y: {
-                      beginAtZero: yAxisBeginAtZero
+                  };
+
+                  if (multiAxis) {
+                      options.scales['y1'] = { ...options.scales.y, position: 'left', id: 'y1'};
+                      options.scales['y2'] = { ...options.scales.y, position: 'right', id: 'y2'};
+                      delete options.scales.y;
                   }
+
+                  return {
+                      type: 'line',
+                      data: {
+                          labels: deltaConfig ? data.obs_delta_labels : data.labels,
+                          datasets: datasetConfig
+                      },
+                      options
+                  };
               }
-          };
 
-          if (multiAxis) {
-              options.scales['y1'] = { ...options.scales.y, position: 'left', id: 'y1'};
-              options.scales['y2'] = { ...options.scales.y, position: 'right', id: 'y2'};
-              delete options.scales.y;
-          }
+              
+              async function main() {
+                  const baseUrl = '.';
+                  const boldPattern = /s_\d{8}_.+bold\.json$/;
+                  const procparPattern = /s_\d{8}_.+procpar\.json$/;
 
-          return {
-              type: 'line',
-              data: {
-                  labels: deltaConfig ? data.obs_delta_labels : data.labels,
-                  datasets: datasetConfig
-              },
-              options
-          };
-      }
+                  const Data = await fetchData(baseUrl, boldPattern, parseBoldData);
+                  const procparData = await fetchData(baseUrl, procparPattern, parseProcparData);
 
-      
-      async function main() {
-          const baseUrl = '.';
-          const boldPattern = /s_\d{8}_.+bold\.json$/;
-          const procparPattern = /s_\d{8}_.+procpar\.json$/;
+                  const snrDatasetConfig = [
+                      {
+                          label: 'TSNR',
+                          data: Data.tsnr,
+                          borderColor: 'rgb(75, 192, 192)',
+                          backgroundColor: 'rgba(75, 192, 192, 0.3)',
+                          yAxisID: 'y1',
+                          tension: 0.1
+                      },
+                      {
+                          label: 'SNR',
+                          data: Data.snr,
+                          borderColor: 'rgb(255, 99, 132)',
+                          backgroundColor: 'rgba(255, 99, 132, 0.3)',
+                          yAxisID: 'y2',
+                          tension: 0.1
+                      }
+                  ];
 
-          const Data = await fetchData(baseUrl, boldPattern, parseBoldData);
-          const procparData = await fetchData(baseUrl, procparPattern, parseProcparData);
+                  const gsrDatasetConfig = [
+                      {
+                          label: 'gsr_x',
+                          data: Data.gsr_x,
+                          borderColor: 'rgb(75, 192, 192)',
+                          backgroundColor: 'rgba(75, 192, 192, 0.3)',
+                          tension: 0.1
+                      },
+                      {
+                          label: 'gsr_y',
+                          data: Data.gsr_y,
+                          borderColor: 'rgb(255, 99, 132)',
+                          backgroundColor: 'rgba(255, 99, 132, 0.3)',
+                          tension: 0.1
+                      }
+                  ];
 
-          const snrDatasetConfig = [
-              {
-                  label: 'TSNR',
-                  data: Data.tsnr,
-                  borderColor: 'rgb(75, 192, 192)',
-                  backgroundColor: 'rgba(75, 192, 192, 0.3)',
-                  tension: 0.1
-              },
-              {
-                  label: 'SNR',
-                  data: Data.snr,
-                  borderColor: 'rgb(255, 99, 132)',
-                  backgroundColor: 'rgba(255, 99, 132, 0.3)',
-                  tension: 0.1
+                  const dvarsDatasetConfig = [
+                      {
+                          label: 'dvars_std',
+                          data: Data.dvars_std,
+                          borderColor: 'rgb(75, 192, 192)',
+                          backgroundColor: 'rgba(75, 192, 192, 0.3)',
+                          tension: 0.1
+                      },
+                      {
+                          label: 'dvars_vstd',
+                          data: Data.dvars_vstd,
+                          borderColor: 'rgb(255, 99, 132)',
+                          backgroundColor: 'rgba(255, 99, 132, 0.3)',
+                          tension: 0.1
+                      }
+                  ];
+
+                  const dvarsnDatasetConfig = [
+                      {
+                          label: 'dvars_nstd',
+                          data: Data.dvars_nstd,
+                          borderColor: 'rgb(255, 99, 132)',
+                          backgroundColor: 'rgba(255, 99, 132, 0.3)',
+                          tension: 0.1
+                      }
+                  ];
+
+                  const fdmeanDatasetConfig = [
+                      {
+                          label: 'fd_mean',
+                          data: Data.fd_mean,
+                          borderColor: 'rgb(255, 99, 132)',
+                          backgroundColor: 'rgba(255, 99, 132, 0.3)',
+                          tension: 0.1
+                      }
+                  ];
+
+                  const procparDatasetConfig = [
+                      {
+                          label: 'Obs',
+                          data: procparData.obs,
+                          borderColor: 'rgb(153, 102, 255)',
+                          backgroundColor: 'rgba(153, 102, 255, 0.3)',
+                          tension: 0.1,
+                          yAxisID: 'y1',
+                          type: 'line'
+                      },
+                      {
+                          label: 'ΔObs',
+                          data: procparData.obs_delta,
+                          borderColor: 'rgb(255, 206, 86)',
+                          backgroundColor: 'rgba(55, 55, 255, 0.7)', 
+                          tension: 0.1,
+                          yAxisID: 'y2',
+                          type: 'bar',
+                          barPercentage: 3 // Increase this value to get wider bars
+                      }
+                  ];
+
+//                  const combinedDatasets = procparDatasetConfig.concat(deltaObsDatasetConfig);
+
+                  await createChart('obs_chart', procparData, chartConfig(procparData, procparDatasetConfig, false, false, true));
+                  await createChart('snr_chart', Data, chartConfig(Data, snrDatasetConfig, false, false, true));
+                  await createChart('gsr_chart', Data, chartConfig(Data, gsrDatasetConfig, true));
+                  await createChart('dvars_chart', Data, chartConfig(Data, dvarsDatasetConfig, true));
+                  await createChart('dvarsn_chart', Data, chartConfig(Data, dvarsnDatasetConfig, true));
+                  await createChart('fd_mean_chart', Data, chartConfig(Data, fdmeanDatasetConfig, true));
+
               }
-          ];
 
-          const gsrDatasetConfig = [
-              {
-                  label: 'gsr_x',
-                  data: Data.gsr_x,
-                  borderColor: 'rgb(75, 192, 192)',
-                  backgroundColor: 'rgba(75, 192, 192, 0.3)',
-                  tension: 0.1
-              },
-              {
-                  label: 'gsr_y',
-                  data: Data.gsr_y,
-                  borderColor: 'rgb(255, 99, 132)',
-                  backgroundColor: 'rgba(255, 99, 132, 0.3)',
-                  tension: 0.1
-              }
-          ];
-
-          const dvarsDatasetConfig = [
-              {
-                  label: 'dvars_std',
-                  data: Data.dvars_std,
-                  borderColor: 'rgb(75, 192, 192)',
-                  backgroundColor: 'rgba(75, 192, 192, 0.3)',
-                  tension: 0.1
-              },
-              {
-                  label: 'dvars_vstd',
-                  data: Data.dvars_vstd,
-                  borderColor: 'rgb(255, 99, 132)',
-                  backgroundColor: 'rgba(255, 99, 132, 0.3)',
-                  tension: 0.1
-              }
-          ];
-
-          const dvarsnDatasetConfig = [
-              {
-                  label: 'dvars_nstd',
-                  data: Data.dvars_nstd,
-                  borderColor: 'rgb(255, 99, 132)',
-                  backgroundColor: 'rgba(255, 99, 132, 0.3)',
-                  tension: 0.1
-              }
-          ];
-
-          const fdmeanDatasetConfig = [
-              {
-                  label: 'fd_mean',
-                  data: Data.fd_mean,
-                  borderColor: 'rgb(255, 99, 132)',
-                  backgroundColor: 'rgba(255, 99, 132, 0.3)',
-                  tension: 0.1
-              }
-          ];
-
-          const procparDatasetConfig = [
-              {
-                  label: 'Obs',
-                  data: procparData.obs,
-                  borderColor: 'rgb(153, 102, 255)',
-                  backgroundColor: 'rgba(153, 102, 255, 0.3)',
-                  tension: 0.1,
-                  yAxisID: 'y1',
-                  type: 'line'
-              }
-          ];
-
-          const deltaObsDatasetConfig = [
-              {
-                  label: 'ΔObs',
-                  data: procparData.obs_delta,
-                  borderColor: 'rgb(255, 206, 86)',
-                  backgroundColor: 'rgba(55, 55, 255, 0.7)', 
-                  tension: 0.1,
-                  yAxisID: 'y2',
-                  type: 'bar',
-                  barPercentage: 3 // Increase this value to get wider bars
-              }
-          ];
-
-          const combinedDatasets = procparDatasetConfig.concat(deltaObsDatasetConfig);
-
-          await createChart('obs_chart', procparData, chartConfig(procparData, combinedDatasets, false, false, true));
-          await createChart('snr_chart', Data, chartConfig(Data, snrDatasetConfig, true));
-          await createChart('gsr_chart', Data, chartConfig(Data, gsrDatasetConfig, true));
-          await createChart('dvars_chart', Data, chartConfig(Data, dvarsDatasetConfig, true));
-          await createChart('dvarsn_chart', Data, chartConfig(Data, dvarsnDatasetConfig, true));
-          await createChart('fd_mean_chart', Data, chartConfig(Data, fdmeanDatasetConfig, true));
-
-      }
-
-      main();
-    </script>
+              main();
+            </script>
 
   </body>
 </html>
