@@ -50,4 +50,5 @@ chown $U:$U ${MOUNT_POINT}
 cmsh -c "category ; use universal; fsmounts; add ${MOUNT_POINT} ; set device nisaba.tengbenet.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit; commit;"
 
 echo Now please run "su - $U" and make sure that worked.
-
+echo
+echo "Need to add to mickey too..."
