@@ -22,12 +22,10 @@ if os.path.isfile(QSUB):
     SYSTYPE = "sge"
     MICC_FMRIPREP = "/home/ddrucker/mictools/micc_fmriprep.py"
     SUB_MATCH = r"Your job (\d{1,7})"
-elif os.path.isfile(SBATCH):
+else:
     SYSTYPE = "slurm"
     MICC_FMRIPREP = "/home/ddrucker/mt-dev/micc_fmriprep.py"
     SUB_MATCH = r"Submitted batch job (\d{1,7})"
-else:
-    raise OSError("No job submission system found!")
 
 
 def task_run(task, studydir, write=False):
