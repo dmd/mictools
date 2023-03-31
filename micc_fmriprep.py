@@ -6,6 +6,17 @@ import getpass
 from pathlib import Path
 
 QSUB = "/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qsub"
+SBATCH = "/cm/shared/apps/slurm/current/bin/sbatch"
+if os.path.isfile(QSUB):
+    SYSTYPE = "sge"
+    SUBMITTER = QSUB
+    SINGULARITY = "/usr/bin/singularity"
+elif os.path.isfile(SBATCH):
+    SYSTYPE = "slurm"
+    SUBMITTER = SBATCH
+    SINGULARITY = "/cm/local/apps/apptainer/current/bin/singularity"
+else:
+    raise OSError("No job submission system found!")
 
 
 def make_runscript(args, workdir):
@@ -23,16 +34,16 @@ def make_runscript(args, workdir):
         "export SINGULARITYENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"
     ]
     s = []
-    s += ["/usr/bin/singularity run"]
+    s += [SINGULARITY + " run"]
     s += ["--contain"]
     s += ["--cleanenv"]
-    s += ["-B /tmp -B /data -B /data1 -B /data2 -B /data3 -B /n -B /cm/shared"]
+    s += ["-B /tmp -B /data -B /data1 -B /data2 -B /data3 -B /n -B /cm/shared -B /data/fmriprep-workdir"]
 
     s += [f"/cm/shared/singularity/images/fmriprep-{args.fmriprep_version}.simg"]
     s += [args.bidsdir]
     s += [args.outputdir]
     s += ["participant"]
-    s += ["--fs-license-file /cm/shared/freesurfer-6.0.1/license.txt"]
+    s += ["--fs-license-file /cm/shared/freesurfer-license.txt"]
     s += [f"--participant_label {args.participant}"]
 
     if isinstance(args.output_spaces, str):
@@ -221,7 +232,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--jobname",
-        help='Name of the SGE job. (Default: "fmriprep")',
+        help='Name of the job in the job scheduler. (Default: "fmriprep")',
         default="fmriprep",
     )
 
@@ -277,7 +288,9 @@ if __name__ == "__main__":
     if not os.path.exists(
         f"/cm/shared/singularity/images/fmriprep-{args.fmriprep_version}.simg"
     ):
-        print(f"MICC does not have fmriprep version {args.fmriprep_version} installed.")
+        print(
+            f"The cluster does not have fmriprep version {args.fmriprep_version} installed."
+        )
         sys.exit(1)
 
     # apparently fmriprep has trouble if you run this from inside BIDS dir
@@ -311,18 +324,21 @@ if __name__ == "__main__":
 
     filename, script = make_runscript(args, workdir)
     action = "NOT submitting" if args.dry_run else "Submitting"
-    print(f"{action} {filename} to qsub, the contents of which are:")
+    print(f"{action} {filename} to {SYSTYPE}, the contents of which are:")
     print("================")
     print(script)
     print("================")
 
-    qsub_cmd = f"{QSUB} -cwd -q fmriprep.q -N {args.jobname} -pe fmriprep {args.ncpus} -w e -R y {filename}".split()
-    print(" ".join(qsub_cmd))
+    if SYSTYPE == "sge":
+        sub_cmd = f"{QSUB} -cwd -q fmriprep.q -N {args.jobname} -pe fmriprep {args.ncpus} -w e -R y {filename}".split()
+    elif SYSTYPE == "slurm":
+        sub_cmd = f"{SBATCH} --job-name {args.jobname} --output=%x-%j.out --error=%x-%j.err --cpus-per-task={args.ncpus} {filename}".split()
+    print(" ".join(sub_cmd))
     if args.dry_run:
         print("NOT running; dry run only.")
     else:
         proc = subprocess.Popen(
-            qsub_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+            sub_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         stdout, stderr = proc.communicate()
         print("stdout:\n")

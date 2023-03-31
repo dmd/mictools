@@ -16,6 +16,19 @@ from converters import convert_to_bids, convert_to_nifti
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 
+QSUB = "/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qsub"
+SBATCH = "/cm/shared/apps/slurm/current/bin/sbatch"
+if os.path.isfile(QSUB):
+    SYSTYPE = "sge"
+    MICC_FMRIPREP = "/home/ddrucker/mictools/micc_fmriprep.py"
+    SUB_MATCH = r"Your job (\d{1,7})"
+elif os.path.isfile(SBATCH):
+    SYSTYPE = "slurm"
+    MICC_FMRIPREP = "/home/ddrucker/mt-dev/micc_fmriprep.py"
+    SUB_MATCH = r"Submitted batch job (\d{1,7})"
+else:
+    raise OSError("No job submission system found!")
+
 
 def task_run(task, studydir, write=False):
     taskfile = pjoin(studydir, ".taskrun_" + task)
@@ -49,7 +62,7 @@ def submit_fmriprep(config, studydir, subject):
 
     s = []
     s += ["/cm/shared/anaconda3/envs/iris/bin/python3"]
-    s += ["/home/ddrucker/mictools/micc_fmriprep.py"]
+    s += [MICC_FMRIPREP]
     s += ["--bidsdir", studydir]
 
     if force_workdir:
@@ -87,10 +100,10 @@ def submit_fmriprep(config, studydir, subject):
 
     proc = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     stdout, stderr = proc.communicate()
-    if b"has been submitted" in stdout:
-        job_id = re.search(r"Your job (\d{1,7})", str(stdout)).group(1)
-        logging.info(f"Submitted job {job_id} to SGE")
-        open(pjoin(studydir, ".sgejobid"), "w").write(job_id)
+    if b"ubmitted" in stdout:
+        job_id = re.search(SUB_MATCH, str(stdout)).group(1)
+        logging.info(f"Submitted job {job_id} to scheduler")
+        open(pjoin(studydir, ".jobid"), "w").write(job_id)
         submitted = True
     else:
         submitted = False
@@ -99,8 +112,19 @@ def submit_fmriprep(config, studydir, subject):
         )
 
     # write out our debug data
-    def list_to_dict(rlist):
+    def qstat_to_dict(rlist):
         return dict(map(lambda s: re.split(": *", s, 1), rlist))
+
+    def scontrol_to_dict(s):
+        key_value_pairs = s.split(" ")
+        result_dict = {}
+
+        for pair in key_value_pairs:
+            if "=" in pair:
+                key, value = pair.split("=", 1)
+                result_dict[key] = value
+
+        return result_dict
 
     dump["arguments"] = sys.argv
     dump["cwd"] = os.getcwd()
@@ -111,17 +135,40 @@ def submit_fmriprep(config, studydir, subject):
     dump["command"] = " ".join(s)
     dump["submitted"] = submitted
     if submitted:
-        dump["sgejobid"] = job_id
+        dump["jobid"] = job_id
+
+        if SYSTYPE == "sge":
+            statcmd = [
+                "/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qstat",
+                "-j",
+                job_id,
+            ]
+        if SYSTYPE == "slurm":
+            statcmd = [
+                "/cm/shared/apps/slurm/current/bin/scontrol",
+                "-o",
+                "show",
+                "job",
+                job_id,
+            ]
+
         proc = subprocess.Popen(
-            ["/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qstat", "-j", job_id],
+            statcmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
         stdout, stderr = proc.communicate()
-        dump["qstat"] = list_to_dict(
-            [x for x in stdout.decode("ascii").split("\n") if ":" in x]
-        )
-        dump["submitted_command"] = open(dump["qstat"]["script_file"]).read()
+
+        if SYSTYPE == "sge":
+            dump["qstat"] = qstat_to_dict(
+                [x for x in stdout.decode("ascii").split("\n") if ":" in x]
+            )
+            dump["submitted_command"] = open(dump["qstat"]["script_file"]).read()
+        if SYSTYPE == "slurm":
+            dump["scontrol_show_job"] = scontrol_to_dict(stdout.decode("ascii"))
+            dump["submitted_command"] = open(
+                dump["scontrol_show_job"]["Command"]
+            ).read()
 
     fp = open(f"/data/fmriprep-workdir/logs/{getpass.getuser()}.{job_id}", "w")
     pp = pprint.PrettyPrinter(stream=fp)
