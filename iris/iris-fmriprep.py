@@ -24,7 +24,7 @@ if os.path.isfile(QSUB):
     SUB_MATCH = r"Your job (\d{1,7})"
 else:
     SYSTYPE = "slurm"
-    MICC_FMRIPREP = "/home/ddrucker/mt-dev/micc_fmriprep.py"
+    MICC_FMRIPREP = "/cm/shared/apps/mictools/micc_fmriprep.py"
     SUB_MATCH = r"Submitted batch job (\d{1,7})"
 
 
