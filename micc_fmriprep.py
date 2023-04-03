@@ -11,7 +11,7 @@ if os.path.isfile(QSUB):
     SYSTYPE = "sge"
     SUBMITTER = QSUB
     SINGULARITY = "/usr/bin/singularity"
-else os.path.isfile(SBATCH):
+else:
     SYSTYPE = "slurm"
     SUBMITTER = SBATCH
     SINGULARITY = "/cm/local/apps/apptainer/current/bin/singularity"
