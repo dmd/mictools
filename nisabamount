@@ -52,7 +52,7 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
     MOUNTPOINT=$(realpath $MOUNTPOINT)
     for i in $nodes ; do
 	echo mounting ${nodename}${i}
-	sudo -u $SUDO_USER ssh ${nodename}${i} sudo /usr/local/bin/nisabamount-node $SHARENAME $MOUNTPOINT $SUDO_USER $CREDFILE 
+	sudo -u $SUDO_USER ssh ${nodename}${i} sudo /usr/local/bin/nisabamount-node "$SHARENAME" "$MOUNTPOINT" "$SUDO_USER" "$CREDFILE" 
     done
 else
     echo Aborted.
