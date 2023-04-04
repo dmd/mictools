@@ -105,6 +105,7 @@ def submit_fmriprep(config, studydir, subject):
         submitted = True
     else:
         submitted = False
+        job_id = -1
         logging.warning(
             f"Something went wrong submitting to the queue:\nSTDOUT:\n{stdout}STDERR:\n{stderr}"
         )
