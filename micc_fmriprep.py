@@ -330,7 +330,7 @@ if __name__ == "__main__":
     if SYSTYPE == "sge":
         sub_cmd = f"{QSUB} -cwd -q fmriprep.q -N {args.jobname} -pe fmriprep {args.ncpus} -w e -R y {filename}".split()
     elif SYSTYPE == "slurm":
-        sub_cmd = f"{SBATCH} --job-name {args.jobname} --output=%x-%j.out --error=%x-%j.err --cpus-per-task={args.ncpus} {filename}".split()
+        sub_cmd = f"{SBATCH} --job-name {args.jobname} --output=%x-%j.out --error=%x-%j.err --time 3- --cpus-per-task={args.ncpus} {filename}".split()
     print(" ".join(sub_cmd))
     if args.dry_run:
         print("NOT running; dry run only.")
