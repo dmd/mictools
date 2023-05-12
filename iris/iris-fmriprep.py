@@ -81,7 +81,6 @@ def submit_fmriprep(config, studydir, subject):
             s += ["--" + arg]
     for arg in (
         "anat-derivatives",
-        "dummy-scans",
         "fmriprep-version",
         "ignore",
         "ncpus",
@@ -91,6 +90,10 @@ def submit_fmriprep(config, studydir, subject):
     ):
         if args[arg]:
             s += ["--" + arg, str(args[arg])]
+
+    # we need to add dummy-scans even if it's 0 (which above would have been false-y)
+    if type(args["dummy-scans"]) is int:
+        s += ["--dummy-scans", str(args["dummy-scans"])]
 
     logging.info("Running command: " + " ".join(s))
 

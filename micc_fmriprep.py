@@ -53,7 +53,7 @@ def make_runscript(args, workdir):
     s += [f"--mem-mb {args.ramsize*1024}"]
     s += ["--notrack"]
 
-    if args.dummy_scans != 0:
+    if 'dummy_scans' in args and args.dummy_scans is not None:
         s += [f"--dummy-scans {args.dummy_scans}"]
 
     if args.ignore:
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--dummy-scans", help="Number of dummy scans. (Default: 0)", type=int, default=0
+        "--dummy-scans", help="Number of dummy scans. (Default: 0)", type=int
     )
 
     parser.add_argument(
