@@ -51,4 +51,4 @@ cmsh -c "category ; use universal; fsmounts; add ${MOUNT_POINT} ; set device nis
 
 echo Now please run "su - $U" and make sure that worked.
 echo
-echo "Need to add to mickey too..."
+echo "DANIEL NEEDS TO RUN mountpoint-for-mickey ON MICKEY TOO"
