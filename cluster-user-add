@@ -17,7 +17,9 @@ E=$2
 
 /cm/local/apps/cmd/bin/cmsh -c "user; add ${U}; set loginshell /bin/tcsh; set email $E ; set password; commit;"
 chown -R $U:$U /home/$U
+
 cp /home/proto/.cshrc /home/proto/.cshrc.local /home/$U
+chown $U:$U /home/$U/.cshrc*
 
 ## create nisaba dataset
 API_KEY=$(cat ~ddrucker/truenas/apikey.txt)
