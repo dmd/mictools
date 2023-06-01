@@ -32,7 +32,7 @@ curl --insecure -H "Authorization: Bearer $API_KEY" -X POST "${API_URL}/sharing/
   "paths": [   "/mnt/'${POOL_DATASET_PATH}'"  ],
   "hosts": [   "x5backup.mclean.harvard.edu"  ],
   "maproot_user": "root",
-  "networks": [   "172.16.4.0/24", "172.16.8.0/24"  ]
+  "networks": [   "172.16.4.0/24", "172.17.4.0/24"  ]
  }'
 
 
