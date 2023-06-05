@@ -24,10 +24,20 @@ parser.add_argument(
     action="store_true",
 )
 
+parser.add_argument(
+    "--authfile",
+    help="Use .xnat_auth file for login.",
+    required=False,
+    action="store_true",
+)
+
 parser.add_argument("accessionnumber", nargs="+")
 args = parser.parse_args()
 
-password = getpass.getpass(f"Iris password for {args.username}: ")
+if not args.authfile:
+    password = getpass.getpass(f"Iris password for {args.username}: ")
+else:
+    password = ""
 
 dlformat = "native"
 outdir = "."
@@ -38,8 +48,7 @@ for accessionnumber in args.accessionnumber:
         dlformat = "flat"
         outdir = accessionnumber
     print(f"Fetching {accessionnumber}...")
-    subprocess.call(
-        [
+    cmd = [
             "/cm/shared/anaconda3/envs/iris/bin/ArcGet.py",
             "--in-mem",
             "-f",
@@ -48,7 +57,12 @@ for accessionnumber in args.accessionnumber:
             accessionnumber,
             "-o",
             outdir,
-        ],
+    ]
+    if args.authfile:
+        cmd.insert(1, "--alias")
+        cmd.insert(2, "iris")
+    subprocess.call(
+        cmd,
         env=dict(
             os.environ,
             XNAT_PASS=password,
