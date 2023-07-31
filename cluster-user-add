@@ -19,7 +19,8 @@ E=$2
 chown -R $U:$U /home/$U
 
 cp /home/proto/.cshrc /home/proto/.cshrc.local /home/$U
-chown $U:$U /home/$U/.cshrc*
+cp /home/proto/.bash_profile /home/$U
+chown $U:$U /home/$U/.cshrc* /home/$U/.bash*
 
 ## create nisaba dataset
 API_KEY=$(cat ~ddrucker/truenas/apikey.txt)
