@@ -137,7 +137,7 @@ if __name__ == "__main__":
     versioning = parser.add_argument_group("Version")
 
     parser.add_argument(
-        "--aroma", help="Turn on AROMA processing. (Default: off)", action="store_true"
+        "--aroma", help="Turn on AROMA processing (in fMRIprep <23.1). (Default: off)", action="store_true"
     )
 
     parser.add_argument(
@@ -151,7 +151,7 @@ if __name__ == "__main__":
         action="store",
         nargs="+",
         choices=["fieldmaps", "slicetiming", "sbref"],
-        help="ignore selected aspects of the input dataset to disable corresponding "
+        help="Ignore selected aspects of the input dataset to disable corresponding "
         "parts of the workflow (a space delimited list)",
     )
 
@@ -258,8 +258,8 @@ if __name__ == "__main__":
 
     workdir_group.add_argument(
         "--force-workdir",
-        help="FORCE the work directory instead of using the MICC default of /data/fmriprep-workdir/USERNAME"
-        "Please do not use this unless you must."
+        help="FORCE the work directory instead of using the MICC default of /data/fmriprep-workdir/USERNAME. "
+        "Please do not use this unless you must. "
         "This directory must not be inside your BIDS dir.",
         action=FullPaths,
     )
