@@ -6,6 +6,15 @@ import getpass
 from pathlib import Path
 
 QSUB = "/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qsub"
+SBATCH = "/cm/shared/apps/slurm/current/bin/sbatch"
+if os.path.isfile(QSUB):
+    SYSTYPE = "sge"
+    SUBMITTER = QSUB
+    SINGULARITY = "/usr/bin/singularity"
+else:
+    SYSTYPE = "slurm"
+    SUBMITTER = SBATCH
+    SINGULARITY = "/cm/local/apps/apptainer/current/bin/singularity"
 
 
 def make_runscript(args, workdir):
@@ -23,16 +32,16 @@ def make_runscript(args, workdir):
         "export SINGULARITYENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"
     ]
     s = []
-    s += ["/usr/bin/singularity run"]
+    s += [SINGULARITY + " run"]
     s += ["--contain"]
     s += ["--cleanenv"]
-    s += ["-B /tmp -B /data -B /data1 -B /data2 -B /data3 -B /n -B /cm/shared"]
+    s += ["-B /tmp -B /data -B /data1 -B /data2 -B /data3 -B /n -B /cm/shared -B /data/fmriprep-workdir"]
 
     s += [f"/cm/shared/singularity/images/fmriprep-{args.fmriprep_version}.simg"]
     s += [args.bidsdir]
     s += [args.outputdir]
     s += ["participant"]
-    s += ["--fs-license-file /cm/shared/freesurfer-6.0.1/license.txt"]
+    s += ["--fs-license-file /cm/shared/freesurfer-license.txt"]
     s += [f"--participant_label {args.participant}"]
 
     if isinstance(args.output_spaces, str):
@@ -44,7 +53,7 @@ def make_runscript(args, workdir):
     s += [f"--mem-mb {args.ramsize*1024}"]
     s += ["--notrack"]
 
-    if args.dummy_scans != 0:
+    if 'dummy_scans' in args and args.dummy_scans is not None:
         s += [f"--dummy-scans {args.dummy_scans}"]
 
     if args.ignore:
@@ -128,7 +137,7 @@ if __name__ == "__main__":
     versioning = parser.add_argument_group("Version")
 
     parser.add_argument(
-        "--aroma", help="Turn on AROMA processing. (Default: off)", action="store_true"
+        "--aroma", help="Turn on AROMA processing (in fMRIprep <23.1). (Default: off)", action="store_true"
     )
 
     parser.add_argument(
@@ -142,7 +151,7 @@ if __name__ == "__main__":
         action="store",
         nargs="+",
         choices=["fieldmaps", "slicetiming", "sbref"],
-        help="ignore selected aspects of the input dataset to disable corresponding "
+        help="Ignore selected aspects of the input dataset to disable corresponding "
         "parts of the workflow (a space delimited list)",
     )
 
@@ -170,7 +179,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--dummy-scans", help="Number of dummy scans. (Default: 0)", type=int, default=0
+        "--dummy-scans", help="Number of dummy scans. (Default: 0)", type=int
     )
 
     parser.add_argument(
@@ -221,7 +230,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--jobname",
-        help='Name of the SGE job. (Default: "fmriprep")',
+        help='Name of the job in the job scheduler. (Default: "fmriprep")',
         default="fmriprep",
     )
 
@@ -249,8 +258,8 @@ if __name__ == "__main__":
 
     workdir_group.add_argument(
         "--force-workdir",
-        help="FORCE the work directory instead of using the MICC default of /data/fmriprep-workdir/USERNAME"
-        "Please do not use this unless you must."
+        help="FORCE the work directory instead of using the MICC default of /data/fmriprep-workdir/USERNAME. "
+        "Please do not use this unless you must. "
         "This directory must not be inside your BIDS dir.",
         action=FullPaths,
     )
@@ -268,8 +277,8 @@ if __name__ == "__main__":
 
     versioning.add_argument(
         "--fmriprep-version",
-        help="fmriprep version number. Default: 23.0-latest",
-        default="23.0-latest",
+        help="fmriprep version number. Default: 23.1-latest",
+        default="23.1-latest",
     )
 
     args = parser.parse_args()
@@ -277,7 +286,9 @@ if __name__ == "__main__":
     if not os.path.exists(
         f"/cm/shared/singularity/images/fmriprep-{args.fmriprep_version}.simg"
     ):
-        print(f"MICC does not have fmriprep version {args.fmriprep_version} installed.")
+        print(
+            f"The cluster does not have fmriprep version {args.fmriprep_version} installed."
+        )
         sys.exit(1)
 
     # apparently fmriprep has trouble if you run this from inside BIDS dir
@@ -311,18 +322,21 @@ if __name__ == "__main__":
 
     filename, script = make_runscript(args, workdir)
     action = "NOT submitting" if args.dry_run else "Submitting"
-    print(f"{action} {filename} to qsub, the contents of which are:")
+    print(f"{action} {filename} to {SYSTYPE}, the contents of which are:")
     print("================")
     print(script)
     print("================")
 
-    qsub_cmd = f"{QSUB} -cwd -q fmriprep.q -N {args.jobname} -pe fmriprep {args.ncpus} -w e -R y {filename}".split()
-    print(" ".join(qsub_cmd))
+    if SYSTYPE == "sge":
+        sub_cmd = f"{QSUB} -cwd -q fmriprep.q -N {args.jobname} -pe fmriprep {args.ncpus} -w e -R y {filename}".split()
+    elif SYSTYPE == "slurm":
+        sub_cmd = f"{SBATCH} --job-name {args.jobname} --output=%x-%j.out --error=%x-%j.err --time 3- --cpus-per-task={args.ncpus} --mem={args.ramsize}G {filename}".split()
+    print(" ".join(sub_cmd))
     if args.dry_run:
         print("NOT running; dry run only.")
     else:
         proc = subprocess.Popen(
-            qsub_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+            sub_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         stdout, stderr = proc.communicate()
         print("stdout:\n")

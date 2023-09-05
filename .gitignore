@@ -1,7 +1,6 @@
-micc_fmriprep
 .idea/
 .vscode
 __pycache__
 .ipynb_checkpoints
 *.ipynb
-everything.pem
+*.pem
