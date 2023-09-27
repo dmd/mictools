@@ -30,7 +30,7 @@ echo "Mail: $mail"
 echo If these are incorrect, control-c now. Otherwise, hit return.
 read
 
-echo /cm/local/apps/cmd/bin/cmsh -c "user; add ${U}; set loginshell /bin/tcsh; set email $mail ; set surname $MGBID ; set commonname \"$displayName\" ; set password; commit;"
+/cm/local/apps/cmd/bin/cmsh -c "user; add ${U}; set loginshell /bin/tcsh; set email $mail ; set surname $MGBID ; set commonname \"$displayName\" ; set password; commit;"
 
 chown -R $U:$U /home/$U
 
