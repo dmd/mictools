@@ -61,7 +61,7 @@ for accessionnumber in args.accessionnumber:
     if args.authfile:
         cmd.insert(1, "--alias")
         cmd.insert(2, "iris")
-    subprocess.call(
+    ret = subprocess.call(
         cmd,
         env=dict(
             os.environ,
@@ -70,3 +70,5 @@ for accessionnumber in args.accessionnumber:
             XNAT_HOST="https://iris.mclean.harvard.edu",
         ),
     )
+    if ret != 0:
+        raise RuntimeError('ArcGet.py call failed.')
