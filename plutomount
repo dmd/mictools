@@ -10,9 +10,18 @@ if [ "$#" -ne 3 ]; then
     exit 1
 fi
 
+CREDFILE=$(getent passwd $SUDO_USER | cut -d: -f6)/.cred
+function finish {
+    rm -f $CREDFILE
+}
+trap finish EXIT
+
 PLUTOID=$1
 SHARENAME=$2
 MOUNTPOINT=$3
+
+SERVER=pluto.mclean.harvard.edu
+
 if [ ! -d "$MOUNTPOINT" ]; then
     echo "$MOUNTPOINT" must be an empty directory
     exit 1
@@ -22,12 +31,24 @@ if ls -1qA "$MOUNTPOINT" | grep -q . ; then
     exit 1
 fi
 
-echo -e "\nIMPORTANT NOTE: Pluto mounts are NOT accessible from compute nodes (node1-5)!\n"
-echo -n "Going to mount //pluto/$SHARENAME on $(readlink -f $MOUNTPOINT) as $PLUTOID.  OK? (y/n): "
+nodes="1 2"
+nodename=mickey-node
+
+echo -n "Going to mount //${SERVER}/${SHARENAME} on $(readlink -f $MOUNTPOINT) as $PLUTOID.  OK? (y/n): "
 read -r answer
 if [ "$answer" != "${answer#[Yy]}" ] ;then
-    echo Please enter your PLUTO password...
-    mount -t cifs -o vers=3.0,domain=SAMBA,username="$PLUTOID",uid="$SUDO_USER" //pluto.mclean.harvard.edu/"$SHARENAME" "$MOUNTPOINT"
+    read -s -p "PLUTO password: " PLUTOPASS
+    echo
+    touch $CREDFILE
+    chmod 400 $CREDFILE
+    echo -e "username=$PLUTOID\npassword=$PLUTOPASS\ndomain=SAMBA\n" > $CREDFILE
+    
+    mount -t cifs -o vers=3.0,credentials=$CREDFILE,uid="$SUDO_USER" //${SERVER}/"$SHARENAME" "$MOUNTPOINT"
+    MOUNTPOINT=$(realpath $MOUNTPOINT)
+    for i in $nodes ; do
+	echo mounting ${nodename}${i}
+	sudo -u $SUDO_USER ssh ${nodename}${i} sudo /usr/local/bin/plutomount-node "$SHARENAME" "$MOUNTPOINT" "$SUDO_USER" "$CREDFILE" 
+    done
 else
     echo Aborted.
 fi

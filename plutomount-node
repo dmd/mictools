@@ -1,0 +1,10 @@
+#!/bin/bash
+
+SHARENAME=$1
+MOUNTPOINT=$2
+MICUSER=$3
+CREDFILE=$4
+SERVER=pluto.mclean.harvard.edu
+
+mount -t cifs -o vers=3.0,credentials=$CREDFILE,uid=$MICUSER //${SERVER}/"$SHARENAME" "$MOUNTPOINT"
+
