@@ -76,6 +76,7 @@ def submit_fmriprep(config, studydir, subject):
         "longitudinal",
         "me-output-echos",
         "return-all-components",
+        "disable-syn-sdc",
     ):
         if args[arg]:
             s += ["--" + arg]
