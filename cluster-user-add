@@ -15,6 +15,8 @@ fi
 U=$1
 MGBID=$2
 
+CMSH=/cm/local/apps/cmd/bin/cmsh
+
 output=$(ldapsearch -y ~ddrucker/.ldpass -LLL -H ldap://ldap.partners.org:389 -D cn=so175,cn=users,dc=partners,dc=org -b"cn=users,dc=partners,dc=org" "(cn=$MGBID)" mail displayName)
 
 if [ -z "$output" ]; then
@@ -30,7 +32,7 @@ echo "Mail: $mail"
 echo If these are incorrect, control-c now. Otherwise, hit return.
 read
 
-/cm/local/apps/cmd/bin/cmsh -c "user; add ${U}; set loginshell /bin/tcsh; set email $mail ; set surname $MGBID ; set commonname \"$displayName\" ; set password; commit;"
+$CMSH -c "user; add ${U}; set loginshell /bin/tcsh; set email $mail ; set surname $MGBID ; set commonname \"$displayName\" ; set password; commit;"
 
 chown -R $U:$U /home/$U
 
@@ -56,7 +58,7 @@ curl --insecure -H "Authorization: Bearer $API_KEY" -X POST "${API_URL}/sharing/
 
 ## mount nisaba dataset
 MOUNT_POINT="/data/$U"
-cmsh -c "device; use micc; fsmounts; add ${MOUNT_POINT} ; set device nisaba.tengbenet.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit"
+$CMSH -c "device; use micc; fsmounts; add ${MOUNT_POINT} ; set device nisaba.tengbenet.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit"
 
 while !  mount | grep "${POOL_DATASET_PATH} on"
 do
@@ -67,7 +69,7 @@ done
 chmod 775 ${MOUNT_POINT}
 chown $U:$U ${MOUNT_POINT}
 
-cmsh -c "category ; use universal; fsmounts; add ${MOUNT_POINT} ; set device nisaba.tengbenet.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit; commit;"
+$CMSH -c "category ; use universal; fsmounts; add ${MOUNT_POINT} ; set device nisaba.tengbenet.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit; commit;"
 
 echo Now please run "su - $U" and make sure that worked.
 echo
