@@ -43,6 +43,7 @@ else:
 dlformat = "native"
 outdir = "."
 
+failed = False
 
 for accessionnumber in args.accessionnumber:
     if args.flat:
@@ -64,7 +65,7 @@ for accessionnumber in args.accessionnumber:
         cmd.insert(2, "iris")
     cp = subprocess.run(
         args=cmd,
-        capture_output=True,
+        stderr=subprocess.PIPE,
         text=True,
         env=dict(
             os.environ,
@@ -74,9 +75,17 @@ for accessionnumber in args.accessionnumber:
         ),
     )
     if cp.returncode != 0:
+        print('ArcGet.py call failed: ' + cp.stderr.split("\n")[-2])
+
         if '401' in cp.stderr:
             print("\n\033[1m * \n * Your Iris username or password is incorrect.\n *\n\033[0m")
+            # exit immediately, no sense in trying any more of them
+            sys.exit(1)
+
         if 'NoExperimentsError' in cp.stderr:
-            print("\n\033[1m * \n * The accession number you requested was not found\n * or is not available to you.\n *\n\033[0m")
-        print('ArcGet.py call failed: ' + cp.stderr.split("\n")[-2])
-        sys.exit(1)
+            # defer exiting, perhaps only some of several are bad
+            failed = True
+            print(f"\n\033[1m * \n * The accession number {accessionnumber} you requested was not found\n * or is not available to you.\n *\n\033[0m")
+
+if failed:
+    sys.exit(1)
