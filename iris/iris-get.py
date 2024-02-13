@@ -61,8 +61,10 @@ for accessionnumber in args.accessionnumber:
     if args.authfile:
         cmd.insert(1, "--alias")
         cmd.insert(2, "iris")
-    ret = subprocess.call(
-        cmd,
+    cp = subprocess.run(
+        args=cmd,
+        capture_output=True,
+        text=True,
         env=dict(
             os.environ,
             XNAT_PASS=password,
@@ -70,5 +72,9 @@ for accessionnumber in args.accessionnumber:
             XNAT_HOST="https://iris.mclean.harvard.edu",
         ),
     )
-    if ret != 0:
-        raise RuntimeError('ArcGet.py call failed.')
+    if cp.returncode != 0:
+        if '401' in cp.stderr:
+            print("\n\033[1m * \n * Your Iris username or password is incorrect.\n *\n\033[0m")
+        if 'NoExperimentsError' in cp.stderr:
+            print("\n\033[1m * \n * The accession number you requested was not found\n * or is not available to you.\n *\n\033[0m")
+        print('ArcGet.py call failed: ' + cp.stderr.split("\n")[-2])
