@@ -4,6 +4,7 @@ import argparse
 import getpass
 import os
 import subprocess
+import sys
 
 parser = argparse.ArgumentParser(
     description="Get studies by accession number from Iris."
@@ -78,3 +79,4 @@ for accessionnumber in args.accessionnumber:
         if 'NoExperimentsError' in cp.stderr:
             print("\n\033[1m * \n * The accession number you requested was not found\n * or is not available to you.\n *\n\033[0m")
         print('ArcGet.py call failed: ' + cp.stderr.split("\n")[-2])
+        sys.exit(1)
