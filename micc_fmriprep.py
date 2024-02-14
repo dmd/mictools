@@ -62,6 +62,9 @@ def make_runscript(args, workdir):
     if args.aroma:
         s += ["--use-aroma"]
 
+    if args.force_syn:
+        s += ["--force-syn"]
+
     if not args.disable_syn_sdc:
         s += ["--use-syn-sdc"]
 
@@ -143,6 +146,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--disable-syn-sdc",
         help="Turn OFF synthetic field map correction. (Default: on)",
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "--force-syn",
+        help="Use SyN correction in addition to fieldmap correction. (Default: off)",
         action="store_true",
     )
 
