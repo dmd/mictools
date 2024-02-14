@@ -51,14 +51,14 @@ for accessionnumber in args.accessionnumber:
         outdir = accessionnumber
     print(f"Fetching {accessionnumber}...")
     cmd = [
-            "/cm/shared/anaconda3/envs/iris/bin/ArcGet.py",
-            "--in-mem",
-            "-f",
-            dlformat,
-            "-l",
-            accessionnumber,
-            "-o",
-            outdir,
+        "/cm/shared/anaconda3/envs/iris/bin/ArcGet.py",
+        "--in-mem",
+        "-f",
+        dlformat,
+        "-l",
+        accessionnumber,
+        "-o",
+        outdir,
     ]
     if args.authfile:
         cmd.insert(1, "--alias")
@@ -75,17 +75,21 @@ for accessionnumber in args.accessionnumber:
         ),
     )
     if cp.returncode != 0:
-        print('ArcGet.py call failed: ' + cp.stderr.split("\n")[-2])
+        print("ArcGet.py call failed: " + cp.stderr.split("\n")[-2])
 
-        if '401' in cp.stderr:
-            print("\n\033[1m * \n * Your Iris username or password is incorrect.\n *\n\033[0m")
+        if "401" in cp.stderr:
+            print(
+                "\n\033[1m * \n * Your Iris username or password is incorrect.\n *\n\033[0m"
+            )
             # exit immediately, no sense in trying any more of them
             sys.exit(1)
 
-        if 'NoExperimentsError' in cp.stderr:
+        if "NoExperimentsError" in cp.stderr:
             # defer exiting, perhaps only some of several are bad
             failed = True
-            print(f"\n\033[1m * \n * The accession number {accessionnumber} you requested was not found\n * or is not available to you.\n *\n\033[0m")
+            print(
+                f"\n\033[1m * \n * The accession number {accessionnumber} you requested was not found\n * or is not available to you.\n *\n\033[0m"
+            )
 
 if failed:
     sys.exit(1)

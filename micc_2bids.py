@@ -34,7 +34,7 @@ def movedcmdir(sourcename, suffix):
     if suffix is None:
         destname = sourcename[0:dashloc]
     else:
-        destname = sourcename[0:dashloc + 1] + suffix
+        destname = sourcename[0 : dashloc + 1] + suffix
     if os.path.isdir(destname):
         print("destination directory already exists - skipping")
     else:

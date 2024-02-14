@@ -35,7 +35,9 @@ def make_runscript(args, workdir):
     s += [SINGULARITY + " run"]
     s += ["--contain"]
     s += ["--cleanenv"]
-    s += ["-B /tmp -B /data -B /data1 -B /data2 -B /data3 -B /n -B /cm/shared -B /data/fmriprep-workdir"]
+    s += [
+        "-B /tmp -B /data -B /data1 -B /data2 -B /data3 -B /n -B /cm/shared -B /data/fmriprep-workdir"
+    ]
 
     s += [f"/cm/shared/singularity/images/fmriprep-{args.fmriprep_version}.simg"]
     s += [args.bidsdir]
@@ -53,7 +55,7 @@ def make_runscript(args, workdir):
     s += [f"--mem-mb {args.ramsize*1024}"]
     s += ["--notrack"]
 
-    if 'dummy_scans' in args and args.dummy_scans is not None:
+    if "dummy_scans" in args and args.dummy_scans is not None:
         s += [f"--dummy-scans {args.dummy_scans}"]
 
     if args.ignore:
@@ -140,7 +142,9 @@ if __name__ == "__main__":
     versioning = parser.add_argument_group("Version")
 
     parser.add_argument(
-        "--aroma", help="Turn on AROMA processing (in fMRIprep <23.1). (Default: off)", action="store_true"
+        "--aroma",
+        help="Turn on AROMA processing (in fMRIprep <23.1). (Default: off)",
+        action="store_true",
     )
 
     parser.add_argument(
