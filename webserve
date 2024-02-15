@@ -7,30 +7,37 @@ import ssl
 import socketserver
 import signal
 
+
 def handler(signum, frame):
-    print('Exiting after 24 hours...')
+    print("Exiting after 24 hours...")
     sys.exit(1)
+
+
 signal.signal(signal.SIGALRM, handler)
-signal.alarm(24*60*60)
+signal.alarm(24 * 60 * 60)
 
 try:
-    if sys.argv[1].startswith('/'):
+    if sys.argv[1].startswith("/"):
         filepath = sys.argv[1]
     else:
-        filepath = os.getcwd() + '/' + sys.argv[1]
+        filepath = os.getcwd() + "/" + sys.argv[1]
 except IndexError:
-    filepath = os.getcwd() 
+    filepath = os.getcwd()
 
-os.chdir('/')
+os.chdir("/")
 
-host = socketserver.socket.gethostname()+'.mclean.harvard.edu'
-httpd = socketserver.TCPServer(('', 0), http.server.SimpleHTTPRequestHandler)
-httpd.socket = ssl.wrap_socket(httpd.socket,
-                               server_side=True,
-                               certfile='/home/ddrucker/mictools/everything-' + host + '.pem',
-                               ssl_version=ssl.PROTOCOL_TLS)
+host = socketserver.socket.gethostname() + ".mclean.harvard.edu"
+httpd = socketserver.TCPServer(("", 0), http.server.SimpleHTTPRequestHandler)
+httpd.socket = ssl.wrap_socket(
+    httpd.socket,
+    server_side=True,
+    certfile="/home/ddrucker/mictools/everything-" + host + ".pem",
+    ssl_version=ssl.PROTOCOL_TLS,
+)
 
-print('Go to:      https://' + host + ':' + str(httpd.socket.getsockname()[1]) + filepath)
-print('(In Terminal, you can right-click the above and select Open URL.)')
-print('Please type Control-c when you are done.')
+print(
+    "Go to:      https://" + host + ":" + str(httpd.socket.getsockname()[1]) + filepath
+)
+print("(In Terminal, you can right-click the above and select Open URL.)")
+print("Please type Control-c when you are done.")
 httpd.serve_forever()
