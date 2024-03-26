@@ -94,6 +94,9 @@ def make_runscript(args, workdir):
     if args.anat_derivatives:
         s += [f"--anat-derivatives {args.anat_derivatives}"]
 
+    if args.fs_subjects_dir:
+        s += [f"--fs-subjects-dir {args.fs_subjects_dir}"]
+
     if args.verbose:
         s += ["-vvvv"]
     else:
@@ -184,6 +187,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--anat-derivatives",
         help="Reuse a preexisting anatomic analysis.",
+        metavar="PATH",
+    )
+
+    parser.add_argument(
+        "--fs-subjects-dir",
+        help="Path to existing FreeSurfer subjects directory to reuse.",
         metavar="PATH",
     )
 

@@ -89,6 +89,7 @@ def submit_fmriprep(config, studydir, subject):
         "output-spaces",
         "ramsize",
         "topup-max-vols",
+        "fs-subjects-dir",
     ):
         if args[arg]:
             s += ["--" + arg, str(args[arg])]
