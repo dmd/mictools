@@ -35,7 +35,7 @@ if [ $(hostname) == "micc" ];then
     nodes="1 2 3 4 5"
     nodename=node
 else
-    nodes="1 2"
+    nodes="1 2 3 4"
     nodename=mickey-node
 fi
 
