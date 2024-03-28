@@ -1,5 +1,5 @@
 #!/bin/bash
-# Extremly simplistic tool to merge subjects from one BIDS directory into another
+# Extremly simplistic tool to merge one BIDS directory into another
 
 if [ "$#" -ne 2 ] || ! [ -d "$1" ] || ! [ -d "$2" ]; then
   echo "Usage: $0 SOURCEDIR DESTDIR" >&2
@@ -18,14 +18,5 @@ for d in ${SOURCE} ${DEST}; do
   fi
 done
 
-mkdir -p "${DEST}"/sourcedata/ \
-         "${DEST}"/derivatives/freesurfer/fsaverage/ \
-         "${DEST}"/derivatives/fmriprep/logs/
-
-mv -v "${SOURCE}"/sub-*                         "${DEST}"/
-mv -v "${SOURCE}"/sourcedata/sub-*              "${DEST}"/sourcedata/
-mv -v "${SOURCE}"/derivatives/freesurfer/sub-*  "${DEST}"/derivatives/freesurfer/ 2>/dev/null
-mv -v "${SOURCE}"/derivatives/fmriprep/sub-*    "${DEST}"/derivatives/fmriprep/ 2>/dev/null
-
-rsync -a --no-t --remove-source-files "${SOURCE}"/derivatives/fmriprep/logs/        "${DEST}"/derivatives/fmriprep/logs/
-rsync -a --no-t --remove-source-files "${SOURCE}"/derivatives/freesurfer/fsaverage/ "${DEST}"/derivatives/freesurfer/fsaverage/
+rsync -a --remove-source-files "${SOURCE}"/ "${DEST}"/
+find "${SOURCE}" -depth -type d -empty -delete
