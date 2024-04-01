@@ -197,7 +197,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--ncpus", help="Number of threads and cores. (Default: 4)", type=int, default=4
+        "--ncpus", help="Number of threads and cores. (Default: 8)", type=int, default=8
     )
 
     parser.add_argument(
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--ramsize", help="RAM size to use, in GB. (Default: 8)", type=int, default=8
+        "--ramsize", help="RAM size to use, in GB. (Default: 16)", type=int, default=16
     )
 
     parser.add_argument(
