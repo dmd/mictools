@@ -17,8 +17,14 @@ if [[ $HOSTNAME != "micc" ]]; then
     exit 1
 fi
 
+if [[ ! "$1" =~ ^[a-z0-9]+$ ]]; then
+    echo "The input '$1' contains invalid characters."
+    exit 1
+fi
+
 U=$1
 MGBID=$2
+
 
 CMSH=/cm/local/apps/cmd/bin/cmsh
 
