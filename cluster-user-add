@@ -22,6 +22,11 @@ if [[ ! "$1" =~ ^[a-z0-9]+$ ]]; then
     exit 1
 fi
 
+if id "$1" &>/dev/null; then
+    echo "The id '$1' already exists."
+    exit 1
+fi
+
 U=$1
 MGBID=$2
 
