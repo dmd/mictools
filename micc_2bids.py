@@ -9,7 +9,7 @@ from os.path import join as pjoin
 import subprocess
 import errno
 
-FST = "/cm/shared/freesurfer-6.0.1/average/"
+FST = "/cm/shared/apps/freesurfer-6.0.1/average/"
 
 
 def silentremove(filename):
@@ -265,36 +265,46 @@ cue_mb6_gr2_3 = task-cue3_bold
                     silentremove(Path(t1anatfile).with_suffix(".log").name)
 
                 if args.deface and config[scantype][scanname] == "T2w" and t1anatfile:
-                    print("=== defacing T2")
-                    t2anatfile = pjoin(destroot, destname) + ".nii.gz"
-                    subprocess.call(
-                        ["fslmaths", t1anatfile, "-thr", "1", "-bin", "t1mask"]
-                    )
-                    subprocess.call(
-                        [
-                            "flirt",
-                            "-in",
-                            "t1mask",
-                            "-ref",
-                            t2anatfile,
-                            "-applyxfm",
-                            "-init",
-                            pjoin(os.environ["FSLDIR"], "data/atlases/bin/eye.mat"),
-                            "-out",
-                            "t2mask",
-                        ]
-                    )
-                    subprocess.call(
-                        [
-                            "fslmaths",
-                            "t2mask",
-                            "-mul",
-                            "2",
-                            "-bin",
-                            "-mul",
-                            t2anatfile,
-                            t2anatfile,
-                        ]
-                    )
-                    silentremove("t1mask.nii.gz")
-                    silentremove("t2mask.nii.gz")
+                    if "FSLDIR" in os.environ:
+                        print("=== defacing T2")
+                        t2anatfile = pjoin(destroot, destname) + ".nii.gz"
+                        subprocess.call(
+                            [
+                                pjoin(os.environ["FSLDIR"], "fslmaths"),
+                                t1anatfile,
+                                "-thr",
+                                "1",
+                                "-bin",
+                                "t1mask",
+                            ]
+                        )
+                        subprocess.call(
+                            [
+                                "flirt",
+                                "-in",
+                                "t1mask",
+                                "-ref",
+                                t2anatfile,
+                                "-applyxfm",
+                                "-init",
+                                pjoin(os.environ["FSLDIR"], "data/atlases/bin/eye.mat"),
+                                "-out",
+                                "t2mask",
+                            ]
+                        )
+                        subprocess.call(
+                            [
+                                "fslmaths",
+                                "t2mask",
+                                "-mul",
+                                "2",
+                                "-bin",
+                                "-mul",
+                                t2anatfile,
+                                t2anatfile,
+                            ]
+                        )
+                        silentremove("t1mask.nii.gz")
+                        silentremove("t2mask.nii.gz")
+                    else:
+                        print("You need to have FSLDIR defined to deface.")
