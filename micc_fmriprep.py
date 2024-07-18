@@ -29,7 +29,7 @@ def make_runscript(args, workdir):
 
     pre = []
     pre += [
-        "export SINGULARITYENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"
+        "export APPTAINERENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"
     ]
     s = []
     s += [SINGULARITY + " run"]
