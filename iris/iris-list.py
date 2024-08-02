@@ -1,4 +1,4 @@
-#!/cm/shared/anaconda3/envs/iris/bin/python
+#!/cm/shared/apps/miniforge3/envs/iris/bin/python
 
 import argparse
 import getpass

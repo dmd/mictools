@@ -1,4 +1,4 @@
-#!/cm/shared/anaconda3/envs/iris/bin/python
+#!/cm/shared/apps/miniforge3/envs/iris/bin/python
 
 import argparse
 import logging
@@ -59,7 +59,7 @@ def submit_fmriprep(config, studydir, subject):
     # a bunch of work in main I don't want to re-implement.
 
     s = []
-    s += ["/cm/shared/anaconda3/envs/iris/bin/python3"]
+    s += ["/cm/shared/apps/miniforge3/envs/iris/bin/python3"]
     s += [MICC_FMRIPREP]
     s += ["--bidsdir", studydir]
 

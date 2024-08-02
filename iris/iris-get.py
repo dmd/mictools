@@ -1,4 +1,4 @@
-#!/cm/shared/anaconda3/envs/iris/bin/python
+#!/cm/shared/apps/miniforge3/envs/iris/bin/python
 
 import argparse
 import getpass
@@ -51,7 +51,7 @@ for accessionnumber in args.accessionnumber:
         outdir = accessionnumber
     print(f"Fetching {accessionnumber}...")
     cmd = [
-        "/cm/shared/anaconda3/envs/iris/bin/ArcGet.py",
+        "/cm/shared/apps/miniforge3/envs/iris/bin/ArcGet.py",
         "--in-mem",
         "-f",
         dlformat,
