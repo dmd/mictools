@@ -18,5 +18,5 @@ for d in ${SOURCE} ${DEST}; do
   fi
 done
 
-rsync -a --no-p --no-t --remove-source-files "${SOURCE}"/ "${DEST}"/
-find "${SOURCE}" -depth -type d -empty -delete
+rsync -a --no-p --no-t "${SOURCE}"/ "${DEST}"/
+
