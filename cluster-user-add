@@ -12,8 +12,8 @@ if [ $# -ne 2 ]
     exit 1
 fi
 
-if [[ $HOSTNAME != "micc" ]]; then
-    echo "This script must be run on micc, not mickey."
+if [[ $HOSTNAME != "mickey" ]]; then
+    echo "This script must be run on mickey."
     exit 1
 fi
 
@@ -72,9 +72,9 @@ curl --insecure -H "Authorization: Bearer $API_KEY" -X POST "${API_URL}/sharing/
  }'
 
 
-## mount nisaba dataset
+## mount nisaba dataset on mickey
 MOUNT_POINT="/data/$U"
-$CMSH -c "device; use micc; fsmounts; add ${MOUNT_POINT} ; set device nisaba.tengbenet.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit"
+$CMSH -c "device; use mickey; fsmounts; add ${MOUNT_POINT} ; set device nisaba.cm.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit"
 
 while !  mount | grep "${POOL_DATASET_PATH} on"
 do
@@ -82,12 +82,18 @@ do
     sleep 5
 done
 
-chmod 775 ${MOUNT_POINT}
+chmod 770 ${MOUNT_POINT}
 chown $U:$U ${MOUNT_POINT}
 
-$CMSH -c "category ; use universal; fsmounts; add ${MOUNT_POINT} ; set device nisaba.tengbenet.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit; commit;"
+## mount on nodes
+$CMSH -c "category ; foreach -v compute-2023-03-28 nogpu-20240316 (fsmounts; add ${MOUNT_POINT} ; set device nisaba.cm.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit; commit;)"
+
+## set up slurm
+if getent group $DATASET >/dev/null; then
+    echo Setting up slurm...
+    sacctmgr add user $DATASET Cluster=slurm Account=mic
+    sacctmgr modify user $DATASET set fairshare=100
+fi
+
 
 echo Now please run "su - $U" and make sure that worked.
-echo
-echo "Next as root ON MICKEY run:"
-echo "~ddrucker/truenas/mountpoint-for-mickey $U"
