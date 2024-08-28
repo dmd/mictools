@@ -89,10 +89,10 @@ chown $U:$U ${MOUNT_POINT}
 $CMSH -c "category ; foreach -v compute-2023-03-28 nogpu-20240316 (fsmounts; add ${MOUNT_POINT} ; set device nisaba.cm.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit; commit;)"
 
 ## set up slurm
-if getent group $DATASET >/dev/null; then
+if getent group $U >/dev/null; then
     echo Setting up slurm...
-    sacctmgr add user $DATASET Cluster=slurm Account=mic
-    sacctmgr modify user $DATASET set fairshare=100
+    sacctmgr add user $U Cluster=slurm Account=mic
+    sacctmgr modify user $U set fairshare=100
 fi
 
 
