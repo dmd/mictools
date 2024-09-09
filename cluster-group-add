@@ -12,5 +12,5 @@ if [ $# -ne 2 ]
     exit 1
 fi
 
-cmsh -c "group ; append $1 groupmembers $2 ; commit"
+cmsh -c "group ; append $1 members $2 ; commit"
 
