@@ -91,8 +91,8 @@ $CMSH -c "category ; foreach -v compute-2023-03-28 nogpu-20240316 (fsmounts; add
 ## set up slurm
 if getent group $U >/dev/null; then
     echo Setting up slurm...
-    sacctmgr add user $U Cluster=slurm Account=mic
-    sacctmgr modify user $U set fairshare=100
+    yes | sacctmgr add user $U Cluster=slurm Account=mic
+    yes | sacctmgr modify user $U set fairshare=100
 fi
 
 
