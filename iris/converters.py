@@ -9,6 +9,8 @@ from preprocess import preprocess
 
 niigz = ".nii.gz"
 
+# make sure we use system dcm2niix
+os.environ['PATH'] = '/usr/local/bin:' + os.environ['PATH']
 
 def final_scan(sourcenames, multiecho=False):
     # if single-echo:
