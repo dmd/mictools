@@ -14,8 +14,8 @@ os.environ['PATH'] = '/usr/local/bin:' + os.environ['PATH']
 
 def final_scan(sourcenames, multiecho=False):
     # if single-echo:
-    #  given ['FOO_BAR_11.nii.gz', 'FOO_BAR_2.nii.gz', 'FOO_BAR_3.nii.gz']
-    #  return 'FOO_BAR_11.nii.gz', the highest numbered scan
+    #  given ['FOO_BAR_11.nii.gz', 'FOO_BAR_2.nii.gz', 'FOO_BAR_1234.nii.gz', 'FOO_BAR_3.nii.gz']
+    #  return 'FOO_BAR_11.nii.gz', the highest numbered scan < 1000
     # if multi-echo
     #  given:
     #   ['checkerboard_AP_SBRef_37_e1.nii.gz',
@@ -38,10 +38,13 @@ def final_scan(sourcenames, multiecho=False):
 
         if multiecho:
             m = re.search(rf"_(\d+)_e\d{niigz}$", file)
-            fid = int(m.group(1))
         else:
             m = re.search(rf"_(\d+){niigz}$", file)
-            fid = int(m.group(1))
+
+        fid = int(m.group(1))
+
+        if fid >= 1000:
+            continue  # ignore files with numbers >= 1000
 
         if fid not in files:
             files[fid] = []
