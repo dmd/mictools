@@ -16,6 +16,10 @@ def test_final_scan():
     ]
 
     assert final_scan(
+        ["foo_11.nii.gz", "foo_1013.nii.gz", "foo_2.nii.gz", "foo_3.nii.gz"], False
+    ) == ["foo_11.nii.gz"]
+
+    assert final_scan(
         [
             "foo_37_e1.nii.gz",
             "foo_37_e2.nii.gz",
