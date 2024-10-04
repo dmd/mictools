@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MICVNA and XNAT Comparison</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold mb-4">MICVNA and XNAT Comparison</h1>
+        <form id="checkForm" class="mb-4">
+            <input type="text" id="accessionNumber" name="accession_number" placeholder="Enter accession number"
+                class="p-2 border rounded mb-2">
+            <button type="submit" id="checkButton"
+                class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Check</button>
+        </form>
+        <div id="result" class="hidden">
+            <h2 class="text-xl font-semibold mb-2">Results:</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2 text-left">Status</th>
+                            <th class="px-4 py-2 text-left">ID</th>
+                            <th class="px-4 py-2 text-left">MICVNA #</th>
+                            <th class="px-4 py-2 text-left">MICVNA Description</th>
+                            <th class="px-4 py-2 text-left">XNAT #</th>
+                            <th class="px-4 py-2 text-left">XNAT Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8">
+        <h2 class="text-xl font-semibold mb-2">Recent Research Accession Numbers:</h2>
+        <ul class="list-disc pl-5">
+            {% for date, accession_number in recent_accession_numbers %}
+            <li>
+                {{ date }}:
+                <a href="#" class="accession-click text-blue-500 hover:underline"
+                    data-accession="{{ accession_number }}">
+                    {{ accession_number }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <script>
+        const checkForm = document.getElementById('checkForm');
+        const checkButton = document.getElementById('checkButton');
+        const resultDiv = document.getElementById('result');
+        const resultBody = document.getElementById('resultBody');
+        const accessionLinks = document.querySelectorAll('.accession-click');
+        const resultTitle = document.createElement('span');  // Element to display overall status
+
+        // Add the result status after the "Results:" heading
+        const resultsHeader = document.querySelector('h2');
+        resultsHeader.appendChild(resultTitle);
+
+        // Function to handle accession number clicks
+        accessionLinks.forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const accessionNumber = this.getAttribute('data-accession');
+
+                // Set the accession number in the input field
+                document.getElementById('accessionNumber').value = accessionNumber;
+
+                // Simulate form submission with POST method
+                submitAccessionNumber(accessionNumber);
+            });
+        });
+
+        function submitAccessionNumber(accessionNumber) {
+            // Disable button and change text
+            checkButton.disabled = true;
+            checkButton.classList.add('bg-gray-400', 'cursor-not-allowed');
+            checkButton.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            checkButton.textContent = 'Checking...';
+
+            // Make the POST request
+            fetch('/check', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `accession_number=${encodeURIComponent(accessionNumber)}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    resultDiv.classList.remove('hidden');
+                    resultBody.innerHTML = '';
+
+                    let overallStatus = 'OK';  // Assume everything is OK initially
+
+                    data.results.forEach(([id, info]) => {
+                        const row = document.createElement('tr');
+                        const status = (info.xnat_frames !== info.orthanc_frames || info.xnat_description !== info.orthanc_description) ? 'MISMATCH' : 'OK';
+
+                        // If any row is a mismatch, set overallStatus to MISMATCH
+                        if (status === 'MISMATCH') {
+                            overallStatus = 'MISMATCH';
+                        }
+
+                        row.innerHTML = `
+                        <td class="border px-4 py-2 ${status === 'OK' ? 'text-green-600' : 'text-red-600'} font-bold">${status}</td>
+                        <td class="border px-4 py-2">${id}</td>
+                        <td class="border px-4 py-2">${info.orthanc_frames}</td>
+                        <td class="border px-4 py-2">${info.orthanc_description}</td>
+                        <td class="border px-4 py-2">${info.xnat_frames}</td>
+                        <td class="border px-4 py-2">${info.xnat_description}</td>
+                    `;
+                        resultBody.appendChild(row);
+                    });
+
+                    // Display the overall status at the top (OK or MISMATCH)
+                    resultTitle.textContent = overallStatus === 'OK' ? ' OK' : ' MISMATCH';
+                    resultTitle.classList.remove('text-green-600', 'text-red-600');
+                    resultTitle.classList.add(overallStatus === 'OK' ? 'text-green-600' : 'text-red-600');
+                })
+                .finally(() => {
+                    // Re-enable button and restore text
+                    checkButton.disabled = false;
+                    checkButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                    checkButton.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                    checkButton.textContent = 'Check';
+                });
+        }
+
+        // Form submission event for manual input as well
+        checkForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const accessionNumber = document.getElementById('accessionNumber').value;
+            submitAccessionNumber(accessionNumber);
+        });
+    </script>
+</body>
+
+</html>
