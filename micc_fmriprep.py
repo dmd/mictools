@@ -297,7 +297,9 @@ if __name__ == "__main__":
 
     workdir_group.add_argument(
         "--workdir-user-subdir",
-        help=argparse.SUPPRESS,
+        help="Rather than using /data/fmriprep-workdir/USERNAME, use a subdirectory of that with the supplied name. "
+        "This flag is used by iris-fmriprep to ensure that multiple runs "
+        "of the same subject, but different sessions, do not collide.",
     )
 
     versioning.add_argument(
