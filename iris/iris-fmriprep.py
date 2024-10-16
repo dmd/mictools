@@ -11,6 +11,7 @@ import subprocess
 import yaml
 import pprint
 from collections import defaultdict
+import time
 
 from converters import convert_to_bids, convert_to_nifti
 
@@ -65,6 +66,12 @@ def submit_fmriprep(config, studydir, subject):
 
     if force_workdir:
         s += ["--force-workdir", force_workdir]
+    else:
+        subdir = time.strftime(
+            "%Y%m%d-%H%M%S",
+            time.localtime(os.path.getmtime(pjoin(studydir, ".taskrun_nifti"))),
+        )
+        s += ["--workdir-user-subdir", subdir]
 
     s += ["--participant", subject]
 
