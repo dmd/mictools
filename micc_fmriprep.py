@@ -28,9 +28,7 @@ def make_runscript(args, workdir):
         args.outputdir = pjoin(args.bidsdir, "derivatives")
 
     pre = []
-    pre += [
-        "export APPTAINERENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"
-    ]
+    pre += ["export APPTAINERENV_TEMPLATEFLOW_HOME=/home/fmriprep/.cache/templateflow"]
     s = []
     s += [SINGULARITY + " run"]
     s += ["--contain"]
@@ -280,7 +278,7 @@ if __name__ == "__main__":
 
     workdir_group.add_argument(
         "--force-workdir",
-        help="FORCE the work directory instead of using the MICC default of /data/fmriprep-workdir/USERNAME. "
+        help="FORCE the work directory instead of using the default of /data/fmriprep-workdir/USERNAME. "
         "Please do not use this unless you must. "
         "This directory must not be inside your BIDS dir.",
         action=FullPaths,
@@ -295,6 +293,11 @@ if __name__ == "__main__":
         "--no-workdir",
         help="Do not use a workdir at all.",
         action="store_true",
+    )
+
+    workdir_group.add_argument(
+        "--workdir-user-subdir",
+        help=argparse.SUPPRESS,
     )
 
     versioning.add_argument(
@@ -325,7 +328,7 @@ if __name__ == "__main__":
 
     if args.workdir:
         print(
-            "The --workdir argument is no longer valid.\nBy default, micc_fmriprep will "
+            "--workdir is no longer valid.\nBy default, micc_fmriprep will "
             "use /data/fmriprep-workdir/USERNAME.\nIf you need to force a different "
             "location, use --force-workdir."
         )
@@ -335,6 +338,10 @@ if __name__ == "__main__":
         workdir = args.force_workdir
     elif args.no_workdir:
         workdir = "__EMPTY__"
+    elif args.workdir_user_subdir:
+        workdir = pjoin(
+            "/data/fmriprep-workdir", getpass.getuser(), args.workdir_user_subdir
+        )
     else:
         workdir = pjoin("/data/fmriprep-workdir", getpass.getuser())
 
