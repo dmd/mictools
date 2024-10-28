@@ -90,6 +90,7 @@ def submit_fmriprep(config, studydir, subject):
             s += ["--" + arg]
     for arg in (
         "anat-derivatives",
+        "bids-filter-file",
         "fmriprep-version",
         "ignore",
         "ncpus",

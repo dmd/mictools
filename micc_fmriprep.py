@@ -92,6 +92,9 @@ def make_runscript(args, workdir):
     if args.anat_derivatives:
         s += [f"--anat-derivatives {args.anat_derivatives}"]
 
+    if args.bids_filter_file:
+        s += [f"--bids-filter-file {args.bids_filter_file}"]
+
     if args.fs_subjects_dir:
         s += [f"--fs-subjects-dir {args.fs_subjects_dir}"]
 
@@ -186,6 +189,12 @@ if __name__ == "__main__":
         "--anat-derivatives",
         help="Reuse a preexisting anatomic analysis.",
         metavar="PATH",
+    )
+
+    parser.add_argument(
+        "--bids-filter-file",
+        help="A JSON file describing custom BIDS input filters using PyBIDS.",
+        metavar="FILE",
     )
 
     parser.add_argument(
