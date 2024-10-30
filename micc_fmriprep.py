@@ -15,6 +15,14 @@ else:
     SYSTYPE = "slurm"
     SUBMITTER = SBATCH
     SINGULARITY = "/cm/local/apps/apptainer/current/bin/singularity"
+    if os.getenv("SLURM_JOB_ID"):
+        print(
+            "micc_fmriprep does job submission on your behalf. "
+            "Do not run it as part of a sbatch job; run it in the shell "
+            "on the Mickey head node.",
+            file=sys.stderr,
+        )
+        exit(1)
 
 
 def make_runscript(args, workdir):
