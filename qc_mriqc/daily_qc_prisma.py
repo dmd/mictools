@@ -47,9 +47,9 @@ def copy_to_in_folder(bids, nifti_name, bids_name):
     open(f"{bids}/dataset_description.json", "w").write(
         """{"Name": "none","BIDSVersion": "1.2.0","Authors": ["x"]}"""
     )
-    nii_bids_filename = f"{bids}/sub-phantom/func/sub-phantom_{bids_name}_bold.nii.gz"
+    nii_bids_filename = f"{bids}/sub-phantom/func/sub-phantom_task-rest_acq-{bids_name}_bold.nii.gz"
     json_name = nifti_name.replace(".nii.gz", ".json")
-    json_bids_filename = nii_bids_filename.replace(".nii.gz", "_sidecar.json")
+    json_bids_filename = nii_bids_filename.replace(".nii.gz", ".json")
     try:
         logging.info(f"copying {nifti_name} to {nii_bids_filename}")
         copyfile(nifti_name, nii_bids_filename)
