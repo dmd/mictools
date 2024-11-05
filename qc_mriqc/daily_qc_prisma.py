@@ -9,6 +9,7 @@ import argparse
 import json
 import logging
 import re
+import sys
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -30,7 +31,6 @@ def final_scan(sourcenames):
 
     files = {}
     for file in sourcenames:
-
         m = re.search(rf"_(\d+).nii.gz$", file)
         fid = int(m.group(1))
 
@@ -42,12 +42,40 @@ def final_scan(sourcenames):
     return files[max(ids)][0]
 
 
+def check_success(pathprefix):
+    print(f"pathprefix: {pathprefix}")
+    file_patterns = [
+        "ep2d_bold.json",
+        "ep2d_bold_sidecar.json",
+        "ep2d_timeseries.json",
+        "mb_bold.json",
+        "mb_bold_sidecar.json",
+        "mb_timeseries.json",
+    ]
+    middle = "_sub-phantom_task-rest_acq-"
+    for pattern in file_patterns:
+        expected_file = f"{pathprefix}{middle}{pattern}"
+        print(f"expecting {expected_file}")
+        if not Path(expected_file).exists():
+            return False
+
+    for pattern in ["ep2d_bold.json", "mb_bold.json"]:
+        json_file = f"{pathprefix}{middle}{pattern}"
+        with open(json_file, "r") as f:
+            data = json.load(f)
+            if "tsnr" not in data or not isinstance(data["tsnr"], float):
+                return False
+    return True
+
+
 def copy_to_in_folder(bids, nifti_name, bids_name):
     Path(f"{bids}/sub-phantom/func").mkdir(parents=True, exist_ok=True)
     open(f"{bids}/dataset_description.json", "w").write(
         """{"Name": "none","BIDSVersion": "1.2.0","Authors": ["x"]}"""
     )
-    nii_bids_filename = f"{bids}/sub-phantom/func/sub-phantom_task-rest_acq-{bids_name}_bold.nii.gz"
+    nii_bids_filename = (
+        f"{bids}/sub-phantom/func/sub-phantom_task-rest_acq-{bids_name}_bold.nii.gz"
+    )
     json_name = nifti_name.replace(".nii.gz", ".json")
     json_bids_filename = nii_bids_filename.replace(".nii.gz", "_sidecar.json")
     try:
@@ -167,6 +195,9 @@ if __name__ == "__main__":
                 dst = f"{root_out}/longitudinal/QA/{foldername}_{Path(src).name}"
                 logging.info(f"copy {src} to {dst}")
                 copyfile(src, dst)
+            if not check_success(f"{root_out}/longitudinal/QA/{foldername}"):
+                logging.error("needed MRIQC outputs not found")
+                sys.exit(1)
         else:
             logging.info(f"Would run {cmd}")
 
