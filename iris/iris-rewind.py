@@ -135,8 +135,6 @@ def rewind_to_state(studydir, target_state):
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser()
     parser.add_argument("studydir", help="the study directory to rewind")
     parser.add_argument(
