@@ -278,6 +278,13 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--logs",
+        help="Where to write logs to. (Default: current directory)",
+        action=FullPaths,
+        type=is_dir,
+    )
+
+    parser.add_argument(
         "--verbose", help="Verbose logging, for debugging.", action="store_true"
     )
 
@@ -368,6 +375,11 @@ if __name__ == "__main__":
         print("Your workdir cannot be in your BIDS dir.")
         sys.exit(1)
 
+    if args.logs:
+        logsdir = args.logs
+    else:
+        logsdir = "."
+
     filename, script = make_runscript(args, workdir)
     action = "NOT submitting" if args.dry_run else "Submitting"
     print(f"{action} {filename} to {SYSTYPE}, the contents of which are:")
@@ -378,7 +390,7 @@ if __name__ == "__main__":
     if SYSTYPE == "sge":
         sub_cmd = f"{QSUB} -cwd -q fmriprep.q -N {args.jobname} -pe fmriprep {args.ncpus} -w e -R y {filename}".split()
     elif SYSTYPE == "slurm":
-        sub_cmd = f"{SBATCH} --job-name {args.jobname} --output=%x-%j.out --error=%x-%j.err --time 1-4 --cpus-per-task={args.ncpus} --mem={args.ramsize}G {filename}".split()
+        sub_cmd = f"{SBATCH} --job-name {args.jobname} --output={logsdir}/%x-%j.out --error={logsdir}/%x-%j.err --time 1-4 --cpus-per-task={args.ncpus} --mem={args.ramsize}G {filename}".split()
     print(" ".join(sub_cmd))
     if args.dry_run:
         print("NOT running; dry run only.")
