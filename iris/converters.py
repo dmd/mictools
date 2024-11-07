@@ -10,7 +10,8 @@ from preprocess import preprocess
 niigz = ".nii.gz"
 
 # make sure we use system dcm2niix
-os.environ['PATH'] = '/usr/local/bin:' + os.environ['PATH']
+os.environ["PATH"] = "/usr/local/bin:" + os.environ["PATH"]
+
 
 def final_scan(sourcenames, multiecho=False):
     # if single-echo:
@@ -55,6 +56,17 @@ def final_scan(sourcenames, multiecho=False):
     return sorted(files[ids[-1]])
 
 
+def record_studydir_state(studydir, task):
+    # record the state of the studydir before we start messing with it
+    state_file = pjoin(studydir, f".state-pre-{task}")
+    with open(state_file, "w") as f:
+        for root, dirs, files in os.walk(studydir):
+            for name in sorted(dirs + files):
+                relpath = os.path.relpath(pjoin(root, name), studydir)
+                if relpath != os.path.relpath(state_file, studydir):
+                    f.write(relpath + "\n")
+
+
 def convert_to_nifti(studydir):
     logging.info("Converting to nifti")
     dicomdir = pjoin(studydir, "scans")
@@ -85,16 +97,18 @@ def convert_to_bids(config, studydir, subject, session):
     open(pjoin(studydir, "dataset_description.json"), "w").write(
         """
         {
-            "Name": "none",
-            "BIDSVersion": "1.2.0",
+            "Name": "Investigator Name",
+            "BIDSVersion": "1.10.0",
             "Authors": ["name1", "name1"],
-            "Funding": ["NIH"]
+            "Funding": ["Funding Agency"]
         }
         """
     )
     open(pjoin(studydir, "README"), "w").write("\n")
     open(pjoin(studydir, "CHANGES"), "w").write("\n")
-    open(pjoin(studydir, ".bidsignore"), "w").write(".job*\n.task*\n")
+    bids_ignore = [".job*", ".task*", ".state*"]
+    with open(pjoin(studydir, ".bidsignore"), "w") as f:
+        f.write("\n".join(bids_ignore) + "\n")
 
     # move data into sourcedata
     for _ in ("nifti", "scans"):

@@ -13,7 +13,7 @@ import pprint
 from collections import defaultdict
 import time
 
-from converters import convert_to_bids, convert_to_nifti
+from converters import convert_to_bids, convert_to_nifti, record_studydir_state
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 
@@ -211,10 +211,13 @@ iris-fmriprep is expecting a directory with a single directory inside named scan
     tasks = task_select(config.get("run", "none"))
 
     if tasks["nifti"] and not task_run("nifti", args.studydir):
+        record_studydir_state(args.studydir, "nifti")
         convert_to_nifti(args.studydir)
         task_run("nifti", args.studydir, write=True)
     if tasks["bids"] and not task_run("bids", args.studydir):
+        record_studydir_state(args.studydir, "bids")
         convert_to_bids(config, args.studydir, args.subject, args.session)
         task_run("bids", args.studydir, write=True)
     if tasks["fmriprep"]:
+        record_studydir_state(args.studydir, "fmriprep")
         submit_fmriprep(config, args.studydir, args.subject)
