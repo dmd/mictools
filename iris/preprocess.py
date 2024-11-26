@@ -1,3 +1,4 @@
+import os
 from os.path import join as pjoin
 from nipype.interfaces.fsl import ExtractROI
 import nibabel as nb
