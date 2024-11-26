@@ -3,6 +3,8 @@ from nipype.interfaces.fsl import ExtractROI
 import nibabel as nb
 import logging
 
+os.environ["PATH"] += ":/cm/shared/apps/fsl-6.0.7.4/bin"
+
 
 def is_4D(niftifile):
     shape = nb.load(niftifile).header.get_data_shape()
