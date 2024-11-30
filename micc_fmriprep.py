@@ -220,7 +220,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--ramsize", help="RAM size to use, in GB. (Default: 16)", type=int, default=16
+        "--ramsize", help="RAM size to use, in GB. (Default: 32)", type=int, default=32
     )
 
     parser.add_argument(
