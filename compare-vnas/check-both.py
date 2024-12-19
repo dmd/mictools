@@ -147,7 +147,7 @@ def compare_scans(xnat_scans, orthanc_scans, print_details=True):
             scan_info["xnat_description"] != scan_info["orthanc_description"]
         ):
             mismatch = "*"
-            if int(scan_id.split("-")[0]) < 100:
+            if int(scan_id.split("-")[0]) < 98:
                 any_mismatch = True
             else:
                 ignore_mismatch = True
@@ -157,7 +157,7 @@ def compare_scans(xnat_scans, orthanc_scans, print_details=True):
                 f"{mismatch:<1} {scan_id:>5} {scan_info['orthanc_frames']:>12} {scan_info['orthanc_description']:<30} {scan_info['xnat_frames']:>18} {scan_info['xnat_description']:<30}"
             )
     if ignore_mismatch:
-        print("ignoring series>100 mismatch")
+        print("ignoring series>98 mismatch")
 
     if len(sorted_results) == 0:
         return True
