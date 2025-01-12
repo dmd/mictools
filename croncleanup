@@ -9,4 +9,4 @@ if [ -z "$DIRS" ]; then
 fi
 RMDIRS=$(find  /data/fmriprep-workdir/* -maxdepth 0 -ctime +${DAYS} -exec echo rm -rf {} \& \;)
 
-echo -e "Ready for cleanup on $HOSTNAME: \n\n${RMDIRS}" | Mail -s "pipeline cleanup" ddrucker@mclean.harvard.edu 
+echo -e "Ready for cleanup on $HOSTNAME: \n\n${RMDIRS}\ndisown -a\n" | Mail -s "pipeline cleanup" ddrucker@mclean.harvard.edu 
