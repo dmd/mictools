@@ -27,13 +27,28 @@ parser.add_argument(
 
 parser.add_argument(
     "--authfile",
-    help="Use .xnat_auth file for login.",
+    help="Use .xnat_auth file for login. This option has no effect and is here for compatibility; if .xnat_auth is present, it will be used unless --noauthfile is specified.",
+    required=False,
+    action="store_true",
+)
+
+parser.add_argument(
+    "--noauthfile",
+    help="Do not use .xnat_auth file for login even if present.",
     required=False,
     action="store_true",
 )
 
 parser.add_argument("accessionnumber", nargs="+")
 args = parser.parse_args()
+
+if (
+    os.path.exists(os.path.expanduser("~/.xnat_auth"))
+    and not args.noauthfile
+    and args.username == getpass.getuser()
+):
+    print("Using .xnat_auth file for login. Use --noauthfile to override.")
+    args.authfile = True
 
 if not args.authfile:
     password = getpass.getpass(f"Iris password for {args.username}: ")
