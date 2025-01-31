@@ -41,6 +41,7 @@ def make_runscript(args, workdir):
     s += [SINGULARITY + " run"]
     s += ["--contain"]
     s += ["--cleanenv"]
+    s += ["--home /home/fmriprep -B $HOME:/home/fmriprep -B $HOME:$HOME"]
     s += [
         "-B /tmp -B /data -B /data1 -B /data2 -B /data3 -B /n -B /cm/shared -B /data/fmriprep-workdir"
     ]
