@@ -36,7 +36,6 @@ def annotate_calcium(logs):
         print(f"{match[0]} {line} # {match[1]}")
 
 
-# Press the green button in the gutter to run the script.
 if __name__ == "__main__":
     logs = load_logs()
     annotate_calcium(logs)
