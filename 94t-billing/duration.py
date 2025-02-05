@@ -15,17 +15,10 @@ username, _, password = netrc.netrc("netrc").authenticators(host)
 o = pyorthanc.Orthanc(server, username=username, password=password)
 
 
-def get_date():
-    if len(sys.argv) > 1 and len(sys.argv[1]) == 8 and sys.argv[1].isdigit():
-        return sys.argv[1]
-    else:
-        return datetime.datetime.today().strftime("%Y%m%d")
-
-
 def studies_for_date(study_date):
     query = {"StudyDate": study_date}
     studies = pyorthanc.find_studies(client=o, query=query)
-    return studies
+    return sorted(studies, key=lambda study: study.date)
 
 
 def duration(study):
@@ -82,10 +75,23 @@ def get_study(study_id):
 
 
 def main():
-    if len(sys.argv) > 1 and sys.argv[1].startswith("E"):
-        get_study(sys.argv[1])
+    if len(sys.argv) != 2:
+        print("Usage: duration.py YYYYMM[DD] | accession_number")
+        sys.exit(1)
+    arg = sys.argv[1]
+    if arg.startswith("E"):
+        get_study(arg)
+    elif len(arg) == 6:
+        year, month = int(arg[:4]), int(arg[4:6])
+        for day in range(
+            1,
+            (datetime.date(year, month + 1, 1) - datetime.date(year, month, 1)).days
+            + 1,
+        ):
+            for study in studies_for_date(f"{year:04d}{month:02d}{day:02d}"):
+                get_study(study)
     else:
-        for study in studies_for_date(get_date()):
+        for study in studies_for_date(arg):
             get_study(study)
 
 
