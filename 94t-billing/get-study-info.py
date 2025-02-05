@@ -7,24 +7,12 @@ import netrc
 import requests
 import pyorthanc
 
+
 host = "micvna.mclean.harvard.edu"
 port = 8042
 server = f"http://{host}:{port}"
 username, _, password = netrc.netrc("netrc").authenticators(host)
 o = pyorthanc.Orthanc(server, username=username, password=password)
-
-if len(sys.argv) < 2:
-    print("Usage: %s <accession number>" % sys.argv[0])
-    sys.exit(1)
-
-accnum = sys.argv[1]
-query = {"AccessionNumber": accnum}
-studies = pyorthanc.find_studies(client=o, query=query)
-study = studies[0]
-
-if len(studies) == 0:
-    print(f"No studies found with query {repr(query)}")
-    sys.exit(1)
 
 
 def duration(study):
@@ -52,17 +40,39 @@ def duration(study):
 
     return max(instance_creation_datetimes) - min(instance_creation_datetimes)
 
+def studies_for_date(study_date):
+    query = {"StudyDate": study_date}
+    studies = pyorthanc.find_studies(client=o, query=query)
+    return studies
 
-data = {}
-data["date"] = study.date
-data["AccessionNumber"] = study.main_dicom_tags["AccessionNumber"]
-if study.main_dicom_tags["StudyDescription"].count("^") > 1:
-    data["investigator"] = study.main_dicom_tags["StudyDescription"].split("^")[1]
-else:
-    data["investigator"] = ""
-data["protocol"] = study.main_dicom_tags["StudyDescription"]
-data["duration"] = str(duration(study)).split(".")[0]
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: %s <accession number>" % sys.argv[0])
+        sys.exit(1)
 
 
-writer = csv.writer(sys.stdout)
-writer.writerow(data.values())
+    accnum = sys.argv[1]
+    query = {"AccessionNumber": accnum}
+    studies = pyorthanc.find_studies(client=o, query=query)
+    study = studies[0]
+
+    if len(studies) == 0:
+        print(f"No studies found with query {repr(query)}")
+        sys.exit(1)
+
+    data = {}
+    data["date"] = study.date
+    data["AccessionNumber"] = study.main_dicom_tags["AccessionNumber"]
+    if study.main_dicom_tags["StudyDescription"].count("^") > 1:
+        data["investigator"] = study.main_dicom_tags["StudyDescription"].split("^")[1]
+    else:
+        data["investigator"] = ""
+    data["protocol"] = study.main_dicom_tags["StudyDescription"]
+    data["duration"] = str(duration(study)).split(".")[0]
+
+    writer = csv.writer(sys.stdout)
+    writer.writerow(data.values())
+
+
+if __name__ == "__main__":
+    main()
