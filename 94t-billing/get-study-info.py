@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import csv
 import datetime
 import netrc
 import requests
@@ -55,11 +56,13 @@ def duration(study):
 data = {}
 data["date"] = study.date
 data["AccessionNumber"] = study.main_dicom_tags["AccessionNumber"]
+if study.main_dicom_tags["StudyDescription"].count("^") > 1:
+    data["investigator"] = study.main_dicom_tags["StudyDescription"].split("^")[1]
+else:
+    data["investigator"] = ""
 data["protocol"] = study.main_dicom_tags["StudyDescription"]
 data["duration"] = str(duration(study)).split(".")[0]
 
-# print the data as a CSV line
-import csv
 
 writer = csv.writer(sys.stdout)
 writer.writerow(data.values())
