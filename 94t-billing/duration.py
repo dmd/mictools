@@ -6,6 +6,7 @@ import datetime
 import netrc
 import requests
 import pyorthanc
+import httpx
 
 
 host = "micvna.mclean.harvard.edu"
@@ -61,13 +62,17 @@ def get_study(study_id):
 
     data = {}
     data["date"] = study.date
+    try:
+        scanner_model = study.series[0].instances[0].get_content_by_tag("0008,1090")
+    except httpx.HTTPError:
+        scanner_model = "?"
+
+    data["scanner"] = {"MAGNETOM Prisma Fit": "P2", "MR MAGNETOM Prisma fit NX": "P2", "Prisma": "P1"}.get(
+        scanner_model, scanner_model
+    )
     data["AccessionNumber"] = study.main_dicom_tags["AccessionNumber"]
-    sd = study.main_dicom_tags["StudyDescription"]
-    if sd.startswith("Investigators^") or sd.startswith("McLean Research^"):
-        data["investigator"] = sd.split("^")[1]
-    else:
-        data["investigator"] = "clinical"
-    data["protocol"] = sd
+    data["patientid"] = study.patient_information["PatientID"]
+    data["protocol"] = study.main_dicom_tags["StudyDescription"]
     data["duration"] = str(duration(study)).split(".")[0]
 
     writer = csv.writer(sys.stdout)
