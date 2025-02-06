@@ -67,11 +67,9 @@ def get_study(study_id):
     except httpx.HTTPError:
         scanner_model = "?"
 
-    data["scanner"] = {
-        "MAGNETOM Prisma Fit": "P2",
-        "MR MAGNETOM Prisma fit NX": "P2",
-        "Prisma": "P1",
-    }.get(scanner_model, scanner_model)
+    data["scanner"] = {"MAGNETOM Prisma Fit": "P2", "MR MAGNETOM Prisma fit NX": "P2", "Prisma": "P1"}.get(
+        scanner_model, scanner_model
+    )
     data["AccessionNumber"] = study.main_dicom_tags["AccessionNumber"]
     data["patientid"] = study.patient_information["PatientID"]
     data["protocol"] = study.main_dicom_tags["StudyDescription"]
@@ -83,30 +81,20 @@ def get_study(study_id):
 
 def main():
     if len(sys.argv) != 2:
-        print("Usage: duration.py YYYYMM[DD] | accession_number | prevmonth")
+        print("Usage: duration.py YYYYMM[DD] | accession_number")
         sys.exit(1)
     arg = sys.argv[1]
     print("datetime,scanner,accession_number,patientid,protocol,duration")
     if arg.startswith("E"):
         get_study(arg)
-    elif len(arg) == 6 or arg == "prevmonth":
-        if arg == "prevmonth":
-            today = datetime.date.today()
-            first_of_month = (
-                today.replace(day=1) - datetime.timedelta(days=1)
-            ).replace(day=1)
-        else:
-            year, month = int(arg[:4]), int(arg[4:6])
-            first_of_month = datetime.date(year, month, 1)
-
-        last_of_month = (
-            first_of_month.replace(day=28) + datetime.timedelta(days=4)
-        ).replace(day=1) - datetime.timedelta(days=1)
-
-        for day in range(1, (last_of_month - first_of_month).days + 2):
-            for study in studies_for_date(
-                f"{first_of_month.year:04d}{first_of_month.month:02d}{day:02d}"
-            ):
+    elif len(arg) == 6:
+        year, month = int(arg[:4]), int(arg[4:6])
+        for day in range(
+            1,
+            (datetime.date(year, month + 1, 1) - datetime.date(year, month, 1)).days
+            + 1,
+        ):
+            for study in studies_for_date(f"{year:04d}{month:02d}{day:02d}"):
                 get_study(study)
     else:
         for study in studies_for_date(arg):
