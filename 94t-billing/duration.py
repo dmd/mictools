@@ -67,9 +67,11 @@ def get_study(study_id):
     except httpx.HTTPError:
         scanner_model = "?"
 
-    data["scanner"] = {"MAGNETOM Prisma Fit": "P2", "MR MAGNETOM Prisma fit NX": "P2", "Prisma": "P1"}.get(
-        scanner_model, scanner_model
-    )
+    data["scanner"] = {
+        "MAGNETOM Prisma Fit": "P2",
+        "MR MAGNETOM Prisma fit NX": "P2",
+        "Prisma": "P1",
+    }.get(scanner_model, scanner_model)
     data["AccessionNumber"] = study.main_dicom_tags["AccessionNumber"]
     data["patientid"] = study.patient_information["PatientID"]
     data["protocol"] = study.main_dicom_tags["StudyDescription"]
