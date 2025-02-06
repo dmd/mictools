@@ -84,6 +84,7 @@ def main():
         print("Usage: duration.py YYYYMM[DD] | accession_number")
         sys.exit(1)
     arg = sys.argv[1]
+    print("datetime,scanner,accession_number,patientid,protocol,duration")
     if arg.startswith("E"):
         get_study(arg)
     elif len(arg) == 6:
