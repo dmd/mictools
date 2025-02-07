@@ -62,10 +62,15 @@ def get_study(study_id):
 
     data = {}
     data["date"] = study.date
-    try:
-        scanner_model = study.series[0].instances[0].get_content_by_tag("0008,1090")
-    except httpx.HTTPError:
-        scanner_model = "?"
+    scanner_model = "?"
+    # not every instance has the scanner model, so we need to loop through all instances
+    for series in study.series:
+        try:
+            scanner_model = series.instances[0].get_content_by_tag("0008,1090")
+            if scanner_model:
+                break
+        except httpx.HTTPError:
+            continue
 
     data["scanner"] = {
         "MAGNETOM Prisma Fit": "P2",
