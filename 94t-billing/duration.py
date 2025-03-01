@@ -25,27 +25,38 @@ def studies_for_date(study_date):
 def duration(study):
     # use bulk-content as it's vastly faster than the pyorthanc method
 
-    datetime_format = "%Y%m%d%H%M%S.%f"
-
     data = requests.post(
         server + "/tools/bulk-content",
         json={"Resources": [study.identifier], "Level": "Instance"},
         auth=(username, password),
     ).json()
 
-    instance_creation_datetimes = [
-        datetime.datetime.strptime(
-            item["MainDicomTags"]["InstanceCreationDate"]
-            + item["MainDicomTags"]["InstanceCreationTime"],
-            datetime_format,
-        )
-        for item in data
-        if "MainDicomTags" in item
-        and "InstanceCreationDate" in item["MainDicomTags"]
-        and "InstanceCreationTime" in item["MainDicomTags"]
-    ]
+    instance_creation_datetimes = []
 
-    return max(instance_creation_datetimes) - min(instance_creation_datetimes)
+    for item in data:
+        if (
+            "MainDicomTags" in item
+            and "InstanceCreationDate" in item["MainDicomTags"]
+            and "InstanceCreationTime" in item["MainDicomTags"]
+        ):
+            datetime_str = (
+                item["MainDicomTags"]["InstanceCreationDate"]
+                + item["MainDicomTags"]["InstanceCreationTime"]
+            )
+
+            # Try both formats - with and without microseconds
+            for fmt in ["%Y%m%d%H%M%S.%f", "%Y%m%d%H%M%S"]:
+                try:
+                    dt = datetime.datetime.strptime(datetime_str, fmt)
+                    instance_creation_datetimes.append(dt)
+                    break
+                except ValueError:
+                    continue
+
+    try:
+        return max(instance_creation_datetimes) - min(instance_creation_datetimes)
+    except ValueError:
+        return 0
 
 
 def get_study(study_id):
@@ -76,14 +87,26 @@ def get_study(study_id):
         "MAGNETOM Prisma Fit": "P2",
         "MR MAGNETOM Prisma fit NX": "P2",
         "Prisma": "P1",
+        "BAP94/30": "94T"
     }.get(scanner_model, scanner_model)
     data["AccessionNumber"] = study.main_dicom_tags["AccessionNumber"]
     data["patientid"] = study.patient_information["PatientID"]
-    data["protocol"] = study.main_dicom_tags["StudyDescription"]
-    data["duration"] = str(duration(study)).split(".")[0]
+    data["protocol"] = study.main_dicom_tags.get("StudyDescription", "missing")
 
-    writer = csv.writer(sys.stdout)
-    writer.writerow(data.values())
+    # Format duration as total hours:minutes:seconds
+    study_duration = duration(study)
+    if study_duration == 0:
+        data["duration"] = "0"
+    else:
+        total_seconds = study_duration.total_seconds()
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        data["duration"] = f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
+
+    # sometimes reconstructs show up as 0
+    if data["duration"] != "0":
+        writer = csv.writer(sys.stdout)
+        writer.writerow(data.values())
 
 
 def main():
