@@ -31,13 +31,8 @@ if ls -1qA "$MOUNTPOINT" | grep -q . ; then
     exit 1
 fi
 
-if [ $(hostname) == "micc" ];then
-    nodes="1 2 3 4 5"
-    nodename=node
-else
-    nodes="1 2 3 4"
-    nodename=mickey-node
-fi
+nodes="1 2 3 4"
+nodename=mickey-node
 
 echo -n "Going to mount //${SERVER}/${SHARENAME} on $(readlink -f $MOUNTPOINT) as $MGBID.  OK? (y/n): "
 read -r answer
