@@ -87,7 +87,7 @@ def get_study(study_id):
         "MAGNETOM Prisma Fit": "P2",
         "MR MAGNETOM Prisma fit NX": "P2",
         "Prisma": "P1",
-        "BAP94/30": "94T"
+        "BAP94/30": "94T",
     }.get(scanner_model, scanner_model)
     data["AccessionNumber"] = study.main_dicom_tags["AccessionNumber"]
     data["patientid"] = study.patient_information["PatientID"]
@@ -119,9 +119,17 @@ def main():
         get_study(arg)
     elif len(arg) == 6:
         year, month = int(arg[:4]), int(arg[4:6])
+        # Handle December properly by rolling over to the next year
+        if month == 12:
+            next_year, next_month = year + 1, 1
+        else:
+            next_year, next_month = year, month + 1
+
         for day in range(
             1,
-            (datetime.date(year, month + 1, 1) - datetime.date(year, month, 1)).days
+            (
+                datetime.date(next_year, next_month, 1) - datetime.date(year, month, 1)
+            ).days
             + 1,
         ):
             for study in studies_for_date(f"{year:04d}{month:02d}{day:02d}"):
