@@ -72,7 +72,11 @@ def make_runscript(args, workdir):
         s += ["--use-aroma"]
 
     if args.force_syn:
-        s += ["--force-syn"]
+        # Check if fmriprep version is 25 or newer
+        if args.fmriprep_version and args.fmriprep_version[:2].isdigit() and int(args.fmriprep_version[:2]) >= 25:
+            s += ["--force syn-sdc"]
+        else:
+            s += ["--force-syn"]
 
     if not args.disable_syn_sdc:
         s += ["--use-syn-sdc"]
