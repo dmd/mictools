@@ -19,8 +19,12 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
+        sudo apt-get install -y unzip curl
+        curl -L -o /tmp/dcm2niix_lnx.zip https://github.com/rordenlab/dcm2niix/releases/download/v1.0.20241211/dcm2niix_lnx.zip
+        unzip /tmp/dcm2niix_lnx.zip -d /tmp
+        sudo mv /tmp/dcm2niix /usr/bin/
         python -m pip install --upgrade pip
-        python -m pip install flake8 pytest pyyaml dcm2niix nipype
+        python -m pip install flake8 pytest pyyaml nipype
     - name: Lint with flake8
       run: |
         flake8 iris --count --select=E9,F63,F7,F82 --show-source --statistics
