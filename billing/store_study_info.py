@@ -169,14 +169,18 @@ ORTHANC = pyorthanc.Orthanc(SERVER_URL, username=USERNAME, password=PASSWORD)
 # SQLite helpers
 # ---------------------------------------------------------------------------
 
-DB_PATH = "study_info.db"
+DEFAULT_DB_PATH = "study_info.db"
 
 
-def get_db_connection() -> sqlite3.Connection:
-    """Open (and create if missing) the SQLite database and ensure that the
-    required tables exist."""
+def get_db_connection(db_path: str = DEFAULT_DB_PATH) -> sqlite3.Connection:
+    """Open (and create if missing) the SQLite database at *db_path* and ensure
+    that the required tables exist.
 
-    conn = sqlite3.connect(DB_PATH)
+    The function creates the file if it does not already exist and initialises
+    the *studies* and *series* tables when they are missing.
+    """
+
+    conn = sqlite3.connect(db_path)
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS studies (
@@ -554,13 +558,20 @@ def parse_args() -> argparse.Namespace:
             "series) are removed before acquisition."
         ),
     )
+
+    parser.add_argument(
+        "--db",
+        metavar="PATH",
+        default="study_info.db",
+        help="Path to the SQLite database file to use (default: study_info.db)",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
 
-    conn = get_db_connection()
+    conn = get_db_connection(args.db)
 
     def _print_skip(acc: str) -> None:
         print(f"{acc} already in db, skipping")
