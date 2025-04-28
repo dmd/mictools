@@ -26,6 +26,9 @@ way they do and what caveats to remember when extending it.
 
 # Multiple tokens are accepted
 ./store_study_info.py 202404 20240427 E87654321
+
+# Force re-acquisition even if the accession is already stored
+./store_study_info.py --force E12345678
 ```
 
 ### Token rules

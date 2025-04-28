@@ -61,7 +61,7 @@ import netrc
 import os
 import sqlite3
 import sys
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Callable
 
 import pydicom  # type: ignore
 import pyorthanc
@@ -83,15 +83,39 @@ def studies_for_date(date_str: str):
     return sorted(studies, key=lambda s: (s.date, s.identifier))
 
 
-def process_date_arg(date_token: str, conn: sqlite3.Connection) -> None:
-    """Handle an argument that is a date (YYYYMM or YYYYMMDD)."""
+# Callable already imported above via typing import Any, Dict, Optional, Callable
+
+
+def process_date_arg(
+    date_token: str,
+    conn: sqlite3.Connection,
+    *,
+    force: bool = False,
+    _skip_cb: Optional[Callable[[str], None]] = None,
+) -> None:
+    """Handle an argument that is a date (YYYYMM or YYYYMMDD).
+
+    The *force* flag has the same semantics as in :func:`store_study` – when
+    False, studies whose accession already exists in the database are skipped.
+    When True, they are purged beforehand.
+    """
 
     if len(date_token) == 8:  # YYYYMMDD
         # single day
         for study in studies_for_date(date_token):
             acc = study.main_dicom_tags.get("AccessionNumber", "")
+
             if not acc.startswith("E"):
                 continue
+
+            if accession_exists(conn, acc):
+                if not force:
+                    if _skip_cb:
+                        _skip_cb(acc)
+                    continue  # skip existing study
+                # purge and reprocess before re-acquiring
+                purge_accession(conn, acc)
+
             print(acc)
             _process_study(study, conn)
 
@@ -108,6 +132,14 @@ def process_date_arg(date_token: str, conn: sqlite3.Connection) -> None:
                 acc = study.main_dicom_tags.get("AccessionNumber", "")
                 if not acc.startswith("E"):
                     continue
+
+                if accession_exists(conn, acc):
+                    if not force:
+                        if _skip_cb:
+                            _skip_cb(acc)
+                        continue
+                    purge_accession(conn, acc)
+
                 print(acc)
                 _process_study(study, conn)
     else:
@@ -176,6 +208,27 @@ def get_db_connection() -> sqlite3.Connection:
     )
 
     return conn
+
+
+# ---------------------------------------------------------------------------
+# DB convenience helpers
+# ---------------------------------------------------------------------------
+
+
+def accession_exists(conn: sqlite3.Connection, accession: str) -> bool:
+    """Return *True* if *accession* is already present in *studies* table."""
+
+    cur = conn.execute("SELECT 1 FROM studies WHERE accession = ? LIMIT 1", (accession,))
+    return cur.fetchone() is not None
+
+
+def purge_accession(conn: sqlite3.Connection, accession: str) -> None:
+    """Remove *accession* from *studies* and all related rows from *series*."""
+
+    # Delete child rows first to satisfy the foreign-key relation.
+    conn.execute("DELETE FROM series WHERE accession = ?", (accession,))
+    conn.execute("DELETE FROM studies WHERE accession = ?", (accession,))
+    conn.commit()
 
 
 # ---------------------------------------------------------------------------
@@ -449,8 +502,25 @@ def _process_study(study: pyorthanc.Study, conn: sqlite3.Connection) -> None:
 # Public helper --------------------------------------------------------------
 
 
-def store_study(accession: str, conn: sqlite3.Connection) -> None:
-    """Locate study by accession and store its information."""
+def store_study(accession: str, conn: sqlite3.Connection, *, force: bool = False) -> None:
+    """Locate study by *accession* and store its information.
+
+    Behaviour is influenced by *force*:
+
+    • If *force* is False (default) and the accession already exists in the
+      database, the function returns immediately.
+    • If *force* is True, any existing rows for the accession (including
+      related *series*) are removed before the data are retrieved again from
+      Orthanc.
+    """
+
+    if accession_exists(conn, accession):
+        if not force:
+            # Skip silently – caller decides whether to print something.
+            return
+
+        # Remove stale data before re-importing.
+        purge_accession(conn, accession)
 
     studies = pyorthanc.find_studies(client=ORTHANC, query={"AccessionNumber": accession})
 
@@ -473,6 +543,17 @@ def parse_args() -> argparse.Namespace:
         nargs="+",
         help="Accession numbers starting with 'E', or date strings YYYYMM / YYYYMMDD",
     )
+
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help=(
+            "Re-fetch information even if the accession already exists in the local "
+            "database. When used, existing rows for that accession (including related "
+            "series) are removed before acquisition."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -481,11 +562,18 @@ def main() -> None:
 
     conn = get_db_connection()
 
+    def _print_skip(acc: str) -> None:
+        print(f"{acc} already in db, skipping")
+
     for token in args.tokens:
         if token.startswith("E"):
-            store_study(token, conn)
+            if not args.force and accession_exists(conn, token):
+                _print_skip(token)
+                continue
+
+            store_study(token, conn, force=args.force)
         elif token.isdigit() and len(token) in (6, 8):
-            process_date_arg(token, conn)
+            process_date_arg(token, conn, force=args.force, _skip_cb=_print_skip)
         else:
             print(
                 f"Unrecognised argument '{token}'. Expected accession starting with 'E' or date string.",
