@@ -32,9 +32,10 @@ def duration(study):
                 json={"Resources": [study.identifier], "Level": "Instance"},
                 auth=(username, password),
             ).json()
+            print(f"Getting {study.identifier}", file=sys.stderr)
             break
-        except requests.exceptions.ConnectionError as e:
-            print(f"Transient connection error: {e}, retrying in 1 second...", file=sys.stderr)
+        except:
+            print(f"Error, retrying in 1 second...", file=sys.stderr)
             time.sleep(1)
 
     instance_creation_datetimes = []
