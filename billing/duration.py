@@ -7,6 +7,7 @@ import netrc
 import requests
 import pyorthanc
 import httpx
+import time
 
 
 host = "micvna.mclean.harvard.edu"
@@ -23,13 +24,18 @@ def studies_for_date(study_date):
 
 
 def duration(study):
-    # use bulk-content as it's vastly faster than the pyorthanc method
-
-    data = requests.post(
-        server + "/tools/bulk-content",
-        json={"Resources": [study.identifier], "Level": "Instance"},
-        auth=(username, password),
-    ).json()
+    # Use bulk-content as it's vastly faster than the pyorthanc method; retry on transient connection errors.
+    while True:
+        try:
+            data = requests.post(
+                server + "/tools/bulk-content",
+                json={"Resources": [study.identifier], "Level": "Instance"},
+                auth=(username, password),
+            ).json()
+            break
+        except requests.exceptions.ConnectionError as e:
+            print(f"Transient connection error: {e}, retrying in 1 second...", file=sys.stderr)
+            time.sleep(1)
 
     instance_creation_datetimes = []
 
