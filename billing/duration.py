@@ -34,8 +34,8 @@ def duration(study):
             ).json()
             print(f"Getting {study.identifier}", file=sys.stderr)
             break
-        except:
-            print(f"Error, retrying in 1 second...", file=sys.stderr)
+        except Exception as e:
+            print(f"Error: {e}, retrying in 1 second...", file=sys.stderr)
             time.sleep(1)
 
     instance_creation_datetimes = []
