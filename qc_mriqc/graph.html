@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/moment"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+  <style>
+    .chart-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .chart-wrapper {
+      flex: 0 1 calc(43% - 30px);
+      margin: 8px;
+      padding: 8px;
+      background-color: #f5f5f5;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+      border-radius: 4px;
+    }
+    .chart-wrapper > div {
+      width: 100%;
+      height: 225px;
+    }
+    .chart-link--active {
+      font-weight: bold;
+      border: 1px solid #333;
+      padding: 5px;
+      border-radius: 3px;
+    }
+    #controls {
+      display: flex;
+      align-items: center;
+      margin: 8px;
+    }
+    #controls label {
+      margin-right: 4px;
+      font-weight: bold;
+    }
+    #controls select {
+      margin-right: 16px;
+    }
+    /* Loading overlay */
+    #loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(128, 128, 128, 0.5);
+      z-index: 1000;
+    }
+    #loading-overlay .loading-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading-overlay">
+    <div class="loading-message">Loading data...</div>
+  </div>
+  <div id="controls">
+    <label for="datasetSelector">Dataset:</label>
+    <select id="datasetSelector">
+      <option value="p1">P1</option>
+      <option value="p2">P2</option>
+    </select>
+    <label for="sequenceSelector">Sequence:</label>
+    <select id="sequenceSelector">
+      <option value="ep2d_bold">ep2d_bold</option>
+      <option value="mb_bold">epi_mb</option>
+    </select>
+  </div>
+  <div class="chart-container">
+    <div class="chart-wrapper"><div id="ImagingFrequency_chart"></div></div>
+    <div class="chart-wrapper"><div id="TxRefAmp_chart"></div></div>
+    <div class="chart-wrapper"><div id="shimSettingSS_chart"></div></div>
+    <div class="chart-wrapper"><div id="snr_chart"></div></div>
+    <div class="chart-wrapper"><div id="gsr_chart"></div></div>
+    <div class="chart-wrapper"><div id="dvars_chart"></div></div>
+    <div class="chart-wrapper"><div id="dvarsn_chart"></div></div>
+    <div class="chart-wrapper"><div id="fd_mean_chart"></div></div>
+  </div>
+  <script>
+    const dataDirs = {
+      p1: 'p1/longitudinal/QA',
+      p2: 'p2/longitudinal/QA'
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const datasetSelector = document.getElementById('datasetSelector');
+      const sequenceSelector = document.getElementById('sequenceSelector');
+      datasetSelector.addEventListener('change', main);
+      sequenceSelector.addEventListener('change', main);
+      main();
+    });
+    // List JSON files in the given directory and return full URLs
+    async function getFilesList(baseUrl, filePattern) {
+      const response = await fetch(baseUrl);
+      const html = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      return [...doc.querySelectorAll('body a')]
+        // href attributes are file names relative to the directory
+        .map(a => a.getAttribute('href'))
+        // filter by the given pattern
+        .filter(name => name && filePattern.test(name))
+        // prepend the directory path
+        .map(name => baseUrl + name);
+    }
+    async function fetchData(baseUrl, filePattern, parserFunc) {
+      const files = await getFilesList(baseUrl, filePattern);
+      return await parserFunc(files);
+    }
+    async function parseBoldData(files) {
+      const data = {
+        labels: [], tsnr: [], snr: [], gsr_x: [], gsr_y: [],
+        dvars_std: [], dvars_vstd: [], dvars_nstd: [], fd_mean: []
+      };
+      for (const file of files) {
+        try {
+          const resp = await fetch(file);
+          const txt = await resp.text();
+          const clean = txt.replace(/\bNaN\b/g, 'null');
+          const d = JSON.parse(clean);
+          const date = parseDate(file);
+          if (!date) continue;
+          data.labels.push(date);
+          data.tsnr.push(d.tsnr);
+          data.snr.push(d.snr);
+          data.gsr_x.push(d.gsr_x);
+          data.gsr_y.push(d.gsr_y);
+          data.dvars_std.push(d.dvars_std);
+          data.dvars_vstd.push(d.dvars_vstd);
+          data.dvars_nstd.push(d.dvars_nstd);
+          data.fd_mean.push(d.fd_mean);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      return data;
+    }
+    async function parseSidecarData(files) {
+      const data = { labels: [], ImagingFrequency: [], TxRefAmp: [], ShimSettingSS: [] };
+      for (const file of files) {
+        try {
+          const resp = await fetch(file);
+          const txt = await resp.text();
+          const clean = txt.replace(/\bNaN\b/g, 'null');
+          const d = JSON.parse(clean);
+          const date = parseDate(file);
+          if (!date) continue;
+          data.labels.push(date);
+          data.ImagingFrequency.push(d.ImagingFrequency);
+          data.TxRefAmp.push(d.TxRefAmp);
+          const sumsq = (d.ShimSetting || []).reduce((a, v) => a + v * v, 0);
+          data.ShimSettingSS.push(Math.sqrt(sumsq));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      return data;
+    }
+    function parseDate(fileName) {
+      const m = fileName.match(/(\d{8})_.*\.json$/);
+      if (!m) return null;
+      const y = +m[1].slice(0, 4),
+            mo = +m[1].slice(4, 6),
+            d = +m[1].slice(6, 8);
+      return new Date(y, mo - 1, d);
+    }
+    async function main() {
+      const overlay = document.getElementById('loading-overlay');
+      overlay.style.display = 'block';
+      try {
+      const dataset = document.getElementById('datasetSelector').value;
+      const pattern = document.getElementById('sequenceSelector').value;
+      let baseUrl = dataDirs[dataset];
+      if (!baseUrl.endsWith('/')) baseUrl += '/';
+      const bp = new RegExp(`\\d{8}_\\d{4}.+${pattern}\\.json$`);
+      const sp = new RegExp(`\\d{8}_\\d{4}.+${pattern}_sidecar\\.json$`);
+      const Data = await fetchData(baseUrl, bp, parseBoldData);
+      const side = await fetchData(baseUrl, sp, parseSidecarData);
+      const charts = [
+        { id: 'ImagingFrequency_chart', title: 'Imaging Frequency', labels: side.labels,
+          series: [{ label: 'ImagingFrequency', data: side.ImagingFrequency, color: '#9966ff' }] },
+        { id: 'TxRefAmp_chart', title: 'TxRef Amp', labels: side.labels,
+          series: [{ label: 'TxRefAmp', data: side.TxRefAmp, color: '#9966ff' }] },
+        { id: 'shimSettingSS_chart', title: 'Shim Setting SS', labels: side.labels,
+          series: [{ label: 'ShimSettingSS', data: side.ShimSettingSS, color: '#ff9f40' }] },
+        { id: 'snr_chart', title: 'SNR / TSNR', labels: Data.labels,
+          series: [
+            { label: 'TSNR', data: Data.tsnr, color: '#4bc0c0' },
+            { label: 'SNR', data: Data.snr, color: '#ff6384' }
+          ],
+          multiAxis: true
+        },
+        { id: 'gsr_chart', title: 'GSR', labels: Data.labels,
+          series: [{ label: 'gsr_x', data: Data.gsr_x, color: '#4bc0c0' },
+                   { label: 'gsr_y', data: Data.gsr_y, color: '#ff6384' }] },
+        { id: 'dvars_chart', title: 'DVARS', labels: Data.labels,
+          series: [{ label: 'dvars_std', data: Data.dvars_std, color: '#4bc0c0' },
+                   { label: 'dvars_vstd', data: Data.dvars_vstd, color: '#ff6384' }] },
+        { id: 'dvarsn_chart', title: 'DVARS NSTD', labels: Data.labels,
+          series: [{ label: 'dvars_nstd', data: Data.dvars_nstd, color: '#ff6384' }] },
+        { id: 'fd_mean_chart', title: 'FD Mean', labels: Data.labels,
+          series: [{ label: 'fd_mean', data: Data.fd_mean, color: '#ff6384' }] }
+      ];
+      window._charts = window._charts || {};
+      charts.forEach(cfg => {
+        const dom = document.getElementById(cfg.id);
+        if (window._charts[cfg.id]) {
+          window._charts[cfg.id].dispose();
+        }
+        const chart = echarts.init(dom);
+        // Only use dual axes when explicitly requested (e.g. SNR/TSNR)
+        const useMultiAxis = Boolean(cfg.multiAxis);
+        // Add small padding (~5%) above/below data range rather than forcing to zero
+        const padding = 0.05;
+        const makeAxis = (label, position) => ({
+          name: label,
+          type: 'value',
+          position: position,
+          min: value => value.min - (value.max - value.min) * padding,
+          max: value => value.max + (value.max - value.min) * padding
+        });
+        const yAxisOption = useMultiAxis
+          ? [
+              makeAxis(cfg.series[0].label, 'left'),
+              makeAxis(cfg.series[1].label, 'right')
+            ]
+          : {
+              type: 'value',
+              min: value => value.min - (value.max - value.min) * padding,
+              max: value => value.max + (value.max - value.min) * padding
+            };
+        const seriesOpt = cfg.series.map((s, idx) => {
+          const seriesItem = {
+            name: s.label,
+            type: 'line',
+            data: cfg.labels.map((d, i) => [d, s.data[i]]),
+            itemStyle: { color: s.color }
+          };
+          if (useMultiAxis) {
+            seriesItem.yAxisIndex = idx;
+          }
+          return seriesItem;
+        });
+        // Assemble options
+        const option = {
+          title: { text: cfg.title },
+          tooltip: { trigger: 'axis' },
+          xAxis: {
+            type: 'time',
+            axisLabel: {
+              formatter: '{yyyy}-{MM}-{dd}',
+              rotate: 30
+            }
+          },
+          yAxis: yAxisOption,
+          series: seriesOpt
+        };
+        // Show legend (color-coded key) for any chart with multiple series
+        if (cfg.series.length > 1) {
+          option.legend = { data: cfg.series.map(s => s.label) };
+        }
+        chart.setOption(option);
+        window._charts[cfg.id] = chart;
+      });
+      } finally {
+        overlay.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>
