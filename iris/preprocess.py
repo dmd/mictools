@@ -5,6 +5,7 @@ import nibabel as nb
 import logging
 
 os.environ["PATH"] += ":/cm/shared/apps/fsl-6.0.7.4/bin"
+os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 
 
 def is_4D(niftifile):
