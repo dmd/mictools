@@ -57,6 +57,14 @@ cp /home/proto/.bash_profile /home/$U
 cp /home/proto/.bashrc /home/$U
 chown $U:$U /home/$U/.cshrc* /home/$U/.bash*
 
+# limit memory use
+newuid=$(id -u $U)
+mkdir -p /etc/systemd/system/user-"$newuid".slice.d
+printf '[Slice]\nMemoryMax=64G\n' \
+    | tee /etc/systemd/system/user-"$newuid".slice.d/override.conf \
+          >/dev/null
+systemctl daemon-reload
+
 ## create nisaba dataset
 API_KEY=$(cat ~ddrucker/truenas/apikey.txt)
 API_URL="https://nisaba.mclean.harvard.edu/api/v2.0"
