@@ -33,6 +33,14 @@ fi
 
 nodes="1 2 3 4"
 nodename=mickey-node
+echo "             ==== ATTENTION ===="
+echo "nisabamount mounts a Nisaba SMB share on Mickey"
+echo "and its compute nodes, for data access convenience."
+echo "The SMB protocol can be slow to commit files to disk,"
+echo "which means it is NOT APPROPRIATE FOR USE in running"
+echo "certain types of jobs, especially fmriprep and FSL."
+echo
+
 
 echo -n "Going to mount //${SERVER}/${SHARENAME} on $(readlink -f $MOUNTPOINT) as $MGBID.  OK? (y/n): "
 read -r answer
