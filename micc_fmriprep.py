@@ -68,7 +68,11 @@ def make_runscript(args, workdir):
 
     if args.force_syn:
         # Check if fmriprep version is 25 or newer
-        if args.fmriprep_version and args.fmriprep_version[:2].isdigit() and int(args.fmriprep_version[:2]) >= 25:
+        if (
+            args.fmriprep_version
+            and args.fmriprep_version[:2].isdigit()
+            and int(args.fmriprep_version[:2]) >= 25
+        ):
             s += ["--force syn-sdc"]
         else:
             s += ["--force-syn"]
@@ -116,6 +120,16 @@ def make_runscript(args, workdir):
 
     script = "#!/bin/bash\n\n" + "\n".join(pre) + "\n" + " \\\n    ".join(s) + "\n"
 
+    if args.email:
+        script += f"""echo "fMRIPrep job ended (successfully or not).
+Host: $(hostname)
+Job ID: $SLURM_JOB_ID
+Job Name: $SLURM_JOB_NAME
+BIDS dir: {args.bidsdir}
+" | mail -S sendwait -s "fMRIprep job $SLURM_JOB_ID ended" {args.email}
+
+"""
+
     _, filename = tempfile.mkstemp()
     with open(filename, "w") as fp:
         fp.write(script)
@@ -152,6 +166,11 @@ if __name__ == "__main__":
     required = parser.add_argument_group("required arguments")
     workdir_group = parser.add_mutually_exclusive_group()
     versioning = parser.add_argument_group("Version")
+
+    parser.add_argument(
+        "--email",
+        help="Email you at given address when the job ends (successfully or not). (Default: off)",
+    )
 
     parser.add_argument(
         "--aroma",

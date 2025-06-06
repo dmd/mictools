@@ -99,6 +99,7 @@ def submit_fmriprep(config, studydir, subject):
         "topup-max-vols",
         "fs-subjects-dir",
         "logs",
+        "email",
     ):
         if args[arg]:
             s += ["--" + arg, str(args[arg])]
