@@ -5,24 +5,19 @@ import sys
 import getpass
 from pathlib import Path
 
-QSUB = "/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qsub"
 SBATCH = "/cm/shared/apps/slurm/current/bin/sbatch"
-if os.path.isfile(QSUB):
-    SYSTYPE = "sge"
-    SUBMITTER = QSUB
-    SINGULARITY = "/usr/bin/singularity"
-else:
-    SYSTYPE = "slurm"
-    SUBMITTER = SBATCH
-    SINGULARITY = "/cm/local/apps/apptainer/current/bin/singularity"
-    if os.getenv("SLURM_JOB_ID"):
-        print(
-            "micc_fmriprep does job submission on your behalf. "
-            "Do not run it as part of a sbatch job; run it in the shell "
-            "on the Mickey head node.",
-            file=sys.stderr,
-        )
-        exit(1)
+
+SYSTYPE = "slurm"
+SUBMITTER = SBATCH
+SINGULARITY = "/cm/local/apps/apptainer/current/bin/singularity"
+if os.getenv("SLURM_JOB_ID"):
+    print(
+        "micc_fmriprep does job submission on your behalf. "
+        "Do not run it as part of a sbatch job; run it in the shell "
+        "on the Mickey head node.",
+        file=sys.stderr,
+    )
+    exit(1)
 
 
 def make_runscript(args, workdir):
@@ -392,10 +387,7 @@ if __name__ == "__main__":
     print(script)
     print("================")
 
-    if SYSTYPE == "sge":
-        sub_cmd = f"{QSUB} -cwd -q fmriprep.q -N {args.jobname} -pe fmriprep {args.ncpus} -w e -R y {filename}".split()
-    elif SYSTYPE == "slurm":
-        sub_cmd = f"{SBATCH} --job-name {args.jobname} --output={logsdir}/%x-%j.out --error={logsdir}/%x-%j.err --time 1-4 --cpus-per-task={args.ncpus} --mem={int(args.ramsize*1.25)}G {filename}".split()
+    sub_cmd = f"{SBATCH} --job-name {args.jobname} --output={logsdir}/%x-%j.out --error={logsdir}/%x-%j.err --time 1-4 --cpus-per-task={args.ncpus} --mem={int(args.ramsize*1.25)}G {filename}".split()
     print(" ".join(sub_cmd))
     if args.dry_run:
         print("NOT running; dry run only.")
