@@ -17,16 +17,11 @@ from converters import convert_to_bids, convert_to_nifti, record_studydir_state
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 
-QSUB = "/cm/shared/apps/sge/2011.11p1/bin/linux-x64/qsub"
 SBATCH = "/cm/shared/apps/slurm/current/bin/sbatch"
-if os.path.isfile(QSUB):
-    SYSTYPE = "sge"
-    MICC_FMRIPREP = "/home/ddrucker/mictools/micc_fmriprep.py"
-    SUB_MATCH = r"Your job (\d{1,7})"
-else:
-    SYSTYPE = "slurm"
-    MICC_FMRIPREP = "/cm/shared/apps/mictools/micc_fmriprep.py"
-    SUB_MATCH = r"Submitted batch job (\d{1,7})"
+SYSTYPE = "slurm"
+MICC_FMRIPREP = "/cm/shared/apps/mictools/micc_fmriprep.py"
+SUB_MATCH = r"Submitted batch job (\d{1,7})"
+sys.path.append("/cm/shared/apps/fsl-6.0.7.4/bin")
 
 
 def task_run(task, studydir, write=False):
