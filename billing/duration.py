@@ -22,6 +22,28 @@ server = f"http://{host}:{port}"
 username, _, password = netrc.netrc("netrc").authenticators(host)
 o = pyorthanc.Orthanc(server, username=username, password=password)
 
+# Cache for billing lookup table
+_billing_lookup = None
+
+
+def load_billing_lookup():
+    """Load the billing lookup table for 94T studies."""
+    lookup_file = "/94tresearch/billing/billinglookup.tsv"
+    lookup_dict = {}
+    
+    try:
+        with open(lookup_file, 'r') as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            for row in reader:
+                study_id = row['StudyID']
+                fund_code = row['FundCode']
+                lookup_dict[study_id] = fund_code
+        logger.info(f"Loaded {len(lookup_dict)} entries from billing lookup table")
+    except Exception as e:
+        logger.warning(f"Failed to load billing lookup table: {e}")
+        
+    return lookup_dict
+
 
 def studies_for_date(study_date):
     query = {"StudyDate": study_date}
@@ -104,6 +126,19 @@ def get_study(study_id):
     }.get(scanner_model, scanner_model)
     data["AccessionNumber"] = study.main_dicom_tags["AccessionNumber"]
     data["patientid"] = study.patient_information["PatientID"]
+    
+    # Handle StudyID lookup for 94T scanner
+    study_id = study.main_dicom_tags.get("StudyID", "missing")
+    if data["scanner"] == "94T" and study_id != "missing":
+        global _billing_lookup
+        if _billing_lookup is None:
+            _billing_lookup = load_billing_lookup()
+        
+        # Use FundCode if found in lookup table, otherwise use original StudyID
+        data["studyid"] = _billing_lookup.get(study_id, study_id)
+    else:
+        data["studyid"] = study_id
+        
     data["protocol"] = study.main_dicom_tags.get("StudyDescription", "missing")
 
     # Format duration as total hours:minutes:seconds
@@ -127,7 +162,7 @@ def main():
         print("Usage: duration.py YYYYMM[DD] | accession_number")
         sys.exit(1)
     arg = sys.argv[1]
-    print("datetime,scanner,accession_number,patientid,protocol,duration")
+    print("datetime,scanner,accession_number,patientid,studyid,protocol,duration")
     if arg.startswith("E"):
         get_study(arg)
     elif len(arg) == 6:
