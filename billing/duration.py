@@ -8,7 +8,13 @@ import requests
 import pyorthanc
 import httpx
 import time
+import logging
 
+
+logging.basicConfig(
+    level=logging.WARNING, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 host = "micvna.mclean.harvard.edu"
 port = 8042
@@ -32,10 +38,10 @@ def duration(study):
                 json={"Resources": [study.identifier], "Level": "Instance"},
                 auth=(username, password),
             ).json()
-            print(f"Getting {study.identifier}", file=sys.stderr)
+            logger.info(f"Getting {study.identifier}")
             break
         except Exception as e:
-            print(f"Error: {e}, retrying in 1 second...", file=sys.stderr)
+            logger.warning(f"Warning: {e}, retrying in 1 second...")
             time.sleep(1)
 
     instance_creation_datetimes = []
@@ -72,7 +78,7 @@ def get_study(study_id):
         query = {"AccessionNumber": accnum}
         studies = pyorthanc.find_studies(client=o, query=query)
         if len(studies) == 0:
-            print(f"No studies found with query {repr(query)}")
+            logger.error(f"No studies found with query {repr(query)}")
             sys.exit(1)
         study = studies[0]
     else:
