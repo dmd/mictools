@@ -59,12 +59,12 @@ if (
     and not args.noauthfile
     and args.username == getpass.getuser()
 ):
-    print("Using .xnat_auth file for login. Use --noauthfile to override.")
+    print("Using .xnat_auth file for login. Use --noauthfile to override.", file=sys.stderr)
     auth_username, password = read_auth_file()
     if auth_username and password:
         args.username = auth_username
     else:
-        print("Failed to read credentials from .xnat_auth file.")
+        print("Failed to read credentials from .xnat_auth file.", file=sys.stderr)
 
 if not password:
     password = getpass.getpass(f"Iris password for {args.username}: ")
@@ -75,9 +75,9 @@ r = requests.get(
 )
 
 if not r.ok:
-    print("Something went wrong.")
+    print("Something went wrong.", file=sys.stderr)
     if args.v:
-        print(r.text)
+        print(r.text, file=sys.stderr)
     sys.exit(1)
 
 sessions = sorted(
