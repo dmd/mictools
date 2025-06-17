@@ -75,7 +75,7 @@ def extract_study_data(studies):
             "DateTime": format_datetime(study_date, study_time),
             "StudyID": main_tags.get("StudyID", ""),
             "PatientID": patient_tags.get("PatientID", ""),
-            "PatientName": patient_tags.get("PatientName", ""),
+            "PatientName": patient_tags.get("PatientName", "").replace("^",""),
             "Identifier": identifier,
             "RawStudyDate": study_date,
             "RawStudyTime": study_time
