@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+
+import sys, os, zipfile, requests, signal
+
+if len(sys.argv) != 2:
+    print("Usage: python3 94t-get.py <StudyInstanceUID>")
+    sys.exit(1)
+
+identifier = sys.argv[1]
+
+# Set NETRC environment variable to point to our secret file
+os.environ['NETRC'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), "94t-get.secret")
+zip_file = f"/tmp/{identifier}.zip"
+
+def cleanup(signum=None, frame=None):
+    if os.path.exists(zip_file):
+        os.remove(zip_file)
+    sys.exit(1)
+
+signal.signal(signal.SIGINT, cleanup)
+
+def fetch_orthanc_id(field):
+    try:
+        r = requests.post("https://94tvna.mclean.harvard.edu/tools/find", 
+                         json={"Level": "Study", "Query": {field: identifier}})
+        data = r.json()
+        return data[0] if data else None
+    except:
+        return None
+
+orthanc_id = fetch_orthanc_id("AccessionNumber") or fetch_orthanc_id("StudyInstanceUID")
+if not orthanc_id:
+    print(f"Failed to find Orthanc ID for {identifier}")
+    sys.exit(1)
+
+try:
+    print(f"Downloading {identifier}...")
+    r = requests.get(f"https://94tvna.mclean.harvard.edu/studies/{orthanc_id}/archive")
+    r.raise_for_status()
+    with open(zip_file, 'wb') as f:
+        f.write(r.content)
+    
+    if os.path.getsize(zip_file) == 0:
+        raise Exception("Empty zip file")
+    
+    os.makedirs(identifier, exist_ok=True)
+    with zipfile.ZipFile(zip_file, 'r') as z:
+        z.extractall(identifier)
+    
+    os.remove(zip_file)
+    print(f"Successfully downloaded and unzipped the data into {identifier}")
+    
+except Exception as e:
+    if os.path.exists(zip_file):
+        os.remove(zip_file)
+    print(f"Error: {e}")
+    sys.exit(1)

@@ -1,0 +1,119 @@
+#!/cm/shared/apps/miniforge3/envs/iris/bin/python
+
+import argparse
+import json
+import os
+import requests
+import sys
+from datetime import datetime, timedelta
+from tabulate import tabulate
+
+def get_date_two_weeks_ago():
+    """Calculate date two weeks ago in YYYYMMDD format."""
+    two_weeks_ago = datetime.now() - timedelta(days=14)
+    return two_weeks_ago.strftime("%Y%m%d")
+
+def setup_netrc():
+    """Set up NETRC environment variable if not already set."""
+    if "NETRC" not in os.environ:
+        netrc_path = os.path.join(os.path.dirname(__file__), "94t-get.secret")
+        if os.path.exists(netrc_path):
+            os.environ["NETRC"] = netrc_path
+
+def query_database(date_str):
+    """Query the MRI database for studies since the given date."""
+    url = "https://94tvna.mclean.harvard.edu/tools/find"
+    payload = {
+        "Level": "Study",
+        "Expand": True,
+        "Query": {
+            "StudyDate": f"{date_str}-"
+        }
+    }
+    
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error querying database: {e}", file=sys.stderr)
+        sys.exit(1)
+
+def format_datetime(date_str, time_str):
+    """Format StudyDate and StudyTime into YYYY-MM-DD HH:MM format."""
+    formatted_date = ""
+    formatted_time = ""
+    
+    if len(date_str) == 8:
+        formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+    else:
+        formatted_date = date_str
+    
+    if len(time_str) >= 4:
+        formatted_time = f"{time_str[:2]}:{time_str[2:4]}"
+    else:
+        formatted_time = time_str
+    
+    return f"{formatted_date} {formatted_time}".strip()
+
+def extract_study_data(studies):
+    """Extract required columns from study data."""
+    rows = []
+    
+    for study in studies:
+        main_tags = study.get("MainDicomTags", {})
+        patient_tags = study.get("PatientMainDicomTags", {})
+        
+        # Get identifier: AccessionNumber if exists and not blank, otherwise StudyInstanceUID
+        accession_number = main_tags.get("AccessionNumber", "").strip()
+        identifier = accession_number if accession_number else main_tags.get("StudyInstanceUID", "")
+        
+        study_date = main_tags.get("StudyDate", "")
+        study_time = main_tags.get("StudyTime", "")
+        
+        row = {
+            "DateTime": format_datetime(study_date, study_time),
+            "StudyID": main_tags.get("StudyID", ""),
+            "PatientID": patient_tags.get("PatientID", ""),
+            "PatientName": patient_tags.get("PatientName", ""),
+            "Identifier": identifier,
+            "RawStudyDate": study_date,
+            "RawStudyTime": study_time
+        }
+        rows.append(row)
+    
+    return rows
+
+def main():
+    parser = argparse.ArgumentParser(description="List MRI studies in table format")
+    parser.add_argument("date", nargs="?", help="Date in YYYYMMDD format (default: two weeks ago)")
+    args = parser.parse_args()
+    
+    # Determine the date to use
+    if args.date:
+        date_str = args.date
+    else:
+        date_str = get_date_two_weeks_ago()
+    
+    # Set up NETRC authentication
+    setup_netrc()
+    
+    # Query the database
+    studies = query_database(date_str)
+    
+    # Extract data
+    rows = extract_study_data(studies)
+    
+    # Sort by StudyDate and StudyTime in descending order
+    rows.sort(key=lambda x: (x["RawStudyDate"], x["RawStudyTime"]), reverse=True)
+    
+    # Display as table
+    if rows:
+        headers = ["DateTime", "StudyID", "PatientID", "PatientName", "Identifier"]
+        table_data = [[row[col] for col in headers] for row in rows]
+        print(tabulate(table_data, headers=headers, tablefmt="plain"))
+    else:
+        print(f"No studies found since {date_str}")
+
+if __name__ == "__main__":
+    main()
