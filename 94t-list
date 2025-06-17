@@ -110,8 +110,9 @@ def main():
     # Display as table
     if rows:
         headers = ["DateTime", "StudyID", "PatientID", "PatientName", "Identifier"]
+        bold_headers = [f"\033[1m{header}\033[0m" for header in headers]
         table_data = [[row[col] for col in headers] for row in rows]
-        print(tabulate(table_data, headers=headers, tablefmt="plain"))
+        print(tabulate(table_data, headers=bold_headers, tablefmt="plain"))
     else:
         print(f"No studies found since {date_str}")
 
