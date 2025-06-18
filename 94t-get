@@ -9,7 +9,7 @@ if len(sys.argv) != 2:
 identifier = sys.argv[1]
 
 # Set NETRC environment variable to point to our secret file
-os.environ['NETRC'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), "94t-get.secret")
+os.environ['NETRC'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".94tsecret")
 zip_file = f"/tmp/{identifier}.zip"
 
 def cleanup(signum=None, frame=None):

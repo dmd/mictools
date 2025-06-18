@@ -16,7 +16,7 @@ def get_date_two_weeks_ago():
 def setup_netrc():
     """Set up NETRC environment variable if not already set."""
     if "NETRC" not in os.environ:
-        netrc_path = os.path.join(os.path.dirname(__file__), "94t-get.secret")
+        netrc_path = os.path.join(os.path.dirname(__file__), ".94tsecret")
         if os.path.exists(netrc_path):
             os.environ["NETRC"] = netrc_path
 
