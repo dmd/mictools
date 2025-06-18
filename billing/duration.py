@@ -9,6 +9,7 @@ import pyorthanc
 import httpx
 import time
 import logging
+import os
 
 
 logging.basicConfig(
@@ -19,7 +20,12 @@ logger = logging.getLogger(__name__)
 host = "micvna.mclean.harvard.edu"
 port = 8042
 server = f"http://{host}:{port}"
-username, _, password = netrc.netrc("netrc").authenticators(host)
+
+try:
+    netrc_file = os.path.expanduser("~/.netrc")
+    username, _, password = netrc.netrc(netrc_file).authenticators(host)
+except (FileNotFoundError, TypeError):
+    username, _, password = netrc.netrc("netrc").authenticators(host)
 o = pyorthanc.Orthanc(server, username=username, password=password)
 
 
