@@ -143,7 +143,10 @@ def process_date_arg(
                 print(acc)
                 _process_study(study, conn)
     else:
-        print(f"Invalid date token '{date_token}'. Expected YYYYMM or YYYYMMDD.", file=sys.stderr)
+        print(
+            f"Invalid date token '{date_token}'. Expected YYYYMM or YYYYMMDD.",
+            file=sys.stderr,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -222,7 +225,9 @@ def get_db_connection(db_path: str = DEFAULT_DB_PATH) -> sqlite3.Connection:
 def accession_exists(conn: sqlite3.Connection, accession: str) -> bool:
     """Return *True* if *accession* is already present in *studies* table."""
 
-    cur = conn.execute("SELECT 1 FROM studies WHERE accession = ? LIMIT 1", (accession,))
+    cur = conn.execute(
+        "SELECT 1 FROM studies WHERE accession = ? LIMIT 1", (accession,)
+    )
     return cur.fetchone() is not None
 
 
@@ -506,7 +511,9 @@ def _process_study(study: pyorthanc.Study, conn: sqlite3.Connection) -> None:
 # Public helper --------------------------------------------------------------
 
 
-def store_study(accession: str, conn: sqlite3.Connection, *, force: bool = False) -> None:
+def store_study(
+    accession: str, conn: sqlite3.Connection, *, force: bool = False
+) -> None:
     """Locate study by *accession* and store its information.
 
     Behaviour is influenced by *force*:
@@ -526,7 +533,9 @@ def store_study(accession: str, conn: sqlite3.Connection, *, force: bool = False
         # Remove stale data before re-importing.
         purge_accession(conn, accession)
 
-    studies = pyorthanc.find_studies(client=ORTHANC, query={"AccessionNumber": accession})
+    studies = pyorthanc.find_studies(
+        client=ORTHANC, query={"AccessionNumber": accession}
+    )
 
     if not studies:
         print(f"No study found for accession number {accession}", file=sys.stderr)
@@ -541,7 +550,9 @@ def store_study(accession: str, conn: sqlite3.Connection, *, force: bool = False
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Store DICOM demographics and SAR information in SQLite.")
+    parser = argparse.ArgumentParser(
+        description="Store DICOM demographics and SAR information in SQLite."
+    )
     parser.add_argument(
         "tokens",
         nargs="+",
