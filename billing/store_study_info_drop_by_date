@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Usage check
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+  echo "Usage: $0 STUDY_DATE [DB_FILE]" >&2
+  echo "  STUDY_DATE: study_date to delete (e.g. 202506 or 20250615)" >&2
+  echo "  DB_FILE   : path to SQLite DB (default: study_info.db)" >&2
+  exit 1
+fi
+
+STUDY_DATE="$1"
+DB_FILE="${2:-study_info.db}"
+
+# Verify sqlite3 is available
+if ! command -v sqlite3 >/dev/null 2>&1; then
+  echo "Error: sqlite3 command not found. Install sqlite3 and retry." >&2
+  exit 2
+fi
+
+# Confirm database file exists
+if [ ! -f "$DB_FILE" ]; then
+  echo "Error: database file '$DB_FILE' not found." >&2
+  exit 3
+fi
+
+# Perform deletion in a transaction
+sqlite3 "$DB_FILE" <<EOF
+PRAGMA foreign_keys = OFF;
+BEGIN TRANSACTION;
+DELETE FROM series
+ WHERE accession IN (
+   SELECT accession
+     FROM studies
+    WHERE study_date = '$STUDY_DATE'
+ );
+DELETE FROM studies
+ WHERE study_date = '$STUDY_DATE';
+COMMIT;
+PRAGMA foreign_keys = ON;
+EOF
+
+echo "Removed all studies and associated series for study_date = '$STUDY_DATE' from '$DB_FILE'."
