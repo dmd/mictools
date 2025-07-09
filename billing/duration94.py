@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 host = "94tvna.mclean.harvard.edu"
 port = 8042
 server = f"http://{host}:{port}"
+FALLBACK_RATE = 9999
 
 try:
     netrc_file = os.path.expanduser("~/.netrc")
@@ -54,11 +55,11 @@ def load_billing_lookup():
                         study_id = row["StudyID"]
                         fund_code = row["FundCode"]
                         pi_name = row["PIName"]
-                        rate = row.get("Rate", "600")  # Default to 600 if Rate column missing
+                        rate = row["Rate"]
                         lookup_dict[study_id] = {
                             "FundCode": fund_code,
                             "PIName": pi_name,
-                            "Rate": int(rate) if rate.isdigit() else 600,
+                            "Rate": int(rate) if rate.isdigit() else FALLBACK_RATE,
                         }
                 logger.info(
                     f"Loaded {len(lookup_dict)} entries from billing lookup table at {lookup_file}"
@@ -185,11 +186,11 @@ def get_study(study_id):
         else:
             grant = study_id_tag
             pi_name = "UNKNOWN"
-            rate = 600
+            rate = FALLBACK_RATE
     else:
         grant = study_id_tag
         pi_name = "UNKNOWN"
-        rate = 600
+        rate = FALLBACK_RATE
 
     # Get duration and start time
     study_duration, start_time = duration(study)
