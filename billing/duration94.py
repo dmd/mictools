@@ -54,9 +54,11 @@ def load_billing_lookup():
                         study_id = row["StudyID"]
                         fund_code = row["FundCode"]
                         pi_name = row["PIName"]
+                        rate = row.get("Rate", "600")  # Default to 600 if Rate column missing
                         lookup_dict[study_id] = {
                             "FundCode": fund_code,
                             "PIName": pi_name,
+                            "Rate": int(rate) if rate.isdigit() else 600,
                         }
                 logger.info(
                     f"Loaded {len(lookup_dict)} entries from billing lookup table at {lookup_file}"
@@ -179,12 +181,15 @@ def get_study(study_id):
         if lookup_entry:
             grant = lookup_entry["FundCode"]
             pi_name = lookup_entry["PIName"]
+            rate = lookup_entry["Rate"]
         else:
             grant = study_id_tag
             pi_name = "UNKNOWN"
+            rate = 600
     else:
         grant = study_id_tag
         pi_name = "UNKNOWN"
+        rate = 600
 
     # Get duration and start time
     study_duration, start_time = duration(study)
@@ -193,7 +198,6 @@ def get_study(study_id):
 
     # Calculate fields
     company = 1600
-    rate = 600
     total_hours = study_duration.total_seconds() / 3600
     quantity = math.ceil(total_hours * 4) / 4  # Round up to nearest 0.25
     total = rate * quantity
@@ -241,7 +245,6 @@ def main():
         print("Usage: duration94.py YYYYMM[DD] | accession_number")
         sys.exit(1)
     arg = sys.argv[1]
-    # Print header
     print("COMPANY,GRANT#,SERVICE,RATE,QUANTITY,PI,INVOICE#,TOTAL,COMMENT,RUNDATE")
     if arg.startswith("9T"):
         get_study(arg)
