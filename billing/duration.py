@@ -5,6 +5,7 @@ import csv
 import datetime
 import httpx
 import logging
+import pyorthanc
 from duration_utils import (
     setup_orthanc_connection,
     studies_for_date,
@@ -24,11 +25,14 @@ port = 8042
 o, server, username, password = setup_orthanc_connection(host, port)
 
 
-def studies_for_date_filtered(study_date):
-    return studies_for_date(study_date, o, {"AccessionNumber": "E*"})
+def studies_for_date_filtered(study_date, qa_mode=False):
+    if qa_mode:
+        return studies_for_date(study_date, o)
+    else:
+        return studies_for_date(study_date, o, {"AccessionNumber": "E*"})
 
 
-def get_study(study_id):
+def get_study(study_id, qa_mode=False):
     if type(study_id) == str and study_id.startswith("E"):
         accnum = study_id
         query = {"AccessionNumber": accnum}
@@ -41,6 +45,11 @@ def get_study(study_id):
         study = study_id
 
     data = {}
+    
+    # In QA mode, skip studies that start with "E"
+    if qa_mode and study.main_dicom_tags["AccessionNumber"].startswith("E"):
+        return
+    
     data["date"] = study.date
     scanner_model = "?"
     # not every instance has the scanner model, so we need to loop through all instances
@@ -72,18 +81,32 @@ def get_study(study_id):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: duration.py YYYYMM[DD] | accession_number")
+    qa_mode = False
+    args = sys.argv[1:]
+    
+    # Check for --qa flag
+    if "--qa" in args:
+        qa_mode = True
+        args.remove("--qa")
+    
+    if len(args) != 1:
+        print("Usage: duration.py [--qa] YYYYMM[DD] | accession_number")
+        print("  --qa: Include only QA scans (non-E accession numbers)")
         sys.exit(1)
-    arg = sys.argv[1]
+    
+    arg = args[0]
     print("datetime,scanner,accession_number,patientid,protocol,duration")
+    
     if arg.startswith("E"):
-        get_study(arg)
+        if qa_mode:
+            print("Cannot use --qa flag with E accession numbers", file=sys.stderr)
+            sys.exit(1)
+        get_study(arg, qa_mode)
     else:
         dates = parse_date_range(arg)
         for date in dates:
-            for study in studies_for_date_filtered(date):
-                get_study(study)
+            for study in studies_for_date_filtered(date, qa_mode):
+                get_study(study, qa_mode)
 
 
 if __name__ == "__main__":
