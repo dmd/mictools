@@ -3,13 +3,15 @@
 import sys
 import csv
 import datetime
-import netrc
-import requests
-import pyorthanc
-import time
 import logging
 import math
 import os
+from duration_utils import (
+    setup_orthanc_connection,
+    studies_for_date,
+    duration,
+    parse_date_range,
+)
 
 
 logging.basicConfig(
@@ -19,15 +21,9 @@ logger = logging.getLogger(__name__)
 
 host = "94tvna.mclean.harvard.edu"
 port = 8042
-server = f"http://{host}:{port}"
 FALLBACK_RATE = 9999
 
-try:
-    netrc_file = os.path.expanduser("~/.netrc")
-    username, _, password = netrc.netrc(netrc_file).authenticators(host)
-except (FileNotFoundError, TypeError):
-    username, _, password = netrc.netrc("netrc").authenticators(host)
-o = pyorthanc.Orthanc(server, username=username, password=password)
+o, server, username, password = setup_orthanc_connection(host, port)
 
 # Cache for billing lookup table
 _billing_lookup = None
@@ -77,57 +73,6 @@ def load_billing_lookup():
     return lookup_dict
 
 
-def studies_for_date(study_date):
-    query = {"StudyDate": study_date}
-    studies = pyorthanc.find_studies(client=o, query=query)
-    return sorted(studies, key=lambda study: study.date)
-
-
-def duration(study):
-    # Use bulk-content as it's vastly faster than the pyorthanc method; retry on transient connection errors.
-    while True:
-        try:
-            data = requests.post(
-                server + "/tools/bulk-content",
-                json={"Resources": [study.identifier], "Level": "Instance"},
-                auth=(username, password),
-            ).json()
-            logger.info(f"Getting {study.identifier}")
-            break
-        except Exception as e:
-            logger.warning(f"Warning: {e}, retrying in 1 second...")
-            time.sleep(1)
-
-    instance_creation_datetimes = []
-
-    for item in data:
-        if (
-            "MainDicomTags" in item
-            and "InstanceCreationDate" in item["MainDicomTags"]
-            and "InstanceCreationTime" in item["MainDicomTags"]
-        ):
-            datetime_str = (
-                item["MainDicomTags"]["InstanceCreationDate"]
-                + item["MainDicomTags"]["InstanceCreationTime"]
-            )
-
-            # Try both formats - with and without microseconds
-            for fmt in ["%Y%m%d%H%M%S.%f", "%Y%m%d%H%M%S"]:
-                try:
-                    dt = datetime.datetime.strptime(datetime_str, fmt)
-                    instance_creation_datetimes.append(dt)
-                    break
-                except ValueError:
-                    continue
-
-    try:
-        return max(instance_creation_datetimes) - min(instance_creation_datetimes), min(
-            instance_creation_datetimes
-        )
-    except ValueError:
-        return 0, None
-
-
 def calculate_invoice_number(scan_date):
     """Calculate invoice number: 116 + months since May 2025"""
     may_2025 = datetime.date(2025, 5, 1)
@@ -165,7 +110,7 @@ def get_study(study):
         rate = FALLBACK_RATE
 
     # Get duration and start time
-    study_duration, start_time = duration(study)
+    study_duration, start_time = duration(study, server, username, password)
     if study_duration == 0 or start_time is None:
         return  # Skip studies with 0 duration
 
@@ -219,25 +164,10 @@ def main():
         sys.exit(1)
     arg = sys.argv[1]
     print("COMPANY,GRANT#,SERVICE,RATE,QUANTITY,PI,INVOICE#,TOTAL,COMMENT,RUNDATE")
-    if len(arg) == 6:
-        year, month = int(arg[:4]), int(arg[4:6])
-        # Handle December properly by rolling over to the next year
-        if month == 12:
-            next_year, next_month = year + 1, 1
-        else:
-            next_year, next_month = year, month + 1
 
-        for day in range(
-            1,
-            (
-                datetime.date(next_year, next_month, 1) - datetime.date(year, month, 1)
-            ).days
-            + 1,
-        ):
-            for study in studies_for_date(f"{year:04d}{month:02d}{day:02d}"):
-                get_study(study)
-    else:
-        for study in studies_for_date(arg):
+    dates = parse_date_range(arg)
+    for date in dates:
+        for study in studies_for_date(date, o):
             get_study(study)
 
 
