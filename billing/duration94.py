@@ -86,7 +86,7 @@ def calculate_invoice_number(scan_date):
 
 
 def get_study(study):
-    service = "94"
+    service = "94T"
 
     # Handle StudyID lookup for 94T scanner
     study_id_tag = study.main_dicom_tags.get("StudyID", "missing")
