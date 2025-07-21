@@ -127,9 +127,9 @@ def get_study(study):
     # Format comment components
     start_time_formatted = start_time.strftime("%y%m%d%H%M")  # YYMMDDHHmm format
 
-    # StudyID after underscore, truncated at 6 characters
+    # StudyID after underscore, truncated at 3 characters
     study_id_part = (
-        study_id_tag.split("_")[-1][:6] if "_" in study_id_tag else study_id_tag[:6]
+        study_id_tag.split("_")[-1][:3] if "_" in study_id_tag else study_id_tag[:3]
     )
 
     # First 4 characters of PI
