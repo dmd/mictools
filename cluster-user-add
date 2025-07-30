@@ -103,12 +103,12 @@ $CMSH -c "category ; foreach -v compute nogpu (fsmounts; add ${MOUNT_POINT} ; se
 
 while ! ( pdsh -N -w mickey-node1 "findmnt -no SOURCE /data/$U" | grep -q nisaba )
 do
-  echo waiting for mount of $U on compute node
+  echo waiting for mount of $U on gpu node
   sleep 10
 done
 while ! ( pdsh -N -w mickey-node4 "findmnt -no SOURCE /data/$U" | grep -q nisaba )
 do
-  echo waiting for mount of $U on gpu node
+  echo waiting for mount of $U on nogpu node
   sleep 5
 done
 
