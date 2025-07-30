@@ -65,6 +65,11 @@ printf '[Slice]\nMemoryMax=64G\n' \
           >/dev/null
 systemctl daemon-reload
 
+echo Setting up slurm...
+yes | sacctmgr add user $U Cluster=slurm Account=mic
+sleep 1
+yes | sacctmgr modify user $U set fairshare=100
+
 ## create nisaba dataset
 API_KEY=$(cat ~ddrucker/truenas/apikey.txt)
 API_URL="https://nisaba.mclean.harvard.edu/api/v2.0"
@@ -86,8 +91,8 @@ $CMSH -c "device; use mickey; fsmounts; add ${MOUNT_POINT} ; set device nisaba.c
 
 while !  mount | grep "${POOL_DATASET_PATH} on"
 do
-    echo waiting for mount of $U
-    sleep 5
+    echo waiting for mount of $U on head node
+    sleep 10
 done
 
 chmod 770 ${MOUNT_POINT}
@@ -96,11 +101,23 @@ chown $U:$U ${MOUNT_POINT}
 ## mount on nodes
 $CMSH -c "category ; foreach -v compute nogpu (fsmounts; add ${MOUNT_POINT} ; set device nisaba.cm.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit; commit;)"
 
-## set up slurm
-if getent group $U >/dev/null; then
-    echo Setting up slurm...
-    yes | sacctmgr add user $U Cluster=slurm Account=mic
-    yes | sacctmgr modify user $U set fairshare=100
+while ! ( pdsh -N -w mickey-node1 "findmnt -no SOURCE /data/$U" | grep -q nisaba )
+do
+  echo waiting for mount of $U on compute node
+  sleep 10
+done
+while ! ( pdsh -N -w mickey-node4 "findmnt -no SOURCE /data/$U" | grep -q nisaba )
+do
+  echo waiting for mount of $U on gpu node
+  sleep 5
+done
+
+raw_shares=$(sshare -A mic -U -u $U -o RawShares -nP)
+if [ "$raw_shares" = "100" ]; then
+  echo "sacctmgr ran ok"
+else
+  echo "ERROR: RawShares for $U is '$raw_shares' (expected 100)." >&2
+  exit 1
 fi
 
 
