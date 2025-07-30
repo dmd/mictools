@@ -94,7 +94,7 @@ chmod 770 ${MOUNT_POINT}
 chown $U:$U ${MOUNT_POINT}
 
 ## mount on nodes
-$CMSH -c "category ; foreach -v compute-2023-03-28 nogpu-20240316 compute nogpu (fsmounts; add ${MOUNT_POINT} ; set device nisaba.cm.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit; commit;)"
+$CMSH -c "category ; foreach -v compute nogpu (fsmounts; add ${MOUNT_POINT} ; set device nisaba.cm.cluster:/mnt/${POOL_DATASET_PATH} ; set filesystem nfs; commit; commit; commit;)"
 
 ## set up slurm
 if getent group $U >/dev/null; then
