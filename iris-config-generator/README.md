@@ -1,5 +1,12 @@
 # iris-fmriprep Configuration Generator
 
+> [!CAUTION]
+> This entire tool was [vibe coded](https://en.wikipedia.org/wiki/Vibe_coding) with [Claude Code](https://www.anthropic.com/claude-code). No human has ever looked at the source code.
+>
+>  Be sure the YAML output makes sense to you before actually using it.
+> 
+> It **cannot** read or change your files - it only gets the filename listings.
+
 A web-based tool for generating YAML configuration files for iris-fmriprep processing. This tool helps users create properly formatted configuration files by providing an intuitive interface for mapping scan names to BIDS-compliant naming conventions and configuring fMRIPrep processing options.
 
 ## Features
