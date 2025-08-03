@@ -194,17 +194,33 @@ iris-fmriprep is expecting a directory with a single directory inside named scan
     required.add_argument(
         "--config",
         "-c",
-        required=True,
         help="Path to YAML config file.",
     )
-    required.add_argument("--subject", "-s", required=True, help="Subject number.")
+    required.add_argument("--subject", "-s", help="Subject number.")
     parser.add_argument("--session", "-e", help="Session number.", default=None)
+    parser.add_argument(
+        "--nifti",
+        action="store_true",
+        help="Convert DICOM to NIfTI only (equivalent to config with 'run: nifti'). When used, --config and --subject are optional.",
+    )
     required.add_argument(
         "studydir", help="Path to study received from Iris (dicom dir)."
     )
     args = parser.parse_args()
 
-    config = yaml.safe_load(open(args.config))
+    # Handle --nifti flag
+    if args.nifti:
+        config = {"run": "nifti"}
+        if not args.subject:
+            args.subject = "dummy"
+    else:
+        # Original behavior - require config and subject
+        if not args.config:
+            parser.error("--config is required when --nifti is not specified")
+        if not args.subject:
+            parser.error("--subject is required when --nifti is not specified")
+        config = yaml.safe_load(open(args.config))
+
     tasks = task_select(config.get("run", "none"))
 
     if tasks["nifti"] and not task_run("nifti", args.studydir):
