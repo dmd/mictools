@@ -65,7 +65,7 @@ class ScanParser {
     }
 
     /**
-     * Categorize scans by type (anat, func, fmap, etc.)
+     * Categorize scans by type (anat, func, fmap, etc.) and apply final_scan logic
      */
     categorizeScanTypes() {
         const categories = {
@@ -101,31 +101,129 @@ class ScanParser {
             ]
         };
 
-        this.scans.forEach((scan, index) => {
-            let categorized = false;
+        // First, group scans by base name (before the final number)
+        const scanGroups = this.groupScansByBaseName();
+
+        // For each group, apply final_scan logic and create one entry per base name
+        Object.entries(scanGroups).forEach(([baseName, scans]) => {
+            const finalScans = this.applyFinalScanLogic(scans);
             
-            for (const [category, patternList] of Object.entries(patterns)) {
-                if (patternList.some(pattern => pattern.test(scan))) {
-                    categories[category].push({
-                        originalName: scan,
-                        index: index,
-                        isMultiEcho: this.isMultiEcho(scan)
-                    });
-                    categorized = true;
-                    break;
+            // Only need to categorize once per base name (not per individual scan)
+            if (finalScans.length > 0) {
+                const representativeScan = finalScans[0]; // Use first scan for pattern matching
+                let categorized = false;
+                
+                for (const [category, patternList] of Object.entries(patterns)) {
+                    if (patternList.some(pattern => pattern.test(representativeScan))) {
+                        categories[category].push({
+                            yamlKey: baseName,  // This is what goes in YAML
+                            displayName: baseName, // This is what user sees
+                            finalScans: finalScans, // The actual scans that would be processed
+                            isMultiEcho: finalScans.some(scan => this.isMultiEcho(scan)),
+                            scanCount: scans.length // How many scans were in this group
+                        });
+                        categorized = true;
+                        break;
+                    }
                 }
-            }
-            
-            if (!categorized) {
-                categories.other.push({
-                    originalName: scan,
-                    index: index,
-                    isMultiEcho: this.isMultiEcho(scan)
-                });
+                
+                if (!categorized) {
+                    categories.other.push({
+                        yamlKey: baseName,
+                        displayName: baseName,
+                        finalScans: finalScans,
+                        isMultiEcho: finalScans.some(scan => this.isMultiEcho(scan)),
+                        scanCount: scans.length
+                    });
+                }
             }
         });
 
         return categories;
+    }
+
+    /**
+     * Group scans by base name (mimicking converters.py logic)
+     * The base name is what goes in the YAML - without trailing numbers or echo suffixes
+     */
+    groupScansByBaseName() {
+        const groups = {};
+        
+        this.scans.forEach(scan => {
+            // Extract base name by removing the final number and echo suffixes
+            // This matches the logic in converters.py where scanname is used in glob(scanname + "*[0-9].nii.gz")
+            let baseName;
+            
+            // Check if it's a multi-echo scan: name_number_eX[_suffix] -> name
+            const multiEchoMatch = scan.match(/^(.+)_\d+_e\d+(?:_\w+)?$/);
+            if (multiEchoMatch) {
+                baseName = multiEchoMatch[1];
+            } else {
+                // Regular scan: name_number[_suffix] -> name
+                const regularMatch = scan.match(/^(.+)_\d+(?:_\w+)?$/);
+                if (regularMatch) {
+                    baseName = regularMatch[1];
+                } else {
+                    // No number at the end, treat as unique
+                    baseName = scan;
+                }
+            }
+            
+            if (!groups[baseName]) {
+                groups[baseName] = [];
+            }
+            groups[baseName].push(scan);
+        });
+        
+        return groups;
+    }
+
+    /**
+     * Apply final_scan logic from converters.py
+     */
+    applyFinalScanLogic(scans) {
+        if (scans.length <= 1) {
+            return scans;
+        }
+
+        // Check if these are multi-echo scans (may have suffixes like _ph)
+        const isMultiEcho = scans.some(scan => /_e\d+(?:_\w+)?$/.test(scan));
+        
+        const files = {};
+        
+        scans.forEach(scan => {
+            let match;
+            if (isMultiEcho) {
+                // Multi-echo pattern: _(\d+)_e\d+[_suffix]$
+                match = scan.match(/_(\d+)_e\d+(?:_\w+)?$/);
+            } else {
+                // Regular pattern: _(\d+)[_suffix]$
+                match = scan.match(/_(\d+)(?:_\w+)?$/);
+            }
+            
+            if (match) {
+                const fid = parseInt(match[1]);
+                
+                // Ignore files with numbers >= 1000 (as in converters.py)
+                if (fid >= 1000) {
+                    return;
+                }
+                
+                if (!files[fid]) {
+                    files[fid] = [];
+                }
+                files[fid].push(scan);
+            }
+        });
+        
+        // Get the highest numbered group
+        const ids = Object.keys(files).map(id => parseInt(id)).sort((a, b) => a - b);
+        if (ids.length === 0) {
+            return scans; // Fallback if no numbered scans found
+        }
+        
+        const highestId = ids[ids.length - 1];
+        return files[highestId].sort();
     }
 
     /**
@@ -221,28 +319,17 @@ class ScanParser {
 
         Object.entries(this.analysisResults.scanTypes).forEach(([category, scans]) => {
             scans.forEach(scanInfo => {
-                const originalName = scanInfo.originalName;
-                const bidsName = this.suggestBIDSName(originalName, category);
+                const yamlKey = scanInfo.yamlKey;
+                const representativeScan = scanInfo.finalScans[0]; // Use first scan for pattern matching
+                const bidsName = this.suggestBIDSName(representativeScan, category);
                 
                 if (bidsName) {
-                    // For multi-echo, use the base name without echo number
-                    const keyName = scanInfo.isMultiEcho ? 
-                        this.getMultiEchoBaseName(originalName) : originalName;
-                    suggestions[category][keyName] = bidsName;
+                    suggestions[category][yamlKey] = bidsName;
                 }
             });
         });
 
         return suggestions;
-    }
-
-    /**
-     * Get base name for multi-echo scans
-     */
-    getMultiEchoBaseName(scanName) {
-        const multiEchoPattern = /^(.+)_(\d+)_e\d+/;
-        const match = scanName.match(multiEchoPattern);
-        return match ? `${match[1]}_${match[2]}` : scanName;
     }
 
     /**

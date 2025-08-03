@@ -239,10 +239,18 @@ class IrisConfigApp {
         // Generate initial BIDS suggestions
         const suggestions = this.scanParser.generateBIDSSuggestions();
         
-        // Update config with suggestions
+        // Update config with suggestions, but exclude auto-ignored scans
         Object.entries(suggestions).forEach(([category, mappings]) => {
-            if (Object.keys(mappings).length > 0) {
-                this.configGenerator.updateBIDSNames(category, mappings);
+            const filteredMappings = {};
+            Object.entries(mappings).forEach(([scanName, bidsName]) => {
+                // Check if this scan should be auto-ignored
+                if (!/scout|localizer/i.test(scanName)) {
+                    filteredMappings[scanName] = bidsName;
+                }
+            });
+            
+            if (Object.keys(filteredMappings).length > 0) {
+                this.configGenerator.updateBIDSNames(category, filteredMappings);
             }
         });
     }
@@ -265,7 +273,8 @@ class IrisConfigApp {
                 
                 scans.forEach(scan => {
                     const isMultiEcho = scan.isMultiEcho ? ' <span class="badge bg-info">Multi-echo</span>' : '';
-                    html += `<li class="list-group-item py-1 px-2 small">${scan.originalName}${isMultiEcho}</li>`;
+                    const scanCount = scan.scanCount > 1 ? ` <span class="badge bg-secondary">${scan.scanCount} files</span>` : '';
+                    html += `<li class="list-group-item py-1 px-2 small">${scan.displayName}${isMultiEcho}${scanCount}</li>`;
                 });
                 
                 html += '</ul></div>';
@@ -320,27 +329,53 @@ class IrisConfigApp {
         bidsSection.style.display = 'block';
         
         // Clear existing content
-        ['anatScans', 'funcScans', 'fmapScans', 'otherScans'].forEach(id => {
+        ['anatScans', 'funcScans', 'fmapScans', 'dwiScans', 'otherScans'].forEach(id => {
             document.getElementById(id).innerHTML = '';
         });
         
         const config = this.configGenerator.getConfig();
         const bidsnames = config.bidsnames || {};
         
-        // Populate each category
+        // Populate each category with section headers
         Object.entries(this.categorizedScans).forEach(([category, scans]) => {
             if (scans.length === 0) return;
             
             const containerId = this.getCategoryContainerId(category);
             const container = document.getElementById(containerId);
             
-            if (container) {
+            if (container && scans.length > 0) {
+                // Add section header
+                const header = document.createElement('div');
+                header.className = 'mt-4 mb-3';
+                header.innerHTML = `
+                    <h6 class="text-capitalize border-bottom pb-2">
+                        <i class="fas fa-${this.getCategoryIcon(category)} me-2"></i>
+                        ${category} Scans (${scans.length})
+                    </h6>
+                `;
+                container.appendChild(header);
+                
+                // Add scans
                 scans.forEach(scan => {
                     const scanDiv = this.createScanMappingDiv(category, scan, bidsnames[category] || {});
                     container.appendChild(scanDiv);
                 });
             }
         });
+    }
+
+    /**
+     * Get icon for scan category
+     */
+    getCategoryIcon(category) {
+        const icons = {
+            anat: 'brain',
+            func: 'chart-line',
+            fmap: 'magnet',
+            dwi: 'project-diagram',
+            other: 'file'
+        };
+        return icons[category] || 'file';
     }
 
     /**
@@ -351,7 +386,7 @@ class IrisConfigApp {
             'anat': 'anatScans',
             'func': 'funcScans',
             'fmap': 'fmapScans',
-            'dwi': 'otherScans',
+            'dwi': 'dwiScans',
             'other': 'otherScans'
         };
         return mapping[category] || 'otherScans';
@@ -362,25 +397,59 @@ class IrisConfigApp {
      */
     createScanMappingDiv(category, scan, categoryMappings) {
         const div = document.createElement('div');
-        div.className = 'mb-3 p-3 border rounded';
         
-        const originalName = scan.originalName;
-        const currentBidsName = categoryMappings[originalName] || '';
+        const yamlKey = scan.yamlKey;
+        const displayName = scan.displayName;
+        
+        // Check if this scan should be auto-ignored
+        const shouldAutoIgnore = /scout|localizer/i.test(displayName);
+        
+        div.className = `mb-3 p-3 border rounded ${shouldAutoIgnore ? 'bg-light' : ''}`;
+        
+        const currentBidsName = categoryMappings[yamlKey] || '';
         const isMultiEcho = scan.isMultiEcho;
+        const scanCount = scan.scanCount;
+        
+        // Create description of what scans this represents
+        let scanDescription = '';
+        if (scanCount > 1) {
+            if (isMultiEcho) {
+                scanDescription = `<small class="text-muted">Represents ${scanCount} files (multi-echo sequence)</small>`;
+            } else {
+                scanDescription = `<small class="text-muted">Represents ${scanCount} files (highest numbered will be used)</small>`;
+            }
+        } else {
+            scanDescription = `<small class="text-muted">Single scan</small>`;
+        }
+        
+        if (shouldAutoIgnore) {
+            scanDescription += ` <small class="text-warning">(Auto-ignored: scout/localizer)</small>`;
+        }
         
         div.innerHTML = `
-            <div class="mb-2">
-                <label class="form-label fw-bold">${originalName}</label>
-                ${isMultiEcho ? '<span class="badge bg-info ms-2">Multi-echo</span>' : ''}
+            <div class="mb-2 d-flex justify-content-between align-items-start">
+                <div>
+                    <label class="form-label fw-bold">${displayName}</label>
+                    ${isMultiEcho ? '<span class="badge bg-info ms-2">Multi-echo</span>' : ''}
+                    ${scanCount > 1 ? `<span class="badge bg-secondary ms-2">${scanCount} files</span>` : ''}
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input ignore-scan-checkbox" type="checkbox" id="ignore_${yamlKey}" 
+                           data-category="${category}" data-original="${yamlKey}" ${shouldAutoIgnore ? 'checked' : ''}>
+                    <label class="form-check-label text-danger" for="ignore_${yamlKey}">
+                        <small>Ignore</small>
+                    </label>
+                </div>
             </div>
-            <div class="input-group mb-2">
+            ${scanDescription}
+            <div class="input-group mb-2 mt-2 bids-input-group" ${shouldAutoIgnore ? 'style="opacity: 0.3"' : ''}>
                 <input type="text" class="form-control bids-name-input" 
-                       value="${currentBidsName}" 
+                       value="${shouldAutoIgnore ? '' : currentBidsName}" 
                        placeholder="Enter BIDS name..."
                        data-category="${category}"
-                       data-original="${originalName}">
+                       data-original="${yamlKey}" ${shouldAutoIgnore ? 'disabled' : ''}>
                 <button class="btn btn-outline-secondary" type="button" 
-                        onclick="showBIDSHelper('${category}', '${originalName}')">
+                        onclick="showBIDSHelper('${category}', '${yamlKey}')">
                     <i class="fas fa-question"></i>
                 </button>
             </div>
@@ -391,6 +460,10 @@ class IrisConfigApp {
         const input = div.querySelector('.bids-name-input');
         input.addEventListener('input', (e) => this.handleBIDSNameChange(e));
         input.addEventListener('blur', (e) => this.validateBIDSName(e));
+        
+        // Add event listener for ignore checkbox
+        const ignoreCheckbox = div.querySelector('.ignore-scan-checkbox');
+        ignoreCheckbox.addEventListener('change', (e) => this.handleIgnoreScanChange(e));
         
         return div;
     }
@@ -403,6 +476,15 @@ class IrisConfigApp {
         const category = input.dataset.category;
         const original = input.dataset.original;
         const bidsName = input.value.trim();
+        
+        // Check if this scan is being ignored
+        const scanDiv = input.closest('.mb-3');
+        const ignoreCheckbox = scanDiv.querySelector('.ignore-scan-checkbox');
+        
+        if (ignoreCheckbox && ignoreCheckbox.checked) {
+            // If scan is ignored, don't update config
+            return;
+        }
         
         if (bidsName) {
             this.configGenerator.updateBIDSNames(category, { [original]: bidsName });
@@ -423,6 +505,15 @@ class IrisConfigApp {
         const input = event.target;
         const bidsName = input.value.trim();
         const feedback = input.closest('.mb-3').querySelector('.validation-feedback');
+        
+        // Check if this scan is being ignored
+        const scanDiv = input.closest('.mb-3');
+        const ignoreCheckbox = scanDiv.querySelector('.ignore-scan-checkbox');
+        
+        if (ignoreCheckbox && ignoreCheckbox.checked) {
+            // If scan is ignored, don't validate
+            return;
+        }
         
         if (!bidsName) {
             input.classList.remove('is-valid', 'is-invalid');
@@ -454,6 +545,44 @@ class IrisConfigApp {
                 ${validation.suggestions.length > 0 ? 
                     `<div class="text-info">${validation.suggestions.join('<br>')}</div>` : ''}
             `;
+        }
+    }
+
+    /**
+     * Handle ignore scan checkbox changes
+     */
+    handleIgnoreScanChange(event) {
+        const checkbox = event.target;
+        const category = checkbox.dataset.category;
+        const original = checkbox.dataset.original;
+        const scanDiv = checkbox.closest('.mb-3');
+        const bidsInputGroup = scanDiv.querySelector('.bids-input-group');
+        const bidsInput = scanDiv.querySelector('.bids-name-input');
+        const validationFeedback = scanDiv.querySelector('.validation-feedback');
+        
+        if (checkbox.checked) {
+            // Scan is being ignored
+            bidsInputGroup.style.opacity = '0.3';
+            bidsInput.disabled = true;
+            bidsInput.value = '';
+            validationFeedback.innerHTML = '';
+            bidsInput.classList.remove('is-valid', 'is-invalid');
+            scanDiv.classList.add('bg-light');
+            
+            // Remove from config
+            this.configGenerator.removeBIDSName(category, original);
+        } else {
+            // Scan is being included again
+            bidsInputGroup.style.opacity = '1';
+            bidsInput.disabled = false;
+            scanDiv.classList.remove('bg-light');
+            
+            // Restore suggested BIDS name if available
+            const suggestions = this.scanParser.generateBIDSSuggestions();
+            if (suggestions[category] && suggestions[category][original]) {
+                bidsInput.value = suggestions[category][original];
+                this.configGenerator.updateBIDSNames(category, { [original]: suggestions[category][original] });
+            }
         }
     }
 

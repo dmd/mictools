@@ -124,26 +124,11 @@
                                 </div>
 
                                 <div id="bidsNamingSection" style="display: none;">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h6>Anatomical Scans</h6>
-                                            <div id="anatScans"></div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <h6>Functional Scans</h6>
-                                            <div id="funcScans"></div>
-                                        </div>
-                                    </div>
-                                    <div class="row mt-3">
-                                        <div class="col-md-6">
-                                            <h6>Field Map Scans</h6>
-                                            <div id="fmapScans"></div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <h6>Other Scans</h6>
-                                            <div id="otherScans"></div>
-                                        </div>
-                                    </div>
+                                    <div id="anatScans"></div>
+                                    <div id="funcScans"></div>
+                                    <div id="fmapScans"></div>
+                                    <div id="dwiScans"></div>
+                                    <div id="otherScans"></div>
                                 </div>
                             </div>
 
@@ -264,21 +249,23 @@
 
             <!-- YAML Preview -->
             <div class="col-lg-4">
-                <div class="card h-100">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-file-code me-2"></i>YAML Preview</span>
-                        <div>
-                            <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="copyYaml()">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-primary" onclick="downloadYaml()">
-                                <i class="fas fa-download me-1"></i>Download
-                            </button>
+                <div class="yaml-preview-container">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-file-code me-2"></i>YAML Preview</span>
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="copyYaml()">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="downloadYaml()">
+                                    <i class="fas fa-download me-1"></i>Download
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        <pre id="yamlPreview" class="bg-light p-3 rounded" style="height: 600px; overflow-y: auto; font-size: 0.875rem;"><code># Select a directory or enter scan names manually to begin
+                        <div class="card-body p-0">
+                            <pre id="yamlPreview" class="p-3 m-0"><code># Select a directory or enter scan names manually to begin
 # Your YAML configuration will appear here</code></pre>
+                        </div>
                     </div>
                 </div>
             </div>
