@@ -362,6 +362,69 @@ class IrisConfigApp {
                 });
             }
         });
+        
+        // Update trimstart functional scans if trimstart is enabled
+        this.updateTrimstartFunctionalScans();
+    }
+
+    /**
+     * Update trimstart functional scans section
+     */
+    updateTrimstartFunctionalScans() {
+        const trimstartFunctionalScans = document.getElementById('trimstartFunctionalScans');
+        if (!trimstartFunctionalScans) return;
+        
+        // Preserve existing values before clearing
+        const existingValues = {};
+        const existingInputs = trimstartFunctionalScans.querySelectorAll('.trimstart-scan-input');
+        existingInputs.forEach(input => {
+            const bidsName = input.dataset.bidsName;
+            if (bidsName && input.value !== '') {
+                existingValues[bidsName] = input.value;
+            }
+        });
+        
+        // Clear existing content
+        trimstartFunctionalScans.innerHTML = '';
+        
+        // Get functional scans with BIDS names
+        const funcScans = this.categorizedScans.func || [];
+        const config = this.configGenerator.getConfig();
+        const funcBidsNames = config.bidsnames?.func || {};
+        
+        if (funcScans.length === 0) {
+            trimstartFunctionalScans.innerHTML = '<p class="text-muted">No functional scans detected. Add functional scans in the BIDS Naming tab first.</p>';
+            return;
+        }
+        
+        funcScans.forEach(scan => {
+            const yamlKey = scan.yamlKey;
+            const bidsName = funcBidsNames[yamlKey];
+            
+            if (bidsName) {
+                const div = document.createElement('div');
+                div.className = 'mb-2';
+                div.innerHTML = `
+                    <label for="trimstart_${yamlKey}" class="form-label">${bidsName}:</label>
+                    <input type="number" class="form-control trimstart-scan-input" 
+                           id="trimstart_${yamlKey}" 
+                           data-bids-name="${bidsName}"
+                           placeholder="Leave blank to use default" 
+                           min="0">
+                    <div class="form-text">Scans to trim from ${yamlKey}</div>
+                `;
+                trimstartFunctionalScans.appendChild(div);
+                
+                // Restore existing value if available
+                const input = div.querySelector('.trimstart-scan-input');
+                if (existingValues[bidsName]) {
+                    input.value = existingValues[bidsName];
+                }
+                
+                // Add event listener
+                input.addEventListener('change', () => this.updatePreprocessConfig());
+            }
+        });
     }
 
     /**
@@ -492,6 +555,11 @@ class IrisConfigApp {
             this.configGenerator.removeBIDSName(category, original);
         }
         
+        // Update trimstart functional scans if this is a functional scan
+        if (category === 'func') {
+            this.updateTrimstartFunctionalScans();
+        }
+        
         // Clear validation feedback while typing
         const feedback = input.closest('.mb-3').querySelector('.validation-feedback');
         feedback.innerHTML = '';
@@ -584,6 +652,11 @@ class IrisConfigApp {
                 this.configGenerator.updateBIDSNames(category, { [original]: suggestions[category][original] });
             }
         }
+        
+        // Update trimstart functional scans if this is a functional scan
+        if (category === 'func') {
+            this.updateTrimstartFunctionalScans();
+        }
     }
 
     /**
@@ -620,57 +693,12 @@ class IrisConfigApp {
     }
 
     /**
-     * Update fMRIPrep configuration
+     * Update fMRIPrep configuration - merge with advanced options
      */
     updateFMRIPrepConfig() {
-        const options = {};
-        
-        // Get numeric values
-        ['ncpus', 'ramsize'].forEach(id => {
-            const element = document.getElementById(id);
-            if (element && element.value) {
-                options[id] = parseInt(element.value);
-            }
-        });
-        
-        // Get string values
-        ['outputSpaces', 'email'].forEach(id => {
-            const element = document.getElementById(id);
-            if (element && element.value.trim()) {
-                options[id === 'outputSpaces' ? 'output-spaces' : id] = element.value.trim();
-            }
-        });
-        
-        // Get version
-        const versionElement = document.getElementById('fmriprepVersion');
-        if (versionElement && versionElement.value.trim()) {
-            options['fmriprep-version'] = versionElement.value.trim();
-        }
-        
-        // Get boolean options
-        ['freesurfer', 'aroma', 'anatOnly', 'longitudinal', 'forceSyn', 'returnAllComponents'].forEach(id => {
-            const element = document.getElementById(id);
-            if (element && element.checked) {
-                const configKey = id === 'anatOnly' ? 'anat-only' :
-                                 id === 'forceSyn' ? 'force-syn' :
-                                 id === 'returnAllComponents' ? 'return-all-components' : id;
-                options[configKey] = true;
-            }
-        });
-        
-        // Get ignore options
-        const ignoreOptions = [];
-        ['ignoreFieldmaps', 'ignoreSlicetiming', 'ignoreSbref'].forEach(id => {
-            const element = document.getElementById(id);
-            if (element && element.checked) {
-                ignoreOptions.push(element.value);
-            }
-        });
-        if (ignoreOptions.length > 0) {
-            options.ignore = ignoreOptions;
-        }
-        
-        this.configGenerator.updateFMRIPrepOptions(options);
+        // Collect ALL fMRIPrep options (main tab + advanced tab)
+        const allOptions = this.collectAllFMRIPrepOptions();
+        this.configGenerator.updateFMRIPrepOptions(allOptions);
     }
 
     /**
@@ -686,6 +714,14 @@ class IrisConfigApp {
         if (topupMaxVols) {
             topupMaxVols.addEventListener('change', () => this.updateAdvancedConfig());
         }
+        
+        // Add event listeners for ignore options checkboxes
+        ['ignoreFieldmaps', 'ignoreSlicetiming', 'ignoreSbref'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', () => this.updateAdvancedConfig());
+            }
+        });
         
         const enableTrimstart = document.getElementById('enableTrimstart');
         if (enableTrimstart) {
@@ -703,14 +739,94 @@ class IrisConfigApp {
     }
 
     /**
-     * Update advanced configuration
+     * Update advanced configuration - merge with existing fMRIPrep options
      */
     updateAdvancedConfig() {
+        // Collect ALL fMRIPrep options (main tab + advanced tab)
+        const allOptions = this.collectAllFMRIPrepOptions();
+        this.configGenerator.updateFMRIPrepOptions(allOptions);
+    }
+
+    /**
+     * Collect all fMRIPrep options from both main and advanced tabs
+     */
+    collectAllFMRIPrepOptions() {
         const options = {};
         
+        // Define default values that should not be included in YAML unless changed
+        const defaults = {
+            ncpus: 8,
+            ramsize: 32,
+            'fmriprep-version': '25.1-latest',
+            'output-spaces': 'MNI152NLin2009cAsym:res-2 anat func fsaverage',
+            'dummy-scans': 0
+        };
+        
+        // Get numeric values from main tab - only if different from defaults
+        ['ncpus', 'ramsize'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element && element.value !== '') {
+                const value = parseInt(element.value);
+                if (value !== defaults[id]) {
+                    options[id] = value;
+                }
+            }
+        });
+        
+        // Get string values from main tab - only if different from defaults
+        ['outputSpaces', 'email'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element && element.value.trim()) {
+                const configKey = id === 'outputSpaces' ? 'output-spaces' : id;
+                const value = element.value.trim();
+                
+                // For email, always include if provided (no default)
+                // For output-spaces, only include if different from default
+                if (id === 'email' || value !== defaults[configKey]) {
+                    options[configKey] = value;
+                }
+            }
+        });
+        
+        // Get version from main tab - only if different from default
+        const versionElement = document.getElementById('fmriprepVersion');
+        if (versionElement && versionElement.value.trim()) {
+            const value = versionElement.value.trim();
+            if (value !== defaults['fmriprep-version']) {
+                options['fmriprep-version'] = value;
+            }
+        }
+        
+        // Get boolean options from main tab - only include if checked (all default to false)
+        ['freesurfer', 'aroma', 'anatOnly', 'longitudinal', 'forceSyn', 'returnAllComponents'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element && element.checked) {
+                const configKey = id === 'anatOnly' ? 'anat-only' :
+                                 id === 'forceSyn' ? 'force-syn' :
+                                 id === 'returnAllComponents' ? 'return-all-components' : id;
+                options[configKey] = true;
+            }
+        });
+        
+        // Get ignore options from main tab - only include if any are checked
+        const ignoreOptions = [];
+        ['ignoreFieldmaps', 'ignoreSlicetiming', 'ignoreSbref'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element && element.checked) {
+                ignoreOptions.push(element.value);
+            }
+        });
+        if (ignoreOptions.length > 0) {
+            options.ignore = ignoreOptions;
+        }
+        
+        // Get advanced options - only if different from defaults
         const dummyScans = document.getElementById('dummyScans');
         if (dummyScans && dummyScans.value !== '') {
-            options['dummy-scans'] = parseInt(dummyScans.value);
+            const value = parseInt(dummyScans.value);
+            if (value !== defaults['dummy-scans']) {
+                options['dummy-scans'] = value;
+            }
         }
         
         const topupMaxVols = document.getElementById('topupMaxVols');
@@ -718,7 +834,7 @@ class IrisConfigApp {
             options['topup-max-vols'] = parseInt(topupMaxVols.value);
         }
         
-        this.configGenerator.updateFMRIPrepOptions(options);
+        return options;
     }
 
     /**
@@ -729,11 +845,27 @@ class IrisConfigApp {
         const options = {};
         
         if (enableTrimstart && enableTrimstart.checked) {
+            const trimstartConfig = {};
+            
+            // Get DEFAULT value
             const defaultValue = document.getElementById('trimstartDefault').value;
             if (defaultValue !== '') {
-                options.trimstart = {
-                    DEFAULT: parseInt(defaultValue)
-                };
+                trimstartConfig.DEFAULT = parseInt(defaultValue);
+            }
+            
+            // Get individual functional scan values
+            const trimstartInputs = document.querySelectorAll('.trimstart-scan-input');
+            trimstartInputs.forEach(input => {
+                const bidsName = input.dataset.bidsName;
+                const value = input.value;
+                if (value !== '' && bidsName) {
+                    trimstartConfig[bidsName] = parseInt(value);
+                }
+            });
+            
+            // Only add trimstart if we have at least one value
+            if (Object.keys(trimstartConfig).length > 0) {
+                options.trimstart = trimstartConfig;
             }
         }
         
@@ -782,10 +914,8 @@ class IrisConfigApp {
         this.showDetectedScans();
         this.enableBIDSNamingTab();
         
-        // Set some default fMRIPrep options
+        // Set some example fMRIPrep options (only non-defaults)
         document.getElementById('freesurfer').checked = true;
-        document.getElementById('ncpus').value = 8;
-        document.getElementById('ramsize').value = 32;
         this.updateFMRIPrepConfig();
     }
 }

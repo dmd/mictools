@@ -209,7 +209,8 @@
 
                                 <div class="mb-3">
                                     <label for="topupMaxVols" class="form-label">TOPUP Max Volumes:</label>
-                                    <input type="number" class="form-control" id="topupMaxVols" placeholder="Leave blank for default">
+                                    <input type="number" class="form-control" id="topupMaxVols" min="1" placeholder="Leave blank for default">
+                                    <div class="form-text">Maximum number of volumes to use for TOPUP correction</div>
                                 </div>
 
                                 <div class="mb-3">
@@ -235,9 +236,13 @@
                                         <label class="form-check-label" for="enableTrimstart">Enable trimstart preprocessing</label>
                                     </div>
                                     <div id="trimstartOptions" style="display: none;">
-                                        <div class="mb-2">
-                                            <label for="trimstartDefault" class="form-label">Default trim value:</label>
-                                            <input type="number" class="form-control" id="trimstartDefault" value="10" min="0">
+                                        <div class="mb-3">
+                                            <label for="trimstartDefault" class="form-label">Default trim value (for unspecified scans):</label>
+                                            <input type="number" class="form-control" id="trimstartDefault" placeholder="Leave blank for no default" min="0">
+                                            <div class="form-text">Applied to functional scans not individually specified below</div>
+                                        </div>
+                                        <div id="trimstartFunctionalScans">
+                                            <!-- Functional scans will be populated here dynamically -->
                                         </div>
                                     </div>
                                 </div>
