@@ -83,7 +83,7 @@ All form controls have event listeners bound in:
 ## File Structure & Responsibilities
 
 ```
-iris-config-generator/
+config-generator/
 ├── index.html              # Main UI structure with Bootstrap tabs
 ├── css/main.css            # Styling (minimal, mostly Bootstrap)
 ├── js/

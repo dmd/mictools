@@ -94,7 +94,7 @@ The tool provides validation and suggestions to help ensure compliance.
 ## File Structure
 
 ```
-iris-config-generator/
+config-generator/
 ├── index.html              # Main application interface
 ├── css/
 │   └── main.css            # Styling
