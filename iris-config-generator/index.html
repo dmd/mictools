@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iris-fmriprep Configuration Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="css/main.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <header class="py-3 mb-4 border-bottom">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-brain text-primary me-3" style="font-size: 2rem;"></i>
+                <div>
+                    <h1 class="h3 mb-0">iris-fmriprep Configuration Generator</h1>
+                    <p class="mb-0 text-white">Generate YAML configuration files for fMRIPrep processing</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="row">
+            <!-- Configuration Form -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="configTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="scan-input-tab" data-bs-toggle="tab" data-bs-target="#scan-input" type="button" role="tab">
+                                    <i class="fas fa-upload me-2"></i>Scan Input
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link disabled" id="bids-naming-tab" data-bs-toggle="tab" data-bs-target="#bids-naming" type="button" role="tab">
+                                    <i class="fas fa-tags me-2"></i>BIDS Naming
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link disabled" id="fmriprep-options-tab" data-bs-toggle="tab" data-bs-target="#fmriprep-options" type="button" role="tab">
+                                    <i class="fas fa-cogs me-2"></i>fMRIPrep Options
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link disabled" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced" type="button" role="tab">
+                                    <i class="fas fa-sliders-h me-2"></i>Advanced
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="configTabContent">
+                            <!-- Scan Input Tab -->
+                            <div class="tab-pane fade show active" id="scan-input" role="tabpanel">
+                                <h5>Input Your Scan Data</h5>
+                                <p class="text-muted">Choose how to provide your scan information:</p>
+                                
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-body text-center">
+                                                <div id="dropZone" class="file-drop-zone">
+                                                    <i class="fas fa-folder-open fa-3x text-primary mb-3"></i>
+                                                    <h6>Select Directory</h6>
+                                                    <p class="text-muted small">Choose a directory to scan for neuroimaging files<br><em>(only filenames are read, no files uploaded)</em></p>
+                                                    <div class="d-grid gap-2">
+                                                        <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                                            <i class="fas fa-folder-open me-2"></i>Browse for Directory
+                                                        </button>
+                                                        <input type="file" id="fileInput" class="d-none" webkitdirectory multiple>
+                                                    </div>
+                                                    <small class="text-muted mt-2 d-block">Or drag and drop files here<br>Looks for .nii, .nii.gz, .json, .bval, .bvec files</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-keyboard fa-3x text-success mb-3"></i>
+                                                <h6>Manual Entry</h6>
+                                                <p class="text-muted small">Enter scan names manually</p>
+                                                <button type="button" class="btn btn-success" onclick="switchToManualEntry()">Enter Manually</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Manual scan entry -->
+                                <div id="manualEntry" style="display: none;">
+                                    <div class="mb-3">
+                                        <label for="scanList" class="form-label">Scan Names (one per line):</label>
+                                        <textarea class="form-control" id="scanList" rows="8" placeholder="Enter scan names like:&#10;T1_MEMPRAGE_1.2mm_p4_Session_03_RMS_6&#10;ses-003_func_task-fid_run-01_10&#10;ses-003_func_task-rest_run-01_11"></textarea>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-primary" onclick="parseManualScans()">
+                                            <i class="fas fa-search me-2"></i>Parse Scans
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="loadExampleData()">
+                                            <i class="fas fa-lightbulb me-2"></i>Load Example
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Detected scans display -->
+                                <div id="detectedScans" style="display: none;">
+                                    <h6>Detected Scans</h6>
+                                    <div id="scansList" class="mt-3"></div>
+                                </div>
+                            </div>
+
+                            <!-- BIDS Naming Tab -->
+                            <div class="tab-pane fade" id="bids-naming" role="tabpanel">
+                                <h5>BIDS Naming Configuration</h5>
+                                <p class="text-muted">Map your original scan names to BIDS-compliant naming</p>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Run Mode:</label>
+                                    <select class="form-select" id="runMode">
+                                        <option value="fmriprep">fmriprep - Full fMRIPrep processing</option>
+                                        <option value="bids">bids - Convert to BIDS format only</option>
+                                        <option value="nifti">nifti - Convert to NIFTI only</option>
+                                    </select>
+                                </div>
+
+                                <div id="bidsNamingSection" style="display: none;">
+                                    <div id="anatScans"></div>
+                                    <div id="funcScans"></div>
+                                    <div id="fmapScans"></div>
+                                    <div id="dwiScans"></div>
+                                    <div id="otherScans"></div>
+                                </div>
+                            </div>
+
+                            <!-- fMRIPrep Options Tab -->
+                            <div class="tab-pane fade" id="fmriprep-options" role="tabpanel">
+                                <h5>fMRIPrep Processing Options</h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Resources</h6>
+                                        <div class="mb-3">
+                                            <label for="ncpus" class="form-label">Number of CPUs:</label>
+                                            <input type="number" class="form-control" id="ncpus" value="8" min="1" max="32">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="ramsize" class="form-label">RAM Size (GB):</label>
+                                            <input type="number" class="form-control" id="ramsize" value="32" min="8" max="128">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="fmriprepVersion" class="form-label">fMRIPrep Version:</label>
+                                            <input type="text" class="form-control" id="fmriprepVersion" value="25.1-latest" placeholder="25.1-latest">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Processing Options</h6>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="freesurfer">
+                                            <label class="form-check-label" for="freesurfer">Enable FreeSurfer</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="aroma">
+                                            <label class="form-check-label" for="aroma">Enable AROMA (pre-23.1)</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="anatOnly">
+                                            <label class="form-check-label" for="anatOnly">Anatomical only</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="longitudinal">
+                                            <label class="form-check-label" for="longitudinal">Longitudinal processing</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="forceSyn">
+                                            <label class="form-check-label" for="forceSyn">Force SyN correction</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="returnAllComponents">
+                                            <label class="form-check-label" for="returnAllComponents">Return all components</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="outputSpaces" class="form-label">Output Spaces:</label>
+                                            <input type="text" class="form-control" id="outputSpaces" value="MNI152NLin2009cAsym:res-2 anat func fsaverage" placeholder="MNI152NLin2009cAsym:res-2 anat func fsaverage">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="email" class="form-label">Email for notifications:</label>
+                                            <input type="email" class="form-control" id="email" placeholder="your@email.com">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Advanced Tab -->
+                            <div class="tab-pane fade" id="advanced" role="tabpanel">
+                                <h5>Advanced Options</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="dummyScans" class="form-label">Dummy Scans:</label>
+                                    <input type="number" class="form-control" id="dummyScans" value="0" min="0">
+                                    <div class="form-text">Number of initial scans to drop</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="topupMaxVols" class="form-label">TOPUP Max Volumes:</label>
+                                    <input type="number" class="form-control" id="topupMaxVols" min="1" placeholder="Leave blank for default">
+                                    <div class="form-text">Maximum number of volumes to use for TOPUP correction</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="ignoreOptions" class="form-label">Ignore Options:</label>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="ignoreFieldmaps" value="fieldmaps">
+                                        <label class="form-check-label" for="ignoreFieldmaps">Fieldmaps</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="ignoreSlicetiming" value="slicetiming">
+                                        <label class="form-check-label" for="ignoreSlicetiming">Slice timing</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="ignoreSbref" value="sbref">
+                                        <label class="form-check-label" for="ignoreSbref">SBRef</label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <h6>Preprocessing Options</h6>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="enableTrimstart">
+                                        <label class="form-check-label" for="enableTrimstart">Enable trimstart preprocessing</label>
+                                    </div>
+                                    <div id="trimstartOptions" style="display: none;">
+                                        <div class="mb-3">
+                                            <label for="trimstartDefault" class="form-label">Default trim value (for unspecified scans):</label>
+                                            <input type="number" class="form-control" id="trimstartDefault" placeholder="Leave blank for no default" min="0">
+                                            <div class="form-text">Applied to functional scans not individually specified below</div>
+                                        </div>
+                                        <div id="trimstartFunctionalScans">
+                                            <!-- Functional scans will be populated here dynamically -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- YAML Preview -->
+            <div class="col-lg-4">
+                <div class="yaml-preview-container">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-file-code me-2"></i>YAML Preview</span>
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="copyYaml()">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="downloadYaml()">
+                                    <i class="fas fa-download me-1"></i>Download
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <pre id="yamlPreview" class="p-3 m-0"><code># Select a directory or enter scan names manually to begin
+# Your YAML configuration will appear here</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+    <script src="js/scanParser.js"></script>
+    <script src="js/bidsValidator.js"></script>
+    <script src="js/configGenerator.js"></script>
+    <script src="js/templates.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
