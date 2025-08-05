@@ -45,6 +45,7 @@ def main():
 
     cmd = [
         "copyparty-sfx.py",
+        "-q",
         "-p",
         str(port),
         "--cert",
@@ -61,7 +62,7 @@ def main():
 
     process = subprocess.Popen(cmd)
 
-    time.sleep(2)
+    time.sleep(1)
 
     print(
         f"""
