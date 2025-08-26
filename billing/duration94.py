@@ -27,6 +27,7 @@ o, server, username, password = setup_orthanc_connection(host, port)
 
 # Cache for billing lookup table
 _billing_lookup = None
+_row_counter = 2  # Start at row 2 (after header)
 
 
 def load_billing_lookup():
@@ -86,6 +87,7 @@ def calculate_invoice_number(scan_date):
 
 
 def get_study(study):
+    global _row_counter
     service = "94T"
 
     # Handle StudyID lookup for 94T scanner
@@ -113,6 +115,9 @@ def get_study(study):
     study_duration, start_time = duration(study, server, username, password)
     if study_duration == 0 or start_time is None:
         return  # Skip studies with 0 duration
+    
+    # Get current row number for Excel formula
+    row_number = _row_counter
 
     # Calculate fields
     company = 1600
@@ -149,13 +154,16 @@ def get_study(study):
         quantity,
         pi_name,
         invoice_number,
-        int(total),
+f"=D{row_number}*E{row_number}",
         comment,
         run_date,
     ]
 
     writer = csv.writer(sys.stdout)
     writer.writerow(row)
+    
+    # Increment row counter for next study
+    _row_counter += 1
 
 
 def main():
