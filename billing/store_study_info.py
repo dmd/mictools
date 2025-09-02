@@ -23,12 +23,16 @@ Per-study (recorded once):
     0018,0015  Body Part Examined
     0008,1090  Manufacturer Model Name
     0008,0020  Study Date
+    0008,1030  Study Description
 
 Per-series (recorded once *per series* when available):
     0018,1316  SAR (Specific Absorption Rate)
     0051,100a  Series Duration – stored in **seconds** (must decode strings like
                "TA 05:20")
     0020,0011  Series Number
+    0008,103e  Series Description
+    0018,9005  Pulse Sequence Name
+    0018,0024  Sequence Name
 
 A series is stored only if both SAR **and** duration are successfully
 retrieved.
@@ -37,10 +41,11 @@ Database schema (auto-created on first run)
 ------------------------------------------
 Table *studies*
     accession (PK) | patient_id | age | height | weight | sex | ethnic_group |
-    body_part | manufacturer_model | study_date
+    body_part | manufacturer_model | study_date | study_description
 
 Table *series*
-    series_uid (PK) | accession (FK) | sar | duration | series_number
+    series_uid (PK) | accession (FK) | sar | duration | series_number |
+    series_description | pulse_sequence_name | sequence_name
 
 Usage examples
 --------------
@@ -196,7 +201,8 @@ def get_db_connection(db_path: str = DEFAULT_DB_PATH) -> sqlite3.Connection:
             ethnic_group       TEXT,
             body_part          TEXT,
             manufacturer_model TEXT,
-            study_date         TEXT
+            study_date         TEXT,
+            study_description  TEXT
         )
         """
     )
@@ -204,11 +210,14 @@ def get_db_connection(db_path: str = DEFAULT_DB_PATH) -> sqlite3.Connection:
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS series (
-            series_uid     TEXT PRIMARY KEY,
-            accession      TEXT NOT NULL,
-            sar            REAL,
-            duration       INTEGER,  -- seconds
-            series_number  INTEGER,
+            series_uid          TEXT PRIMARY KEY,
+            accession           TEXT NOT NULL,
+            sar                 REAL,
+            duration            INTEGER,  -- seconds
+            series_number       INTEGER,
+            series_description  TEXT,
+            pulse_sequence_name TEXT,
+            sequence_name       TEXT,
             FOREIGN KEY (accession) REFERENCES studies(accession)
         )
         """
@@ -256,12 +265,16 @@ BODY_PART_TAG = "0018,0015"  # Body Part Examined (study level)
 
 MANUFACTURER_MODEL_TAG = "0008,1090"  # Manufacturer's Model Name
 STUDY_DATE_TAG = "0008,0020"  # Study Date
+STUDY_DESCRIPTION_TAG = "0008,1030"  # Study Description
 
 SAR_TAG = "0018,1316"  # Specific Absorption Rate
 
 SERIES_DURATION_TAG = "0051,100a"  # Series duration (per series)
 
 SERIES_NUMBER_TAG = "0020,0011"  # Series Number
+SERIES_DESCRIPTION_TAG = "0008,103e"  # Series Description
+PULSE_SEQUENCE_NAME_TAG = "0018,9005"  # Pulse Sequence Name
+SEQUENCE_NAME_TAG = "0018,0024"  # Sequence Name
 
 
 def extract_patient_tags(ds: pydicom.FileDataset) -> Dict[str, Optional[str]]:
@@ -310,6 +323,42 @@ def extract_body_part(ds: pydicom.FileDataset) -> Optional[str]:
     """Return Body Part Examined (0018,0015) as string or None."""
 
     elem = get_element(ds, BODY_PART_TAG)
+    if elem is None or elem.value in ("", None):  # type: ignore[attr-defined]
+        return None
+    return str(elem.value)  # type: ignore[attr-defined]
+
+
+def extract_study_description(ds: pydicom.FileDataset) -> Optional[str]:
+    """Return Study Description (0008,1030) as string or None."""
+
+    elem = get_element(ds, STUDY_DESCRIPTION_TAG)
+    if elem is None or elem.value in ("", None):  # type: ignore[attr-defined]
+        return None
+    return str(elem.value)  # type: ignore[attr-defined]
+
+
+def extract_series_description(ds: pydicom.FileDataset) -> Optional[str]:
+    """Return Series Description (0008,103e) as string or None."""
+
+    elem = get_element(ds, SERIES_DESCRIPTION_TAG)
+    if elem is None or elem.value in ("", None):  # type: ignore[attr-defined]
+        return None
+    return str(elem.value)  # type: ignore[attr-defined]
+
+
+def extract_pulse_sequence_name(ds: pydicom.FileDataset) -> Optional[str]:
+    """Return Pulse Sequence Name (0018,9005) as string or None."""
+
+    elem = get_element(ds, PULSE_SEQUENCE_NAME_TAG)
+    if elem is None or elem.value in ("", None):  # type: ignore[attr-defined]
+        return None
+    return str(elem.value)  # type: ignore[attr-defined]
+
+
+def extract_sequence_name(ds: pydicom.FileDataset) -> Optional[str]:
+    """Return Sequence Name (0018,0024) as string or None."""
+
+    elem = get_element(ds, SEQUENCE_NAME_TAG)
     if elem is None or elem.value in ("", None):  # type: ignore[attr-defined]
         return None
     return str(elem.value)  # type: ignore[attr-defined]
@@ -407,6 +456,7 @@ def _process_study(study: pyorthanc.Study, conn: sqlite3.Connection) -> None:
 
     patient_info = extract_patient_tags(ds_first)
     body_part = extract_body_part(ds_first)
+    study_description = extract_study_description(ds_first)
 
     # Manufacturer model: try first instance; if missing, search others
     elem_mm = get_element(ds_first, MANUFACTURER_MODEL_TAG)
@@ -438,8 +488,8 @@ def _process_study(study: pyorthanc.Study, conn: sqlite3.Connection) -> None:
         """
         INSERT INTO studies (
             accession, patient_id, age, height, weight, sex, ethnic_group, body_part,
-            manufacturer_model, study_date
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            manufacturer_model, study_date, study_description
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(accession) DO UPDATE SET
             patient_id          = excluded.patient_id,
             age                 = COALESCE(excluded.age, studies.age),
@@ -449,7 +499,8 @@ def _process_study(study: pyorthanc.Study, conn: sqlite3.Connection) -> None:
             ethnic_group        = COALESCE(excluded.ethnic_group, studies.ethnic_group),
             body_part           = COALESCE(excluded.body_part, studies.body_part),
             manufacturer_model  = COALESCE(excluded.manufacturer_model, studies.manufacturer_model),
-            study_date          = COALESCE(excluded.study_date, studies.study_date)
+            study_date          = COALESCE(excluded.study_date, studies.study_date),
+            study_description   = COALESCE(excluded.study_description, studies.study_description)
         """,
         (
             accession,
@@ -462,6 +513,7 @@ def _process_study(study: pyorthanc.Study, conn: sqlite3.Connection) -> None:
             body_part,
             manufacturer_model,
             study_date,
+            study_description,
         ),
     )
 
@@ -494,12 +546,18 @@ def _process_study(study: pyorthanc.Study, conn: sqlite3.Connection) -> None:
             else:
                 series_number = None
 
+            # Extract new series-level tags
+            series_description = extract_series_description(ds)
+            pulse_sequence_name = extract_pulse_sequence_name(ds)
+            sequence_name = extract_sequence_name(ds)
+
             conn.execute(
                 """
-                INSERT INTO series (series_uid, accession, sar, duration, series_number)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO series (series_uid, accession, sar, duration, series_number, 
+                                  series_description, pulse_sequence_name, sequence_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (series_uid, accession, sar, duration, series_number),
+                (series_uid, accession, sar, duration, series_number, series_description, pulse_sequence_name, sequence_name),
             )
 
         except Exception as exc:

@@ -73,6 +73,7 @@ file**.  Two tables:
 | body_part           | TEXT    | `0018,0015`                                         |
 | manufacturer_model  | TEXT    | `0008,1090`                                         |
 | study_date          | TEXT    | `0008,0020` (YYYYMMDD)                              |
+| study_description   | TEXT    | `0008,1030`                                         |
 
 ### series
 
@@ -82,7 +83,10 @@ file**.  Two tables:
 | accession     | TEXT FK | links back to *studies*                                    |
 | sar           | REAL    | `0018,1316` – must be present or row is skipped            |
 | duration      | INTEGER | seconds; parsed from `0051,100a` (“TA mm:ss”) **required** |
-| series_number | INTEGER | `0020,0011`; NULL if missing/non-numeric                  |
+| series_number       | INTEGER | `0020,0011`; NULL if missing/non-numeric                  |
+| series_description  | TEXT    | `0008,103e`                                                |
+| pulse_sequence_name | TEXT    | `0018,9005`                                                |
+| sequence_name       | TEXT    | `0018,0024`                                                |
 
 ## Tag handling summary
 
@@ -95,10 +99,14 @@ file**.  Two tables:
 | 0010,2160  | ethnic_group TEXT | study   |                                                     |
 | 0018,0015  | body_part TEXT    | study   |                                                     |
 | 0008,1090  | manufacturer_model| study   | tries first instance, otherwise scans others        |
-| 0008,0020  | study_date TEXT   | study   | from Study MainDicomTags                            |
-| 0018,1316  | sar REAL          | series  | required                                            |
-| 0051,100a  | duration INTEGER  | series  | required; seconds                                   |
-| 0020,0011  | series_number INT | series  | may be NULL                                         |
+| 0008,0020  | study_date TEXT       | study   | from Study MainDicomTags                            |
+| 0008,1030  | study_description TEXT| study   |                                                     |
+| 0018,1316  | sar REAL              | series  | required                                            |
+| 0051,100a  | duration INTEGER      | series  | required; seconds; Siemens private tag             |
+| 0020,0011  | series_number INT     | series  | may be NULL                                         |
+| 0008,103e  | series_description TEXT| series  |                                                     |
+| 0018,9005  | pulse_sequence_name TEXT| series  |                                                     |
+| 0018,0024  | sequence_name TEXT      | series  |                                                     |
 
 ## Business rules & edge cases
 
@@ -106,10 +114,14 @@ file**.  Two tables:
 2. **Age extraction** – expects strings like `040Y`, `30Y`; keeps leading
    digits, converts to int; NULL if parse fails.
 3. **Duration parsing** – handles:
-   * Vendor private string “TA mm:ss” or “TA hh:mm:ss”.
+   * Vendor private string "TA mm:ss" or "TA hh:mm:ss".
    * Pure numeric seconds (float or int).
-4. **Date mode filtering** – ignore studies whose accession doesn’t start with
+4. **Date mode filtering** – ignore studies whose accession doesn't start with
    `E`.
+5. **Duration tag (0051,100a)** – Siemens-specific private tag; may be missing in:
+   * Non-Siemens scanners
+   * Localizer/scout sequences
+   * Some sequence types or older software versions
 
 ## Code structure cheatsheet
 
