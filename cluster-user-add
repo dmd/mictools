@@ -56,8 +56,8 @@ cp /home/proto/.cshrc /home/proto/.cshrc.local /home/$U
 cp /home/proto/.bash_profile /home/$U
 cp /home/proto/.bashrc /home/$U
 cp /home/proto/.condarc /home/$U
-touch /home/$U/octopus-read-cluster-instructions
-chown $U:$U /home/$U/.cshrc* /home/$U/.bash* /home/$U/.condarc /home/$U/octopus-read-cluster-instructions
+
+chown $U:$U /home/$U/.cshrc* /home/$U/.bash* /home/$U/.condarc
 
 # limit memory use
 newuid=$(id -u $U)
