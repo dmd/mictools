@@ -81,9 +81,8 @@ curl --insecure -H "Authorization: Bearer $API_KEY" -X POST "${API_URL}/pool/dat
 curl --insecure -H "Authorization: Bearer $API_KEY" -X POST "${API_URL}/sharing/nfs" \
      -d '{
   "paths": [   "/mnt/'${POOL_DATASET_PATH}'"  ],
-  "hosts": [   "x5backup.mclean.harvard.edu"  ],
   "maproot_user": "root",
-  "networks": [   "172.16.4.0/24", "172.17.4.0/24"  ]
+  "networks": [  "172.17.4.0/24"  ]
  }'
 
 
