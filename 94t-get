@@ -8,6 +8,10 @@ if len(sys.argv) != 2:
 
 identifier = sys.argv[1]
 
+# If identifier contains a period and doesn't start with the prefix, prepend it
+if "." in identifier and not identifier.startswith("2.16.756.5.5.200.8323328."):
+    identifier = "2.16.756.5.5.200.8323328." + identifier
+
 # Set NETRC environment variable to point to our secret file
 os.environ['NETRC'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".94tsecret")
 zip_file = f"/tmp/{identifier}.zip"

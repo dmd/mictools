@@ -56,24 +56,37 @@ def format_datetime(date_str, time_str):
     
     return f"{formatted_date} {formatted_time}".strip()
 
-def extract_study_data(studies):
+def extract_study_data(studies, study_id_filter=None):
     """Extract required columns from study data."""
     rows = []
     
     for study in studies:
         main_tags = study.get("MainDicomTags", {})
         patient_tags = study.get("PatientMainDicomTags", {})
-        
+
+        study_id = main_tags.get("StudyID", "")
+
+        # Filter by StudyID if specified
+        if study_id_filter and study_id != study_id_filter:
+            continue
+
         # Get identifier: AccessionNumber if exists and not blank, otherwise StudyInstanceUID
         accession_number = main_tags.get("AccessionNumber", "").strip()
-        identifier = accession_number if accession_number else main_tags.get("StudyInstanceUID", "")
-        
+        study_instance_uid = main_tags.get("StudyInstanceUID", "")
+
+        # Hide prefix "2.16.756.5.5.200.8323328." from StudyInstanceUID for display
+        display_uid = study_instance_uid
+        if display_uid.startswith("2.16.756.5.5.200.8323328."):
+            display_uid = display_uid[len("2.16.756.5.5.200.8323328."):]
+
+        identifier = accession_number if accession_number else display_uid
+
         study_date = main_tags.get("StudyDate", "")
         study_time = main_tags.get("StudyTime", "")
-        
+
         row = {
             "DateTime": format_datetime(study_date, study_time),
-            "StudyID": main_tags.get("StudyID", ""),
+            "StudyID": study_id,
             "PatientID": patient_tags.get("PatientID", ""),
             "PatientName": patient_tags.get("PatientName", "").replace("^",""),
             "Identifier": identifier,
@@ -86,9 +99,10 @@ def extract_study_data(studies):
 
 def main():
     parser = argparse.ArgumentParser(description="List MRI studies in table format")
-    parser.add_argument("date", nargs="?", help="Date in YYYYMMDD format (default: two weeks ago)")
+    parser.add_argument("-d", "--date", help="Date in YYYYMMDD format (default: two weeks ago)")
+    parser.add_argument("-s", "--studyid", help="Filter by StudyID")
     args = parser.parse_args()
-    
+
     # Determine the date to use
     if args.date:
         date_str = args.date
@@ -102,7 +116,7 @@ def main():
     studies = query_database(date_str)
     
     # Extract data
-    rows = extract_study_data(studies)
+    rows = extract_study_data(studies, args.studyid)
     
     # Sort by StudyDate and StudyTime in descending order
     rows.sort(key=lambda x: (x["RawStudyDate"], x["RawStudyTime"]), reverse=True)
