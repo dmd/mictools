@@ -66,8 +66,8 @@ def extract_study_data(studies, study_id_filter=None):
 
         study_id = main_tags.get("StudyID", "")
 
-        # Filter by StudyID if specified
-        if study_id_filter and study_id != study_id_filter:
+        # Filter by StudyID if specified (case-insensitive)
+        if study_id_filter and study_id.lower() != study_id_filter.lower():
             continue
 
         # Get identifier: AccessionNumber if exists and not blank, otherwise StudyInstanceUID
