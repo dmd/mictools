@@ -99,7 +99,7 @@ def extract_study_data(studies, study_id_filter=None):
 
 def main():
     parser = argparse.ArgumentParser(description="List MRI studies in table format")
-    parser.add_argument("-d", "--date", help="Date in YYYYMMDD format (default: two weeks ago)")
+    parser.add_argument("-d", "--date", help="Show studies since date, in YYYYMMDD format (default: two weeks ago)")
     parser.add_argument("-s", "--studyid", help="Filter by StudyID")
     args = parser.parse_args()
 
