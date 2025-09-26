@@ -110,6 +110,12 @@ def make_runscript(args, workdir):
     if args.fs_subjects_dir:
         s += [f"--fs-subjects-dir {args.fs_subjects_dir}"]
 
+    if args.cifti_output:
+        s += [f"--cifti-output {args.cifti_output}"]
+
+    if args.me_t2s_fit_method:
+        s += [f"--me-t2s-fit-method {args.me_t2s_fit_method}"]
+
     if args.verbose:
         s += ["-vvvv"]
     else:
