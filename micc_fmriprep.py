@@ -279,6 +279,16 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--cifti-output",
+        help=argparse.SUPPRESS,
+    )
+
+    parser.add_argument(
+        "--me-t2s-fit-method",
+        help=argparse.SUPPRESS,
+    )
+
+    parser.add_argument(
         "--outputdir",
         help='Output directory. (Default: "derivatives" in BIDS dir)',
         action=FullPaths,

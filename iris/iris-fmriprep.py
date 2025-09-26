@@ -95,6 +95,8 @@ def submit_fmriprep(config, studydir, subject):
         "fs-subjects-dir",
         "logs",
         "email",
+        "cifti-output",
+        "me-t2s-fit-method",
     ):
         if args[arg]:
             s += ["--" + arg, str(args[arg])]
