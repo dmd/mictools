@@ -78,6 +78,7 @@ def get_study(study_id, qa_mode=False):
     if data["duration"] != "0":
         writer = csv.writer(sys.stdout)
         writer.writerow(data.values())
+        sys.stdout.flush()
 
 
 def main():
