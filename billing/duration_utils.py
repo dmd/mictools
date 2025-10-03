@@ -52,7 +52,7 @@ def duration(study, server, username, password):
             logger.warning(f"Warning: {e}, retrying in 1 second...")
             time.sleep(1)
 
-    instance_data = []
+    instance_creation_datetimes = []
 
     for item in data:
         if (
@@ -69,26 +69,15 @@ def duration(study, server, username, password):
             for fmt in ["%Y%m%d%H%M%S.%f", "%Y%m%d%H%M%S"]:
                 try:
                     dt = datetime.datetime.strptime(datetime_str, fmt)
-                    # Extract AcquisitionDuration if present (tag 0018,9073, in seconds)
-                    acq_duration = item.get("MainDicomTags", {}).get("AcquisitionDuration", 0)
-                    try:
-                        acq_duration = float(acq_duration)
-                    except (ValueError, TypeError):
-                        acq_duration = 0
-                    instance_data.append((dt, acq_duration))
+                    instance_creation_datetimes.append(dt)
                     break
                 except ValueError:
                     continue
 
     try:
-        min_time = min(instance_data, key=lambda x: x[0])[0]
-        max_time_tuple = max(instance_data, key=lambda x: x[0])
-        max_time = max_time_tuple[0]
-        max_acq_duration = max_time_tuple[1]
-
-        # Add the acquisition duration of the last instance to the total duration
-        total_duration = (max_time - min_time) + datetime.timedelta(seconds=max_acq_duration)
-        return total_duration, min_time
+        min_time = min(instance_creation_datetimes)
+        max_time = max(instance_creation_datetimes)
+        return max_time - min_time, min_time
     except ValueError:
         return 0, None
 
