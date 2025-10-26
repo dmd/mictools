@@ -1,43 +1,108 @@
-#!/usr/bin/python3
+#!/usr/bin/env bash
+set -euo pipefail
 
-import os
-import sys
-import http.server
-import ssl
-import socketserver
-import signal
+CERT="/home/ddrucker/mictools/everything-mickey.pem"
+KEY="/home/ddrucker/mictools/everything-mickey.pem"
+
+find_available_port() {
+    local port
+    local max_attempts=100
+    local attempt=0
+
+    # Check if ss command is available
+    if ! command -v ss >/dev/null 2>&1; then
+        printf "Error: 'ss' command not found (install iproute2)\n" >&2
+        return 1
+    fi
+
+    while (( attempt < max_attempts )); do
+        # Generate random port in range 20000-60000
+        port=$((20000 + RANDOM % 40001))
+
+        # Check if port is available (not listening)
+        # Use grep with word boundary to match port at end of address field
+        # Pattern matches :PORT followed by whitespace or end of line
+        if ! ss -tuln | grep -qE ":${port}([[:space:]]|$)"; then
+            echo "$port"
+            return 0
+        fi
+
+        ((attempt++))
+    done
+
+    printf "Failed to find available port after %d attempts\n" "$max_attempts" >&2
+    return 1
+}
+
+PORT=$(find_available_port)
+if [[ -z "$PORT" ]]; then
+    exit 1
+fi
+
+ADDR="0.0.0.0:$PORT"
+
+for cmd in rclone htpasswd pamtester; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        printf "Error: Required command '%s' not found\n" "$cmd" >&2
+        exit 1
+    fi
+done
+
+# Check for certificate and key files
+if [[ ! -f "$CERT" ]]; then
+    printf "Error: Certificate file not found: %s\n" "$CERT" >&2
+    exit 1
+fi
+if [[ ! -f "$KEY" ]]; then
+    printf "Error: Key file not found: %s\n" "$KEY" >&2
+    exit 1
+fi
+
+USERNAME="${USERNAME:-${USER:-$(whoami)}}"
+
+cleanup() {
+    [[ -n "${HTPASS_TMP:-}" && -f "$HTPASS_TMP" ]] && shred -u "$HTPASS_TMP" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+printf "Mickey password for %s: " "$USERNAME" >&2
+IFS= read -r -s PASSWORD
+printf "\n" >&2
+
+if ! printf "%s\n" "$PASSWORD" | pamtester --force-interactive login "$USERNAME" authenticate >/dev/null 2>&1; then
+    printf "Authentication failed for user %s\n" "$USERNAME" >&2
+    exit 1
+fi
+
+# Create a secure temporary htpasswd file (600)
+HTPASS_TMP="$(mktemp --tmpdir rclone-htpasswd.XXXXXX)"
+chmod 600 "$HTPASS_TMP"
+
+if ! printf "%s\n" "$PASSWORD" | htpasswd -i -B -c "$HTPASS_TMP" "$USERNAME"; then
+    printf "Failed to write htpasswd file\n" >&2
+    exit 1
+fi
+
+PASSWORD=''
+unset PASSWORD
 
 
-def handler(signum, frame):
-    print("Exiting after 24 hours...")
-    sys.exit(1)
+# Color codes
+BRIGHT_YELLOW='\033[93m'
+YELLOW='\033[33m'
+RESET='\033[0m'
 
+printf "\n\n" >&2
+printf "${YELLOW}Your files are at: ${BRIGHT_YELLOW}https://mickey.mclean.harvard.edu:%s%s/${RESET}\n\n" "$PORT" "$PWD" >&2
+printf "${BRIGHT_YELLOW}You can mount them on your desktop:${RESET}\n" >&2
+printf "${YELLOW}  MacOS: Go → Connect to Server.\n" >&2
+printf "  Win11: Map Network Drive; uncheck Reconnect, check 'different credentials'.${RESET}\n\n" >&2
+printf "Please type Control-c when you are done.\n" >&2
+printf "(Server will automatically exit after 24 hours.)\n\n" >&2
 
-signal.signal(signal.SIGALRM, handler)
-signal.alarm(24 * 60 * 60)
-
-try:
-    if sys.argv[1].startswith("/"):
-        filepath = sys.argv[1]
-    else:
-        filepath = os.getcwd() + "/" + sys.argv[1]
-except IndexError:
-    filepath = os.getcwd()
-
-os.chdir("/")
-
-host = socketserver.socket.gethostname() + ".mclean.harvard.edu"
-httpd = socketserver.TCPServer(("", 0), http.server.SimpleHTTPRequestHandler)
-httpd.socket = ssl.wrap_socket(
-    httpd.socket,
-    server_side=True,
-    certfile="/home/ddrucker/mictools/everything-" + host + ".pem",
-    ssl_version=ssl.PROTOCOL_TLS,
-)
-
-print(
-    "Go to:      https://" + host + ":" + str(httpd.socket.getsockname()[1]) + filepath
-)
-print("(In Terminal, you can right-click the above and select Open URL.)")
-print("Please type Control-c when you are done.")
-httpd.serve_forever()
+timeout --foreground 48h rclone serve webdav / \
+    --addr "$ADDR" \
+    --cert "$CERT" \
+    --key "$KEY" \
+    --htpasswd "$HTPASS_TMP" \
+    --copy-links
