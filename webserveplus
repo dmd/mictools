@@ -43,6 +43,16 @@ def main():
     username = getpass.getuser()
     password = generate_password()
 
+    # Log launch to file
+    try:
+        from datetime import datetime
+        log_file = "/home/ddrucker/webserve-log"
+        with open(log_file, "a") as f:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"{timestamp}\twebserveplus\t{username}\n")
+    except Exception:
+        pass  # Silently ignore logging errors
+
     cmd = [
         "copyparty-sfx.py",
         "-q",

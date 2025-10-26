@@ -86,6 +86,9 @@ fi
 PASSWORD=''
 unset PASSWORD
 
+# Log launch to file
+LOG_FILE="/home/ddrucker/webserve-log"
+printf "%s\t%s\t%s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "webserve" "$USERNAME" >> "$LOG_FILE" 2>/dev/null || true
 
 # Color codes
 BRIGHT_YELLOW='\033[93m'
@@ -98,7 +101,7 @@ printf "${BRIGHT_YELLOW}You can mount them on your desktop:${RESET}\n" >&2
 printf "${YELLOW}  MacOS: Go → Connect to Server.\n" >&2
 printf "  Win11: Map Network Drive; uncheck Reconnect, check 'different credentials'.${RESET}\n\n" >&2
 printf "Please type Control-c when you are done.\n" >&2
-printf "(Server will automatically exit after 24 hours.)\n\n" >&2
+printf "(Server will automatically exit after 48 hours.)\n\n" >&2
 
 timeout --foreground 48h rclone serve webdav / \
     --addr "$ADDR" \
