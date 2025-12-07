@@ -1,6 +1,0 @@
-#!/bin/bash
-
-echo "Please use plain \"webserve\", which now supports drive mounting."
-echo
-echo "If there is a feature of webserveplus/copyparty"
-echo "that you are missing let Daniel know."
