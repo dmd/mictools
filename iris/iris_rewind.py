@@ -64,9 +64,24 @@ def rewind(studydir, task):
 
         bids_subj = bids_subj_dir(studydir)
         trash(studydir, [bids_subj])
-        for d in os.listdir(pjoin(studydir, "sourcedata", bids_subj)):
-            os.rename(pjoin(studydir, "sourcedata", bids_subj, d), pjoin(studydir, d))
-        os.rmdir(pjoin(studydir, "sourcedata", bids_subj))
+
+        # Check if there's a session directory in sourcedata
+        sourcedata_subj_dir = pjoin(studydir, "sourcedata", bids_subj)
+        contents = os.listdir(sourcedata_subj_dir)
+
+        # If there's a single ses-* directory, move from within it
+        session_dirs = [d for d in contents if d.startswith("ses-")]
+        if len(session_dirs) == 1:
+            session_dir = pjoin(sourcedata_subj_dir, session_dirs[0])
+            for d in os.listdir(session_dir):
+                os.rename(pjoin(session_dir, d), pjoin(studydir, d))
+            os.rmdir(session_dir)
+        else:
+            # No session or multiple sessions - use original logic
+            for d in contents:
+                os.rename(pjoin(sourcedata_subj_dir, d), pjoin(studydir, d))
+
+        os.rmdir(sourcedata_subj_dir)
         os.rmdir(pjoin(studydir, "sourcedata"))
         trash(
             studydir,

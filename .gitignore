@@ -8,3 +8,4 @@ __pycache__
 .netrc
 .aider*
 .94tsecret
+.claude/

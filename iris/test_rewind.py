@@ -114,3 +114,32 @@ def test_rewind_to_state():
     assert not os.path.exists(f"{testdir}/nifti")
 
     destroy_testdir("rewind_to_state")
+
+
+def test_rewind_bids_with_session():
+    """Test that rewind works correctly with session-level data (sub-1/ses-1/{anat,func})"""
+    testdir_source = "tests/iris/rewind-with-session"
+    testdir = "tests/iris/rewind_test_bids_with_session"
+    shutil.copytree(testdir_source, testdir)
+
+    # First rewind from fmriprep to bids
+    rewind(testdir, "fmriprep")
+    rewind(testdir, "bids")
+
+    # Check that session-level sourcedata was moved back correctly
+    assert not os.path.exists(f"{testdir}/sourcedata/sub-1/ses-1")
+    assert not os.path.exists(f"{testdir}/sourcedata/sub-1")
+    assert not os.path.exists(f"{testdir}/sourcedata")
+    assert not os.path.exists(f"{testdir}/.state-pre-bids")
+    assert not os.path.exists(f"{testdir}/dataset_description.json")
+    assert not os.path.exists(f"{testdir}/README")
+    assert not os.path.exists(f"{testdir}/CHANGES")
+    assert not os.path.exists(f"{testdir}/.bidsignore")
+    assert not os.path.exists(f"{testdir}/.taskrun_bids")
+
+    # Check that nifti and scans directories were restored to the top level
+    assert os.path.exists(f"{testdir}/nifti/restingstate_10.json")
+    assert os.path.exists(f"{testdir}/scans/10-restingstate")
+    assert os.path.exists(f"{testdir}/.state-pre-nifti")
+
+    shutil.rmtree(testdir)
