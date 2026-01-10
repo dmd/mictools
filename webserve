@@ -65,7 +65,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-printf "Mickey password for %s: " "$USERNAME" >&2
+printf "Password: " "$USERNAME" >&2
 IFS= read -r -s PASSWORD
 printf "\n" >&2
 

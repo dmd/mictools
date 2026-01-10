@@ -48,7 +48,7 @@ echo "Mail: $mail"
 echo If these are incorrect, control-c now. Otherwise, hit return.
 read
 
-$CMSH -c "user; add ${U}; set loginshell /bin/bash; set email $mail ; set surname ${MGBID}@PARTNERS.org ; set commonname \"$displayName\" ; set password; commit;"
+$CMSH -c "user; add ${U}; set loginshell /bin/bash; set email $mail ; set surname ${MGBID}@PARTNERS.org ; set commonname \"$displayName\" ; commit;"
 
 chown -R $U:$U /home/$U
 
@@ -58,14 +58,6 @@ cp /home/proto/.bashrc /home/$U
 cp /home/proto/.condarc /home/$U
 
 chown $U:$U /home/$U/.cshrc* /home/$U/.bash* /home/$U/.condarc
-
-# limit memory use
-newuid=$(id -u $U)
-mkdir -p /etc/systemd/system/user-"$newuid".slice.d
-printf '[Slice]\nMemoryMax=64G\n' \
-    | tee /etc/systemd/system/user-"$newuid".slice.d/override.conf \
-          >/dev/null
-systemctl daemon-reload
 
 echo Setting up slurm...
 yes | sacctmgr add user $U Cluster=slurm Account=mic
