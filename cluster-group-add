@@ -13,4 +13,6 @@ if [ $# -ne 2 ]
 fi
 
 cmsh -c "group ; append $1 members $2 ; commit"
+sleep 2
+sss_cache -E
 

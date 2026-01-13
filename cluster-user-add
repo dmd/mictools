@@ -115,3 +115,4 @@ fi
 
 
 echo Now please run "su - $U" and make sure that worked.
+sss_cache -E
