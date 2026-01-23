@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QA Metrics Overview</title>
+    <style>
+      :root {
+        --ink: #16212a;
+        --muted: #5f6c75;
+        --accent: #d46a1f;
+        --accent-deep: #8c3e0b;
+        --paper: #f7f1ea;
+        --card: #ffffff;
+        --shadow: 0 12px 28px rgba(26, 32, 44, 0.12);
+        --radius: 18px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+        color: var(--ink);
+        background:
+          radial-gradient(1200px 600px at 10% -10%, #f1d9c7 0%, transparent 70%),
+          radial-gradient(900px 500px at 90% 10%, #dbe7f5 0%, transparent 65%),
+          linear-gradient(160deg, #f6efe7 0%, #eef3f8 100%);
+      }
+
+      .hero {
+        padding: 56px 6vw 32px;
+      }
+
+      .hero-inner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .hero-text {
+        max-width: 520px;
+      }
+
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.24em;
+        font-size: 0.7rem;
+        color: var(--accent-deep);
+        margin: 0 0 10px;
+      }
+
+      h1 {
+        font-size: clamp(2.1rem, 3.4vw, 3rem);
+        margin: 0 0 12px;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .hero-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        min-width: 280px;
+      }
+
+      .badge {
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid rgba(22, 33, 42, 0.1);
+        padding: 14px 16px;
+        border-radius: 999px;
+        display: grid;
+        gap: 6px;
+        box-shadow: var(--shadow);
+      }
+
+      .badge-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: var(--muted);
+      }
+
+      .badge-value {
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .grid {
+        display: grid;
+        gap: 24px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        padding: 0 6vw 64px;
+      }
+
+      .card {
+        background: var(--card);
+        border-radius: var(--radius);
+        padding: 18px 18px 24px;
+        box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(140deg, rgba(212, 106, 31, 0.08), transparent 50%);
+        pointer-events: none;
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .card h2 {
+        margin: 0;
+        font-size: 1.25rem;
+      }
+
+      .card-sub {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .chart {
+        width: 100%;
+        height: 320px;
+        border-radius: 12px;
+        background: rgba(246, 239, 231, 0.55);
+      }
+
+      .footer {
+        padding: 0 6vw 40px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 640px) {
+        .hero {
+          padding-top: 40px;
+        }
+
+        .badge {
+          border-radius: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="hero-text">
+          <p class="eyebrow">Bruker QA</p>
+          <h1>Scan Quality Trends</h1>
+          <p class="subtitle">
+            Frequency, SNR, inhomogeneity, and ghosting plotted by study time.
+          </p>
+        </div>
+        <div class="hero-meta">
+          <div class="badge">
+            <span class="badge-label">Data</span>
+            <span id="study-count" class="badge-value">--</span>
+          </div>
+          <div class="badge">
+            <span class="badge-label">Range</span>
+            <span id="date-range" class="badge-value">--</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="card">
+        <div class="card-header">
+          <h2>Frequency</h2>
+          <p class="card-sub">MHz</p>
+        </div>
+        <div id="chart-frequency" class="chart"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2>Normalized SNR</h2>
+          <p class="card-sub">&nbsp;</p>
+        </div>
+        <div id="chart-snr" class="chart"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2>Inhomogeneity</h2>
+          <p class="card-sub">&nbsp;</p>
+        </div>
+        <div id="chart-inhomogeneity" class="chart"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2>Max Ghost</h2>
+          <p class="card-sub">&nbsp;</p>
+        </div>
+        <div id="chart-maxghost" class="chart"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Rendered from <code>qa.json</code> in this folder.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <script>
+      const COLORS = {
+        frequency: "#e26b1d",
+        snr: "#1d6fa8",
+        inhomogeneity: "#8c3e0b",
+        maxghost: "#2f7c4f",
+      };
+
+      function parseDate(value) {
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date;
+      }
+
+      function formatDate(value) {
+        return value.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+        });
+      }
+
+      function setMeta(data) {
+        const count = document.getElementById("study-count");
+        const range = document.getElementById("date-range");
+        count.textContent = `${data.length} studies`;
+        if (data.length) {
+          range.textContent = `${formatDate(data[0].datetime)} — ${formatDate(
+            data[data.length - 1].datetime
+          )}`;
+        } else {
+          range.textContent = "No data";
+        }
+      }
+
+      function normalizeData(entries) {
+        return entries
+          .map((entry) => {
+            const dt = parseDate(entry.datetime);
+            if (!dt) {
+              return null;
+            }
+            return {
+              datetime: dt,
+              frequency: Number(entry.frequency),
+              normalized_snr: Number(entry.normalized_snr),
+              inhomogeneity: Number(entry.inhomogeneity),
+              maxghost: Number(entry.maxghost),
+            };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.datetime - b.datetime);
+      }
+
+      function baseOption(color) {
+        return {
+          animation: false,
+          grid: { left: 52, right: 24, top: 18, bottom: 38 },
+          tooltip: { trigger: "axis" },
+          xAxis: {
+            type: "time",
+            axisLabel: { color: "#5f6c75" },
+            axisLine: { lineStyle: { color: "rgba(22, 33, 42, 0.2)" } },
+            splitLine: { show: false },
+          },
+          yAxis: {
+            type: "value",
+            axisLabel: { color: "#5f6c75" },
+            splitLine: { lineStyle: { color: "rgba(22, 33, 42, 0.08)" } },
+          },
+          series: [
+            {
+              type: "line",
+              smooth: false,
+              showSymbol: true,
+              symbolSize: 6,
+              lineStyle: { color, width: 2.5 },
+              itemStyle: { color },
+              areaStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                  { offset: 0, color },
+                  { offset: 1, color: "rgba(255,255,255,0)" },
+                ]),
+              },
+            },
+          ],
+        };
+      }
+
+      function renderChart(el, data, color) {
+        const chart = echarts.init(el);
+        const option = baseOption(color);
+        option.series[0].data = data.map((point) => [point.x, point.y]);
+        chart.setOption(option);
+        return chart;
+      }
+
+      async function main() {
+        const response = await fetch("qa.json", { cache: "no-store" });
+        const rawData = await response.json();
+        const data = normalizeData(rawData);
+        setMeta(data);
+
+        const charts = [
+          renderChart(
+            document.getElementById("chart-frequency"),
+            data.map((row) => ({ x: row.datetime, y: row.frequency })),
+            COLORS.frequency
+          ),
+          renderChart(
+            document.getElementById("chart-snr"),
+            data.map((row) => ({ x: row.datetime, y: row.normalized_snr })),
+            COLORS.snr
+          ),
+          renderChart(
+            document.getElementById("chart-inhomogeneity"),
+            data.map((row) => ({ x: row.datetime, y: row.inhomogeneity })),
+            COLORS.inhomogeneity
+          ),
+          renderChart(
+            document.getElementById("chart-maxghost"),
+            data.map((row) => ({ x: row.datetime, y: row.maxghost })),
+            COLORS.maxghost
+          ),
+        ];
+
+        window.addEventListener("resize", () => {
+          charts.forEach((chart) => chart.resize());
+        });
+      }
+
+      main().catch((err) => {
+        console.error(err);
+        const range = document.getElementById("date-range");
+        if (range) {
+          range.textContent = "Failed to load qa.json";
+        }
+      });
+    </script>
+  </body>
+</html>

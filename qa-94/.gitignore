@@ -1,0 +1,3 @@
+.ruff*
+__pycache__
+qa.json
