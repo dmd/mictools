@@ -1,0 +1,5 @@
+export PBS_USER="backups@pbs"
+export PBS_HOST="pbs.mclean.harvard.edu"
+export PBS_DATASTORE="backups"
+export PBS_PASSWORD="the-secret-password-here"
+export PBS_REPOSITORY="${PBS_USER}@${PBS_HOST}:${PBS_DATASTORE}"
