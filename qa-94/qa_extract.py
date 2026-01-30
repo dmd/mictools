@@ -255,7 +255,7 @@ def main():
     parser.add_argument(
         "-o",
         "--output",
-        help="Output JSON path (defaults to <study>-qa.json for one input, qa.json for multiple)",
+        help="Output JSON path (defaults to <study>-qa.json for one input, 94tweeklyQA.json for multiple)",
     )
     args = parser.parse_args()
 
@@ -280,7 +280,7 @@ def main():
     elif len(outputs) == 1:
         output_path = Path.cwd() / f"{outputs[0]['study']}-qa.json"
     else:
-        output_path = Path.cwd() / "qa.json"
+        output_path = Path.cwd() / "94tweeklyQA.json"
 
     with output_path.open("w", encoding="utf-8") as f:
         json.dump(outputs, f, indent=2)
