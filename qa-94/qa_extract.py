@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 import argparse
+import glob
 import json
 import re
 from pathlib import Path
 import os
 import xml.etree.ElementTree as ET
 from datetime import datetime
+
+DEFAULT_PATTERN = "/94t/bruker/nmr/*T9660_WeeklyQAMiddle*"
 
 DOCBOOK_NS = "http://docbook.org/ns/docbook"
 NS = {"db": DOCBOOK_NS}
@@ -246,8 +249,8 @@ def main():
     )
     parser.add_argument(
         "study_paths",
-        nargs="+",
-        help="One or more study directories",
+        nargs="*",
+        help=f"One or more study directories (default: {DEFAULT_PATTERN})",
     )
     parser.add_argument(
         "-o",
@@ -255,6 +258,11 @@ def main():
         help="Output JSON path (defaults to <study>-qa.json for one input, qa.json for multiple)",
     )
     args = parser.parse_args()
+
+    if not args.study_paths:
+        args.study_paths = sorted(glob.glob(DEFAULT_PATTERN))
+        if not args.study_paths:
+            raise SystemExit(f"No directories found matching {DEFAULT_PATTERN}")
 
     outputs_with_dt = []
     for study_path_str in args.study_paths:
