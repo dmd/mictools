@@ -49,6 +49,7 @@ echo If these are incorrect, control-c now. Otherwise, hit return.
 read
 
 $CMSH -c "user; add ${U}; set loginshell /bin/bash; set email $mail ; set surname ${MGBID}@PARTNERS.org ; set commonname \"$displayName\" ; commit;"
+sss_cache -E
 
 chown -R $U:$U /home/$U
 
