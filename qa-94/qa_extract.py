@@ -269,8 +269,8 @@ def main():
         study_path = Path(study_path_str)
         try:
             outputs_with_dt.append(extract_study_metrics(study_path))
-        except SystemExit as e:
-            raise SystemExit(f"{study_path}: {e}")
+        except SystemExit:
+            continue
 
     outputs_with_dt.sort(key=lambda x: x[0])
     outputs = [o for _, o in outputs_with_dt]
