@@ -9,3 +9,4 @@ __pycache__
 .aider*
 .94tsecret
 .claude/
+pbs.token
