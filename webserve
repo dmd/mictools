@@ -95,13 +95,20 @@ BRIGHT_YELLOW='\033[93m'
 YELLOW='\033[33m'
 RESET='\033[0m'
 
-FILENAME="${1:-}"
+ARG="${1:-}"
 
 printf "\n\n" >&2
-if [[ -n "$FILENAME" ]]; then
-    printf "${YELLOW}Your file is at: ${BRIGHT_YELLOW}https://mickey.mclean.harvard.edu:%s%s/%s${RESET}\n\n" "$PORT" "$PWD" "$FILENAME" >&2
+if [[ -n "$ARG" && ! -d "$ARG" ]]; then
+    # Single file: show URL with filename, no mounting instructions
+    printf "${YELLOW}Your file is at: ${BRIGHT_YELLOW}https://mickey.mclean.harvard.edu:%s%s/%s${RESET}\n\n" "$PORT" "$PWD" "$ARG" >&2
 else
-    printf "${YELLOW}Your files are at: ${BRIGHT_YELLOW}https://mickey.mclean.harvard.edu:%s%s/${RESET}\n\n" "$PORT" "$PWD" >&2
+    # No argument or directory: show directory URL and mounting instructions
+    if [[ -n "$ARG" ]]; then
+        SERVE_DIR="$(cd "$ARG" && pwd)"
+        printf "${YELLOW}Your files are at: ${BRIGHT_YELLOW}https://mickey.mclean.harvard.edu:%s%s/${RESET}\n\n" "$PORT" "$SERVE_DIR" >&2
+    else
+        printf "${YELLOW}Your files are at: ${BRIGHT_YELLOW}https://mickey.mclean.harvard.edu:%s%s/${RESET}\n\n" "$PORT" "$PWD" >&2
+    fi
     printf "${BRIGHT_YELLOW}You can mount them on your desktop:${RESET}\n" >&2
     printf "${YELLOW}  MacOS: Go → Connect to Server.\n" >&2
     printf "  Win11: Map Network Drive; uncheck Reconnect, check 'different credentials'.${RESET}\n\n" >&2
