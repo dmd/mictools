@@ -280,11 +280,11 @@
       function baseOption(color) {
         return {
           animation: false,
-          grid: { left: 52, right: 24, top: 18, bottom: 38 },
+          grid: { left: 52, right: 24, top: 18, bottom: 56 },
           tooltip: { trigger: "axis" },
           xAxis: {
             type: "time",
-            axisLabel: { color: "#5f6c75" },
+            axisLabel: { color: "#5f6c75", hideOverlap: true, rotate: 30 },
             axisLine: { lineStyle: { color: "rgba(22, 33, 42, 0.2)" } },
             splitLine: { show: false },
           },
