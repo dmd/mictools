@@ -312,9 +312,10 @@
         };
       }
 
-      function renderChart(el, data, color) {
+      function renderChart(el, data, color, yAxisOpts) {
         const chart = echarts.init(el);
         const option = baseOption(color);
+        if (yAxisOpts) Object.assign(option.yAxis, yAxisOpts);
         option.series[0].data = data.map((point) => [point.x, point.y]);
         chart.setOption(option);
         return chart;
@@ -330,7 +331,8 @@
           renderChart(
             document.getElementById("chart-frequency"),
             data.map((row) => ({ x: row.datetime, y: row.frequency })),
-            COLORS.frequency
+            COLORS.frequency,
+            { scale: true }
           ),
           renderChart(
             document.getElementById("chart-snr"),
