@@ -121,20 +121,23 @@ def find_report_paths(study_path: Path) -> tuple[list[Path], Path | None]:
     return qasnr_paths, first_ghost_path
 
 
+def extract_frequency(study_path: Path) -> float | None:
+    acqp_path = study_path / "1" / "acqp"
+    if not acqp_path.is_file():
+        return None
+    with acqp_path.open() as f:
+        for line in f:
+            if line.startswith("##$BF1="):
+                return float(line.split("=", 1)[1].strip())
+    return None
+
+
 def extract_qasnr_metrics(qasnr_paths):
-    frequency = None
     max_snr = None
     min_inhomogeneity = None
     min_inhomogeneity_fraction = None
     for path in qasnr_paths:
         root = ET.parse(path).getroot()
-
-        if frequency is None:
-            table = find_table_by_title(root, "System Information")
-            if table is not None:
-                value = get_table_label_value(table, "Frequency")
-                if value:
-                    frequency = parse_number(value)
 
         table = find_table_by_title(root, "Image specific SNR values")
         if table is not None:
@@ -160,7 +163,7 @@ def extract_qasnr_metrics(qasnr_paths):
     if max_snr is not None and max_snr.is_integer():
         max_snr = int(max_snr)
 
-    return frequency, max_snr, min_inhomogeneity_fraction
+    return max_snr, min_inhomogeneity_fraction
 
 
 def extract_maxghost(first_ghost_path):
@@ -213,13 +216,15 @@ def extract_study_metrics(study_path: Path) -> tuple[datetime, dict]:
     except ValueError as e:
         raise SystemExit(str(e))
 
+    frequency = extract_frequency(study_path)
+
     qasnr_paths, first_ghost = find_report_paths(study_path)
     if not qasnr_paths:
         raise SystemExit("No QASnrReport.xml files found.")
     if first_ghost is None:
         raise SystemExit("No QAGhostReport.xml files found.")
 
-    frequency, normalized_snr, inhomogeneity = extract_qasnr_metrics(qasnr_paths)
+    normalized_snr, inhomogeneity = extract_qasnr_metrics(qasnr_paths)
     maxghost = extract_maxghost(first_ghost)
 
     if frequency is None:
