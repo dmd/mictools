@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]
+  then
+    echo "No password supplied"
+fi
+
+mkdir -p run var-lib-rstudio-server
+port=$(shuf -i 30000-50000 -n 1)
+echo Connect to http://mickey.mclean.harvard.edu:$port/
+printf 'provider=sqlite\ndirectory=/var/lib/rstudio-server\n' > database.conf
+APPTAINERENV_OMP_NUM_THREADS=1 PASSWORD=$1 singularity exec \
+   -B /data --bind run:/run,var-lib-rstudio-server:/var/lib/rstudio-server,database.conf:/etc/rstudio/database.conf \
+   /data/singularity-images/rstudio_4.2.sif \
+   /usr/lib/rstudio-server/bin/rserver --www-port $port --auth-none=0 --auth-pam-helper-path=pam-helper --server-user=$(whoami)
+
