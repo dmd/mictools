@@ -1,0 +1,6 @@
+#!/bin/bash
+
+port=$(shuf -i 30000-50000 -n 1)
+jupyter lab --ip 0.0.0.0 --port $port --no-browser
+
+
