@@ -33,6 +33,7 @@ Per-series (recorded once *per series* when available):
     0008,103e  Series Description
     0018,9005  Pulse Sequence Name
     0018,0024  Sequence Name
+    0018,0080  Repetition Time (milliseconds)
 
 A series is stored only if both SAR **and** duration are successfully
 retrieved.
@@ -45,7 +46,7 @@ Table *studies*
 
 Table *series*
     series_uid (PK) | accession (FK) | sar | duration | series_number |
-    series_description | pulse_sequence_name | sequence_name
+    series_description | pulse_sequence_name | sequence_name | repetition_time
 
 Usage examples
 --------------
@@ -218,10 +219,17 @@ def get_db_connection(db_path: str = DEFAULT_DB_PATH) -> sqlite3.Connection:
             series_description  TEXT,
             pulse_sequence_name TEXT,
             sequence_name       TEXT,
+            repetition_time     REAL,     -- milliseconds
             FOREIGN KEY (accession) REFERENCES studies(accession)
         )
         """
     )
+
+    # Lightweight migration: add repetition_time column to pre-existing DBs.
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(series)").fetchall()}
+    if "repetition_time" not in cols:
+        conn.execute("ALTER TABLE series ADD COLUMN repetition_time REAL")
+        conn.commit()
 
     return conn
 
@@ -275,6 +283,7 @@ SERIES_NUMBER_TAG = "0020,0011"  # Series Number
 SERIES_DESCRIPTION_TAG = "0008,103e"  # Series Description
 PULSE_SEQUENCE_NAME_TAG = "0018,9005"  # Pulse Sequence Name
 SEQUENCE_NAME_TAG = "0018,0024"  # Sequence Name
+REPETITION_TIME_TAG = "0018,0080"  # Repetition Time (ms)
 
 
 def extract_patient_tags(ds: pydicom.FileDataset) -> Dict[str, Optional[str]]:
@@ -362,6 +371,21 @@ def extract_sequence_name(ds: pydicom.FileDataset) -> Optional[str]:
     if elem is None or elem.value in ("", None):  # type: ignore[attr-defined]
         return None
     return str(elem.value)  # type: ignore[attr-defined]
+
+
+def extract_repetition_time(ds: pydicom.FileDataset) -> Optional[float]:
+    """Return Repetition Time (0018,0080) in milliseconds or None."""
+
+    elem = get_element(ds, REPETITION_TIME_TAG)
+    if elem is None or elem.value in ("", None):  # type: ignore[attr-defined]
+        return None
+    try:
+        return float(elem.value)  # type: ignore[arg-type,attr-defined]
+    except (TypeError, ValueError):
+        try:
+            return float(str(elem.value).split()[0])  # type: ignore[attr-defined]
+        except ValueError:
+            return None
 
 
 def extract_series_duration(ds: pydicom.FileDataset) -> Optional[float]:
@@ -550,14 +574,15 @@ def _process_study(study: pyorthanc.Study, conn: sqlite3.Connection) -> None:
             series_description = extract_series_description(ds)
             pulse_sequence_name = extract_pulse_sequence_name(ds)
             sequence_name = extract_sequence_name(ds)
+            repetition_time = extract_repetition_time(ds)
 
             conn.execute(
                 """
-                INSERT INTO series (series_uid, accession, sar, duration, series_number, 
-                                  series_description, pulse_sequence_name, sequence_name)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO series (series_uid, accession, sar, duration, series_number,
+                                  series_description, pulse_sequence_name, sequence_name, repetition_time)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (series_uid, accession, sar, duration, series_number, series_description, pulse_sequence_name, sequence_name),
+                (series_uid, accession, sar, duration, series_number, series_description, pulse_sequence_name, sequence_name, repetition_time),
             )
 
         except Exception as exc:
