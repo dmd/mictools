@@ -31,6 +31,8 @@
     }
     #controls {
       display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
       align-items: center;
       margin: 8px;
     }
@@ -38,8 +40,14 @@
       margin-right: 4px;
       font-weight: bold;
     }
-    #controls select {
-      margin-right: 16px;
+    #controls select,
+    #controls input {
+      margin-right: 0;
+    }
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     /* Loading overlay */
     #loading-overlay {
@@ -68,16 +76,28 @@
     <div class="loading-message">Loading data...</div>
   </div>
   <div id="controls">
-    <label for="datasetSelector">Dataset:</label>
-    <select id="datasetSelector">
-      <option value="p1">P1</option>
-      <option value="p2">P2</option>
-    </select>
-    <label for="sequenceSelector">Sequence:</label>
-    <select id="sequenceSelector">
-      <option value="ep2d_bold">ep2d_bold</option>
-      <option value="mb_bold">epi_mb</option>
-    </select>
+    <div class="control-group">
+      <label for="datasetSelector">Dataset:</label>
+      <select id="datasetSelector">
+        <option value="p1">P1</option>
+        <option value="p2">P2</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="sequenceSelector">Sequence:</label>
+      <select id="sequenceSelector">
+        <option value="ep2d_bold">ep2d_bold</option>
+        <option value="mb_bold">epi_mb</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="startDate">Start:</label>
+      <input type="date" id="startDate">
+    </div>
+    <div class="control-group">
+      <label for="endDate">End:</label>
+      <input type="date" id="endDate">
+    </div>
   </div>
   <div class="chart-container">
     <div class="chart-wrapper"><div id="ImagingFrequency_chart"></div></div>
@@ -98,8 +118,12 @@
     document.addEventListener('DOMContentLoaded', () => {
       const datasetSelector = document.getElementById('datasetSelector');
       const sequenceSelector = document.getElementById('sequenceSelector');
+      const startDate = document.getElementById('startDate');
+      const endDate = document.getElementById('endDate');
       datasetSelector.addEventListener('change', main);
       sequenceSelector.addEventListener('change', main);
+      startDate.addEventListener('change', main);
+      endDate.addEventListener('change', main);
       main();
     });
     // List JSON files in the given directory and return full URLs
@@ -177,6 +201,27 @@
             d = +m[1].slice(6, 8);
       return new Date(y, mo - 1, d);
     }
+    function parseDateInput(value, endOfDay = false) {
+      if (!value) return null;
+      const [year, month, day] = value.split('-').map(Number);
+      if (!year || !month || !day) return null;
+      return endOfDay
+        ? new Date(year, month - 1, day, 23, 59, 59, 999)
+        : new Date(year, month - 1, day);
+    }
+    function filterByDateRange(data, start, end) {
+      const filtered = {};
+      Object.keys(data).forEach(key => {
+        filtered[key] = [];
+      });
+      data.labels.forEach((date, idx) => {
+        if ((start && date < start) || (end && date > end)) return;
+        Object.keys(data).forEach(key => {
+          filtered[key].push(data[key][idx]);
+        });
+      });
+      return filtered;
+    }
     async function main() {
       const overlay = document.getElementById('loading-overlay');
       overlay.style.display = 'block';
@@ -187,8 +232,10 @@
       if (!baseUrl.endsWith('/')) baseUrl += '/';
       const bp = new RegExp(`\\d{8}_\\d{4}.+${pattern}\\.json$`);
       const sp = new RegExp(`\\d{8}_\\d{4}.+${pattern}_sidecar\\.json$`);
-      const Data = await fetchData(baseUrl, bp, parseBoldData);
-      const side = await fetchData(baseUrl, sp, parseSidecarData);
+      const start = parseDateInput(document.getElementById('startDate').value);
+      const end = parseDateInput(document.getElementById('endDate').value, true);
+      const Data = filterByDateRange(await fetchData(baseUrl, bp, parseBoldData), start, end);
+      const side = filterByDateRange(await fetchData(baseUrl, sp, parseSidecarData), start, end);
       const charts = [
         { id: 'ImagingFrequency_chart', title: 'Imaging Frequency', labels: side.labels,
           series: [{ label: 'ImagingFrequency', data: side.ImagingFrequency, color: '#9966ff' }] },
