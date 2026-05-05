@@ -73,6 +73,41 @@
         min-width: 280px;
       }
 
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        width: min(100%, 420px);
+      }
+
+      .field {
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid rgba(22, 33, 42, 0.1);
+        border-radius: 16px;
+        padding: 12px 14px;
+        box-shadow: var(--shadow);
+      }
+
+      .field label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: var(--muted);
+      }
+
+      .field input {
+        width: 100%;
+        min-height: 36px;
+        border: 1px solid rgba(22, 33, 42, 0.18);
+        border-radius: 8px;
+        padding: 6px 8px;
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.86);
+        font: inherit;
+      }
+
       .badge {
         background: rgba(255, 255, 255, 0.75);
         border: 1px solid rgba(22, 33, 42, 0.1);
@@ -182,6 +217,16 @@
             <span id="date-range" class="badge-value">--</span>
           </div>
         </div>
+        <form id="date-controls" class="controls">
+          <div class="field">
+            <label for="start-date">Start</label>
+            <input id="start-date" name="start-date" type="date" />
+          </div>
+          <div class="field">
+            <label for="end-date">End</label>
+            <input id="end-date" name="end-date" type="date" />
+          </div>
+        </form>
       </div>
     </header>
 
@@ -245,13 +290,38 @@
         });
       }
 
-      function setMeta(data) {
+      function toDateInputValue(value) {
+        const year = value.getFullYear();
+        const month = String(value.getMonth() + 1).padStart(2, "0");
+        const day = String(value.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+
+      function dateFromInput(value, endOfDay = false) {
+        if (!value) return null;
+        const [year, month, day] = value.split("-").map(Number);
+        if (!year || !month || !day) return null;
+        return new Date(
+          year,
+          month - 1,
+          day,
+          endOfDay ? 23 : 0,
+          endOfDay ? 59 : 0,
+          endOfDay ? 59 : 0,
+          endOfDay ? 999 : 0
+        );
+      }
+
+      function setMeta(data, filteredData) {
         const count = document.getElementById("study-count");
         const range = document.getElementById("date-range");
-        count.textContent = `${data.length} studies`;
-        if (data.length) {
-          range.textContent = `${formatDate(data[0].datetime)} — ${formatDate(
-            data[data.length - 1].datetime
+        count.textContent =
+          filteredData.length === data.length
+            ? `${data.length} studies`
+            : `${filteredData.length} of ${data.length} studies`;
+        if (filteredData.length) {
+          range.textContent = `${formatDate(filteredData[0].datetime)} — ${formatDate(
+            filteredData[filteredData.length - 1].datetime
           )}`;
         } else {
           range.textContent = "No data";
@@ -321,35 +391,101 @@
         return chart;
       }
 
+      function updateChart(chart, data) {
+        chart.setOption({
+          series: [
+            {
+              data: data.map((point) => [point.x, point.y]),
+            },
+          ],
+        });
+      }
+
+      function metricSeries(data) {
+        return {
+          frequency: data.map((row) => ({ x: row.datetime, y: row.frequency })),
+          snr: data.map((row) => ({ x: row.datetime, y: row.normalized_snr })),
+          inhomogeneity: data.map((row) => ({
+            x: row.datetime,
+            y: row.inhomogeneity,
+          })),
+          maxghost: data.map((row) => ({ x: row.datetime, y: row.maxghost })),
+        };
+      }
+
+      function filterByDateRange(data) {
+        const start = dateFromInput(document.getElementById("start-date").value);
+        const end = dateFromInput(document.getElementById("end-date").value, true);
+        return data.filter((row) => {
+          if (start && row.datetime < start) return false;
+          if (end && row.datetime > end) return false;
+          return true;
+        });
+      }
+
       async function main() {
         const response = await fetch("qa.json", { cache: "no-store" });
         const rawData = await response.json();
         const data = normalizeData(rawData);
-        setMeta(data);
+        const dateControls = document.getElementById("date-controls");
+        const startInput = document.getElementById("start-date");
+        const endInput = document.getElementById("end-date");
+
+        dateControls.addEventListener("submit", (event) => {
+          event.preventDefault();
+        });
+
+        if (data.length) {
+          startInput.min = endInput.min = toDateInputValue(data[0].datetime);
+          startInput.max = endInput.max = toDateInputValue(
+            data[data.length - 1].datetime
+          );
+          startInput.value = startInput.min;
+          endInput.value = endInput.max;
+        }
+
+        setMeta(data, data);
+        const initialSeries = metricSeries(data);
 
         const charts = [
           renderChart(
             document.getElementById("chart-frequency"),
-            data.map((row) => ({ x: row.datetime, y: row.frequency })),
+            initialSeries.frequency,
             COLORS.frequency,
             { scale: true }
           ),
           renderChart(
             document.getElementById("chart-snr"),
-            data.map((row) => ({ x: row.datetime, y: row.normalized_snr })),
+            initialSeries.snr,
             COLORS.snr
           ),
           renderChart(
             document.getElementById("chart-inhomogeneity"),
-            data.map((row) => ({ x: row.datetime, y: row.inhomogeneity })),
+            initialSeries.inhomogeneity,
             COLORS.inhomogeneity
           ),
           renderChart(
             document.getElementById("chart-maxghost"),
-            data.map((row) => ({ x: row.datetime, y: row.maxghost })),
+            initialSeries.maxghost,
             COLORS.maxghost
           ),
         ];
+
+        function applyDateRange() {
+          if (startInput.value && endInput.value && startInput.value > endInput.value) {
+            endInput.value = startInput.value;
+          }
+          const filteredData = filterByDateRange(data);
+          const series = metricSeries(filteredData);
+          setMeta(data, filteredData);
+          updateChart(charts[0], series.frequency);
+          updateChart(charts[1], series.snr);
+          updateChart(charts[2], series.inhomogeneity);
+          updateChart(charts[3], series.maxghost);
+        }
+
+        startInput.addEventListener("change", applyDateRange);
+        endInput.addEventListener("change", applyDateRange);
 
         window.addEventListener("resize", () => {
           charts.forEach((chart) => chart.resize());
