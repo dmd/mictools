@@ -129,9 +129,10 @@ def test_convert_to_bids_keep_all_runs():
             f"{func}/sub-test_ses-1_task-rest_acq-multiecho_dir-AP_run-03_echo-1_bold.nii.gz",
             f"{func}/sub-test_ses-1_task-rest_acq-multiecho_dir-AP_run-03_echo-4_bold.nii.gz",
             f"{func}/sub-test_ses-1_task-rest_acq-multiecho_dir-AP_run-03_echo-4_sbref.nii.gz",
-            # multi-echo PA: only one run, so config run-1 is kept; SBRef kept too
-            f"{func}/sub-test_ses-1_task-rest_acq-multiecho_dir-PA_run-1_echo-1_bold.nii.gz",
-            f"{func}/sub-test_ses-1_task-rest_acq-multiecho_dir-PA_run-1_echo-1_sbref.nii.gz",
+            # multi-echo PA: only one run, so no new run tag is added, but the
+            # config run entity is normalized to padded form (run-1 -> run-01)
+            f"{func}/sub-test_ses-1_task-rest_acq-multiecho_dir-PA_run-01_echo-1_bold.nii.gz",
+            f"{func}/sub-test_ses-1_task-rest_acq-multiecho_dir-PA_run-01_echo-1_sbref.nii.gz",
         ]
 
         should_not_exist_bids = [
@@ -141,6 +142,8 @@ def test_convert_to_bids_keep_all_runs():
             f"{func}/sub-test_ses-1_task-rest_acq-singleecho_dir-AP_bold.nii.gz",
             # only three AP runs exist
             f"{func}/sub-test_ses-1_task-rest_acq-multiecho_dir-AP_run-04_echo-1_bold.nii.gz",
+            # config run entity is normalized to padded form, even for single runs
+            f"{func}/sub-test_ses-1_task-rest_acq-multiecho_dir-PA_run-1_echo-1_bold.nii.gz",
         ]
 
         for f in should_exist_bids:

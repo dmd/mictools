@@ -194,9 +194,7 @@ def convert_to_bids(config, studydir, subject, session, keep_all_runs=False):
                 has_repeats = len(sources_by_run) > 1
 
             for run_idx, sources in sources_by_run.items():
-                run_tag = (
-                    f"run-{run_idx:02d}" if (keep_all_runs and has_repeats) else ""
-                )
+                run_tag = f"run-{run_idx:02d}" if keep_all_runs else ""
 
                 for source in sources:
                     basename = f"sub-{subject}_"
@@ -206,17 +204,18 @@ def convert_to_bids(config, studydir, subject, session, keep_all_runs=False):
                     bidsbase = bidsnames[scantype][scanname]
 
                     if keep_all_runs and file_is_sbref.get(source, False):
-                        if bidsbase.endswith("_bold"):
-                            bidsbase = bidsbase.replace("_bold", "_sbref")
-                        elif bidsbase.endswith("bold"):
-                            bidsbase = bidsbase.replace("bold", "sbref")
+                        # SBRef companion: replace the modality suffix with _sbref
+                        if "_" in bidsbase:
+                            bidsbase = bidsbase.rsplit("_", 1)[0] + "_sbref"
                         else:
-                            bidsbase += "_sbref"
+                            bidsbase = "sbref"
 
                     basename += bidsbase
                     pieces = basename.split("_")
 
-                    # Overwrite or reconcile an existing config-level run entity
+                    # Normalize an existing config-level run entity (padding and
+                    # chronological numbering), or add a run tag only when there
+                    # are multiple runs to disambiguate.
                     if run_tag:
                         # Find if any piece already starts with 'run-'
                         existing_run_idx = -1
@@ -226,9 +225,9 @@ def convert_to_bids(config, studydir, subject, session, keep_all_runs=False):
                                 break
 
                         if existing_run_idx != -1:
-                            # Replace existing token (reconciles run-1 to run-01 padding)
+                            # Replace existing token (reconciles run-1 to run-01)
                             pieces[existing_run_idx] = run_tag
-                        else:
+                        elif has_repeats:
                             # Safely insert before the suffix/modality
                             pieces.insert(-1, run_tag)
 
