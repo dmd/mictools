@@ -80,7 +80,7 @@ def convert_to_nifti(studydir):
     dcm.run()
 
 
-def convert_to_bids(config, studydir, subject, session):
+def convert_to_bids(config, studydir, subject, session, keep_all_runs=False):
     logging.info("Organizing in BIDS format")
     EXTENSIONS = (".json", ".bval", ".bvec", ".tsv", niigz)
     sourcedata_dir = pjoin(studydir, "sourcedata", "sub-" + subject)
@@ -90,7 +90,7 @@ def convert_to_bids(config, studydir, subject, session):
         sourcedata_dir = pjoin(sourcedata_dir, "ses-" + session)
         subject_dir = pjoin(subject_dir, "ses-" + session)
 
-    # make a totally generic bids folder
+    # Reverted to original behavior
     os.makedirs(sourcedata_dir)
     os.makedirs(subject_dir)
 
@@ -110,19 +110,16 @@ def convert_to_bids(config, studydir, subject, session):
     with open(pjoin(studydir, ".bidsignore"), "w") as f:
         f.write("\n".join(bids_ignore) + "\n")
 
-    # move data into sourcedata
     for _ in ("nifti", "scans"):
         shutil.move(pjoin(studydir, _), sourcedata_dir)
 
     niftidir = pjoin(sourcedata_dir, "nifti")
-
     bidsnames = config["bidsnames"]
 
     for scantype in bidsnames:  # ('anat', 'func')
         scantype_dir = pjoin(subject_dir, scantype)
         os.mkdir(scantype_dir)
         for scanname, _ in sorted(bidsnames[scantype].items(), key=lambda x: x[1]):
-            # take only the latest; exclude _ph.nii.gz phase component
             scans = [
                 os.path.basename(_)
                 for _ in glob(pjoin(niftidir, scanname + f"*[0-9]{niigz}"))
@@ -131,40 +128,131 @@ def convert_to_bids(config, studydir, subject, session):
                 logging.warning(f"No scans found named {scanname}.")
                 continue
 
-            # is this a multi-echo scan?
             multiecho = scans[0].split("_")[-1][0] == "e"
 
-            sources = final_scan(scans, multiecho)
+            if not keep_all_runs:
+                # OLD BEHAVIOR
+                sources_by_run = {0: final_scan(scans, multiecho)}
+                has_repeats = False
+            else:
+                # NEW BEHAVIOR
+                bold_fids = set()
+                sbref_fids = set()
+                fid_to_file = {}
+                file_is_sbref = {}
 
-            for source in sources:
-                basename = f"sub-{subject}_"
-                if session:
-                    basename += f"ses-{session}_"
+                # Reuse logic as requested, but clean up tracking variables
+                for file in scans:
+                    is_sbref = "_SBRef_" in file or file.split("_")[-2] == "SBRef"
 
-                bidsbase = bidsnames[scantype][scanname]
-                basename += bidsbase
+                    if multiecho:
+                        m = re.search(rf"_(\d+)_e\d{niigz}$", file)
+                    else:
+                        m = re.search(rf"_(\d+){niigz}$", file)
 
-                if multiecho:
-                    m = re.search(rf"_\d+_e(\d){niigz}$", source)
-                    echobids = f"echo-{m.group(1)}"
+                    if m:
+                        fid = int(m.group(1))
+                        if fid >= 1000:
+                            continue
+
+                        if is_sbref:
+                            sbref_fids.add(fid)
+                        else:
+                            bold_fids.add(fid)
+
+                        if fid not in fid_to_file:
+                            fid_to_file[fid] = []
+                        fid_to_file[fid].append(file)
+                        file_is_sbref[file] = is_sbref
+
+                sorted_bold = sorted(list(bold_fids))
+                sorted_sbref = sorted(list(sbref_fids))
+
+                sources_by_run = {}
+                run_idx = 1
+
+                # Grab the nearest PRECEDING SBRef companion, not the oldest stale one
+                while sorted_bold:
+                    b_fid = sorted_bold.pop(0)
+                    current_run_files = list(fid_to_file[b_fid])
+
+                    # Filter for SBRefs that happened before this BOLD, pick the maximum/closest one
+                    preceding_sbrefs = [s for s in sorted_sbref if s < b_fid]
+                    if preceding_sbrefs:
+                        s_fid = max(preceding_sbrefs)
+                        sorted_sbref.remove(s_fid)
+                        current_run_files.extend(fid_to_file[s_fid])
+
+                    sources_by_run[run_idx] = sorted(current_run_files)
+                    run_idx += 1
+
+                while sorted_sbref:
+                    s_fid = sorted_sbref.pop(0)
+                    sources_by_run[run_idx] = sorted(fid_to_file[s_fid])
+                    run_idx += 1
+
+                has_repeats = len(sources_by_run) > 1
+
+            for run_idx, sources in sources_by_run.items():
+                run_tag = (
+                    f"run-{run_idx:02d}" if (keep_all_runs and has_repeats) else ""
+                )
+
+                for source in sources:
+                    basename = f"sub-{subject}_"
+                    if session:
+                        basename += f"ses-{session}_"
+
+                    bidsbase = bidsnames[scantype][scanname]
+
+                    if keep_all_runs and file_is_sbref.get(source, False):
+                        if bidsbase.endswith("_bold"):
+                            bidsbase = bidsbase.replace("_bold", "_sbref")
+                        elif bidsbase.endswith("bold"):
+                            bidsbase = bidsbase.replace("bold", "sbref")
+                        else:
+                            bidsbase += "_sbref"
+
+                    basename += bidsbase
                     pieces = basename.split("_")
-                    pieces.insert(-1, echobids)
+
+                    # Overwrite or reconcile an existing config-level run entity
+                    if run_tag:
+                        # Find if any piece already starts with 'run-'
+                        existing_run_idx = -1
+                        for i, piece in enumerate(pieces):
+                            if piece.startswith("run-"):
+                                existing_run_idx = i
+                                break
+
+                        if existing_run_idx != -1:
+                            # Replace existing token (reconciles run-1 to run-01 padding)
+                            pieces[existing_run_idx] = run_tag
+                        else:
+                            # Safely insert before the suffix/modality
+                            pieces.insert(-1, run_tag)
+
+                    if multiecho:
+                        m = re.search(rf"_\d+_e(\d){niigz}$", source)
+                        echobids = f"echo-{m.group(1)}"
+                        pieces.insert(-1, echobids)
+
                     basename = "_".join(pieces)
 
-                logging.info(f"Copying {source} to {basename}.")
-                for extension in EXTENSIONS:
-                    try:
-                        os.link(
-                            pjoin(niftidir, source.replace(niigz, extension)),
-                            pjoin(scantype_dir, basename + extension),
-                        )
-                        preprocess(
-                            config,
-                            studydir,
-                            scantype_dir,
-                            basename,
-                            extension,
-                            bidsbase,
-                        )
-                    except FileNotFoundError:
-                        pass
+                    logging.info(f"Copying {source} to {basename}.")
+                    for extension in EXTENSIONS:
+                        try:
+                            os.link(
+                                pjoin(niftidir, source.replace(niigz, extension)),
+                                pjoin(scantype_dir, basename + extension),
+                            )
+                            preprocess(
+                                config,
+                                studydir,
+                                scantype_dir,
+                                basename,
+                                extension,
+                                bidsbase,
+                            )
+                        except FileNotFoundError:
+                            pass

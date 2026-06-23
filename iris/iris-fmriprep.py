@@ -208,6 +208,11 @@ iris-fmriprep is expecting a directory with a single directory inside named scan
     required.add_argument(
         "studydir", help="Path to study received from Iris (dicom dir)."
     )
+    parser.add_argument(
+        "--keep-all-runs",
+        action="store_true",
+        help="Process all repeated runs and append run-XX tags instead of throwing away previous runs.",
+    )
     args = parser.parse_args()
 
     # Handle --nifti flag
@@ -231,7 +236,7 @@ iris-fmriprep is expecting a directory with a single directory inside named scan
         task_run("nifti", args.studydir, write=True)
     if tasks["bids"] and not task_run("bids", args.studydir):
         record_studydir_state(args.studydir, "bids")
-        convert_to_bids(config, args.studydir, args.subject, args.session)
+        convert_to_bids(config, args.studydir, args.subject, args.session, keep_all_runs=args.keep_all_runs)
         task_run("bids", args.studydir, write=True)
     if tasks["fmriprep"]:
         record_studydir_state(args.studydir, "fmriprep")
