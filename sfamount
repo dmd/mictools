@@ -24,6 +24,9 @@ case $(basename $0) in
     rfamount )
         SERVER=rfawin.partners.org
         ;;
+    madmount )
+        SERVER=MGBMAD3ISILON1-smb.partners.org
+        ;;
     * )
         echo "Call me as sfamount or rfamount, please."
         exit 1
