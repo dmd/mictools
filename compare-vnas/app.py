@@ -1,10 +1,28 @@
 # app.py
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 import requests
 from datetime import datetime, timedelta
+from pathlib import Path
+from passlib.apache import HtpasswdFile
 
 app = Flask(__name__)
+
+# HTTP Basic Auth backed by .htpasswd (Apache htpasswd format)
+HTPASSWD_PATH = Path(__file__).with_name(".htpasswd")
+_htpasswd = HtpasswdFile(str(HTPASSWD_PATH))
+
+
+@app.before_request
+def require_basic_auth():
+    auth = request.authorization
+    _htpasswd.load_if_changed()
+    if not auth or not _htpasswd.check_password(auth.username, auth.password):
+        return Response(
+            "Authentication required.",
+            401,
+            {"WWW-Authenticate": 'Basic realm="compare-vnas"'},
+        )
 
 # Constants
 XNAT_BASE_URL = "https://iris.mclean.harvard.edu"

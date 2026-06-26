@@ -2,3 +2,4 @@ flask
 werkzeug
 requests
 gunicorn
+passlib
