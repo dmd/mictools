@@ -1,6 +1,15 @@
 #!/bin/bash
 
+CERT="/home/ddrucker/mictools/everything-mickey.pem"
+KEY="/home/ddrucker/mictools/everything-mickey.pem"
 port=$(shuf -i 30000-50000 -n 1)
-jupyter lab --ip 0.0.0.0 --port $port --no-browser
+
+# Advertise the name the certificate is issued for, so the printed URL
+# is reachable and TLS validates. Derived from the cert's CN.
+fqdn=$(openssl x509 -in "$CERT" -noout -subject -nameopt multiline \
+    | awk -F' = ' '/commonName/{print $2}')
+
+jupyter lab --ip 0.0.0.0 --port $port --no-browser --certfile $CERT --keyfile $KEY \
+    --ServerApp.custom_display_url="https://$fqdn:$port/lab"
 
 
