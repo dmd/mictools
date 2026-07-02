@@ -43,12 +43,52 @@ while true; do
     break
 done
 
+# Select the container image from the name this script was invoked as, so
+# rstudio-runner-custom can simply be a symlink to rstudio-runner.
+case "$(basename "$0")" in
+    *-custom) image=/data/singularity-images/rstudio-4.4.3-custom.sif ;;
+    *)        image=/data/singularity-images/rstudio_4.2.sif ;;
+esac
+
 mkdir -p run var-lib-rstudio-server
-port=$(shuf -i 30000-50000 -n 1)
-echo Connect to http://mickey.mclean.harvard.edu:$port/
 printf 'provider=sqlite\ndirectory=/var/lib/rstudio-server\n' > database.conf
+
+# RStudio Server (open source) can't terminate TLS itself, so run rserver on a
+# localhost-only plaintext port and put a TLS-terminating proxy (socat) in front
+# of it, reusing the same certificate as the Jupyter runner. socat forwards raw
+# bytes, so RStudio's websocket connections pass through unchanged.
+CERT="/home/ddrucker/mictools/everything-mickey.pem"
+port=$(shuf -i 30000-50000 -n 1)       # public HTTPS port (TLS terminated by socat)
+backend=$(shuf -i 30000-50000 -n 1)    # rserver's plaintext port, bound to localhost
+while [ "$backend" = "$port" ]; do backend=$(shuf -i 30000-50000 -n 1); done
+
+# Advertise the name the certificate is issued for, so the URL is reachable and
+# TLS validates. Derived from the cert's CN.
+fqdn=$(openssl x509 -in "$CERT" -noout -subject -nameopt multiline \
+    | awk -F' = ' '/commonName/{print $2}')
+
+# Run the proxy and server under job control (set -m) so each gets its own
+# process group. A Ctrl-C in the terminal then reaches only this script, which
+# shuts them down with SIGTERM. If the terminal's SIGINT reaches rserver
+# directly it dies with "bus error (core dumped)"; SIGTERM is clean.
+set -m
+cleanup() {
+    trap - INT TERM EXIT
+    [ -n "$rserver_pid" ] && kill -TERM -"$rserver_pid" 2>/dev/null
+    [ -n "$socat_pid" ]   && kill -TERM -"$socat_pid"   2>/dev/null
+    wait 2>/dev/null
+}
+trap cleanup INT TERM EXIT
+
+socat OPENSSL-LISTEN:$port,cert=$CERT,verify=0,reuseaddr,fork TCP:127.0.0.1:$backend &
+socat_pid=$!
+
+echo Connect to https://$fqdn:$port/
+
 APPTAINERENV_OMP_NUM_THREADS=1 PASSWORD="$password" singularity exec \
    -B /data --bind run:/run,var-lib-rstudio-server:/var/lib/rstudio-server,database.conf:/etc/rstudio/database.conf \
-   /data/singularity-images/rstudio_4.2.sif \
-   /usr/lib/rstudio-server/bin/rserver --www-port $port --auth-none=0 --auth-pam-helper-path=pam-helper --server-user=$(whoami)
+   "$image" \
+   /usr/lib/rstudio-server/bin/rserver --www-port $backend --www-address 127.0.0.1 --auth-none=0 --auth-pam-helper-path=pam-helper --server-user=$(whoami) &
+rserver_pid=$!
 
+wait "$rserver_pid"
